@@ -75,10 +75,6 @@ object ReadFits {
     } while (c.hasNext)
   }
 
-  class BinaryTableHDUExt(x : Header, y : BinaryTable) extends BinaryTableHDU(x, y) with java.io.Serializable
-
-  // case class FitsData(key1: String, val: Long)
-
   def main(args : Array[String]) {
     // Open the fits
     val ffits = new Fits(args(0).toString) with Serializable
@@ -104,52 +100,20 @@ object ReadFits {
         System.exit(1)
       }
 
-      // // Actually it cannot work with image
-      // val hduExt = hdu match {
-      //   case image : ImageHDU => image
-      //   case table : BinaryTableHDU => table
-      // }
-
       val data = hdu.asInstanceOf[BinaryTableHDU]
 
       val ncols = data.getNCols
       val nrows = data.getNRows
       println(s"Table with [col x row] = [$ncols x $nrows]")
 
-
-      // def returnLine()
-      // val mR = data.getData().getModelRow()
-      // var n : Int = 0
-      // if (data.getData.reset()) {
-      //   val arrayDataInput = ffits.getStream()
-      //   arrayDataInput.skip(24) // skip one line
-      //   while (n < 10) {
-      //     n = n + 1
-      //     // val arr = Seq(arrayDataInput.readDouble, arrayDataInput.readDouble, arrayDataInput.readDouble)
-      //     def arr(arrayDataInput : ArrayDataInput) : Seq[Double] = Seq(arrayDataInput.readDouble, arrayDataInput.readDouble, arrayDataInput.readDouble)
-      //     val rdd = sc.parallelize(0 to 10).map(x => arr(arrayDataInput))
-      //     val df = rdd.toDF("value")
-      //     df.show()
-      //   }
-      // }
-      // println("Count : " + n.toString)
-
-      // def readStream(rdd : RDD[Double] = sc.parallelize(Seq[Double]()), n : Int = 0, nmax : Int = 2) : RDD[Double] = {
-      //   if (n == nmax) {
-      //     rdd
-      //   } else {
-      //     val itd = data.getColumn(n).asInstanceOf[Array[Double]]
-      //     val newRdd = sc.parallelize(itd) ++ rdd
-      //     buildMyRDD(newRdd, n + 1)
-      //   }
-      // }
-      // val rdd = readStream()
+      val nBlock = 10
+      val sizeBlock : Int = nrows / nBlock
+      val nParts = 10
+      val col0 = 0
 
       val it = data.getHeader.iterator
       val myheader = getMyHeader(it, "")
 
-      // val toto = header(data.getHeader)
-      // println(toto)
       println(myheader)
 
       println(data.getColumnName(0))
@@ -163,147 +127,89 @@ object ReadFits {
         )
       )
 
-      // val dec = (0 to nrows - 1)
-      //   .map(
-      //     x => data.getElement(x, 1)
-      //       .asInstanceOf[Array[Double]]
-      //       .seq).toSeq
+      def yieldRows(x : Fits, col : Int, offset : Int, sizeBlock : Int) = {
 
-      // val rdd = sc.parallelize(Seq((1, "Spark"), (2, "Databricks"), (3, "Notebook")))
-      // val df = rdd.toDF("Id", "Name")
+        // Start of the block
+        val start = offset * sizeBlock
 
-      // Solution degueu
-      // val dataset = (0 to nrows - 1)
-      //   .flatMap(x => Seq( (proc.get(data, x, 0), proc.get(data, x, 1)) ))
-      // val rdd = sc.parallelize(dataset)
+        // End of the block
+        val stop_tmp = (offset + 1) * sizeBlock - 1
+        val stop = if (stop_tmp < nrows - 1) {
+          stop_tmp
+        } else {
+          nrows - 1
+        }
 
-      // def myIt(it : Iterator[Double], rdd : RDD[Seq[Double]] = sc.parallelize(Seq[Seq[Double]]())) : RDD[Seq[Double]] = {
-      //   if (!it.hasNext) {
-      //     rdd
-      //   } else {
-      //     // rdd.cache()
-      //     // val d = it.next()
-      //     // val newRdd = sc.parallelize(Seq(d)) ++ rdd
-      //     val newRdd = sc.parallelize(0 to 1000)
-      //       .map(x => Seq(it.next())) ++ rdd
-      //     // rdd.unpersist()
-      //     myIt(it, newRdd)
-      //   }
-      // }
-      // val itd = data.getColumn(0).asInstanceOf[Array[Double]].toList.iterator
-      // val rdd = myIt(itd)
+        // Yield rows
+        for {
+          i <- start to stop
+        } yield (x.getHDU(1)
+          .asInstanceOf[BinaryTableHDU]
+          .getElement(i, col)
+          .asInstanceOf[Array[_]](0)
+        )
+      }
 
-      // def getRowsIt(
-      //     data : BinaryTableHDU,
-      //     blocksize : Int,
-      //     rdd : RDD[Seq[Double]] = sc.parallelize(Seq[Seq[Double]]()),
-      //     index : Int = 0,
-      //     maxIndex : Int = 100) : RDD[Seq[Double]] = {
-      //   if (index == maxIndex) {
-      //     rdd
-      //   } else {
-      //     // rdd.cache()
-      //     // val d = it.next()
-      //     // val newRdd = sc.parallelize(Seq(d)) ++ rdd
-      //     val stop = index + blocksize
-      //     val newRdd = sc.parallelize(index to stop)
-      //       .map(x => proc.get(data, x)) ++ rdd
-      //       // .map(x => data.getRow(x).seq.asInstanceOf[Seq[Array[Double]]].flatMap(x => x)) ++ rdd
-      //     // rdd.unpersist()
-      //     getRowsIt(data, blocksize, newRdd, index + blocksize, maxIndex)
-      //   }
-      // }
-      // val rdd = getRowsIt(data, 10)
+      def getDF(rdd : RDD[(Any, Int)], fitstype : String, name : String) = {
+        fitstype match {
+          case "1J" => rdd.asInstanceOf[RDD[(Int, Int)]].toDF(name, "id")
+          case "1E" => rdd.asInstanceOf[RDD[(Double, Int)]].toDF(name, "id")
+          case "D" => rdd.asInstanceOf[RDD[(Double, Int)]].toDF(name, "id")
+          case _ => rdd.asInstanceOf[RDD[(Float, Int)]].toDF(name, "id")
+        }
+      }
 
-      // def buildMyRDD(rdd : RDD[Double] = sc.parallelize(Seq[Double]()), n : Int = 0, nmax : Int = 2) : RDD[Double] = {
-      //   if (n == nmax) {
-      //     rdd
-      //   } else {
-      //     val itd = data.getColumn(n).asInstanceOf[Array[Double]]
-      //     val newRdd = sc.parallelize(itd) ++ rdd
-      //     buildMyRDD(newRdd, n + 1)
-      //   }
-      // }
-      // val rdd = buildMyRDD()
+      def spanBlock(offset : Int, sizeBlock : Int) = {
+        // Start of the block
+        val start = offset * sizeBlock
 
-      // def buildMyRDD(rdd : RDD[Double] = sc.parallelize(Seq[Double]()), n : Int = 0, nmax : Int = 100) : RDD[Double, Double, Double] = {
-      //   if (n == nmax) {
-      //     rdd
-      //   } else {
-      //     val itd = data.getRow(n).asInstanceOf[Array[Double]]
-      //     val newRdd = sc.parallelize(Seq(itd)) ++ rdd
-      //     buildMyRDD(newRdd, n + 1)
-      //   }
-      // }
-      // val rdd = buildMyRDD()
+        // End of the block
+        val stop_tmp = (offset + 1) * sizeBlock - 1
+        val stop = if (stop_tmp < nrows - 1) {
+          stop_tmp
+        } else {
+          nrows - 1
+        }
 
+        for {
+          i <- start to stop
+        } yield (i)
+      }
 
-      // val get = (f : Fits, col : Int, row : Int) => f.getHDU(1).asInstanceOf[BinaryTableHDU].getRow(0).seq.asInstanceOf[Seq[Array[Double]]].flatMap(x=>x)
-      // Solution plus propre - mais qui ne marche pas... :-(
+      def recurDF(df : DataFrame, col : Int, colmax : Int) : DataFrame = {
+        if (col == colmax + 1) {
+          df
+        } else {
+          val rdd_tmp = sc.parallelize(0 to nBlock - 1, nParts)
+            .map(blockid => (blockid, new Fits(args(0).toString) with Serializable ))
+            .map(x => yieldRows(x._2, col, x._1, sizeBlock).zip(spanBlock(x._1, sizeBlock)))
+            .flatMap(x => x)
+          val fitstype : String = data.getColumnFormat(col)
+          val df_tmp = getDF(rdd_tmp, fitstype, col.toString)
+          println(df_tmp.count())
+          println(df.join(df_tmp, "id").count())
+          recurDF(df.join(df_tmp, "id"), col + 1, colmax)
+        }
+      }
 
-      // Initialisation
-      val rdd = sc.binaryFiles(args(0).toString, 20000)
-        .map(x => new Fits(x._1))
-        .map(x => x.getHDU(1))
-        .map(x => x.asInstanceOf[BinaryTableHDU])
-        .map(x => x.getColumn(0).asInstanceOf[Array[Double]].zipWithIndex)
+      // Initialisation (1st column)
+      val rdd = sc.parallelize(0 to nBlock - 1, nParts)
+        .map(blockid => (blockid, new Fits(args(0).toString) with Serializable ))
+        .map(x => yieldRows(x._2, col0, x._1, sizeBlock).zip(spanBlock(x._1, sizeBlock)))
         .flatMap(x => x)
-      // val rdd = sc.binaryFiles(args(0).toString, 20000)
-      //   .map(x => new Fits(x._1))
-      //   .map(x => x.getHDU(1))
-      //   .map(x => x.asInstanceOf[BinaryTableHDU])
-      //   .map(x => x.getElement(0, 0).seq.asInstanceOf[Seq[Array[Double]]].flatMap(x=>x).zipWithIndex)
-      //   .flatMap(x => x)
 
-      // val df = rdd.toDF("RA", "Dec")
-      val df = rdd.toDF("RA", "id")
-      // df.show()
+      // Get the correct type for the column
+      // Type of the data
+      val fitstype : String = data.getColumnFormat(col0)
+      val df = getDF(rdd, fitstype, col0.toString)
+      println(df.count())
 
-      def recurDF(df : DataFrame, fn : String, n : Int, nmax : Int) : DataFrame = {
-        if (n == nmax + 1) {
-          df
-        } else {
-          val df_tmp = sc.binaryFiles(fn, 20000)
-            .map(x => new Fits(x._1))
-            .map(x => x.getHDU(1))
-            .map(x => x.asInstanceOf[BinaryTableHDU])
-            .map(x => x.getColumn(n).asInstanceOf[Array[Double]].zipWithIndex)
-            .flatMap(x => x).toDF(n.toString, "id")
-          recurDF(df.join(df_tmp, "id"), fn, n + 1, nmax)
-        }
-      }
+      // Recursion
+      val df_tot = recurDF(df, 1, 2)
 
-      def recurDfRow(df : DataFrame, fn : String, n : Int, nmax : Int) : DataFrame = {
-        if (n == nmax + 1) {
-          df
-        } else {
-          val df_tmp = sc.binaryFiles(fn, 20000)
-            .map(x => new Fits(x._1))
-            .map(x => x.getHDU(1))
-            .map(x => x.asInstanceOf[BinaryTableHDU])
-            .map(x => x.getRow(n).seq.asInstanceOf[Seq[Array[Double]]].flatMap(x=>x).zipWithIndex)
-            .flatMap(x => x).toDF(n.toString, "id")
-          recurDfRow(df.join(df_tmp, "id"), fn, n + 1, nmax)
-        }
-      }
-
-      val df2 = recurDF(df, args(0).toString, 1, 1)
-      // val df2 = recurDfRow(df, args(0).toString, 1, 2)
-      // df2.drop("id").show()
-      // df2.select()
-      df2.select("id").filter(x => x(0) == 100).show()
-
-      // sc.parallelize(1 to 1000000, 1000).map(x => (x, new Fits(fn) with Serializable)).map(x=>(x._1, x._2.getHDU(1).asInstanceOf[BinaryTableHDU].getElement(x._1, 1).asInstanceOf[Array[Float]](0))).toDF.count()
-
-      // println(dec.take(10))
-      // val rows = dec.map{x => Row(x:_*)}
-      // val rdd = sc.makeRDD(rows)
-      // val df = sq.createDataFrame(rdd, fitsSchema)
-      // val df = dec.toDS()
-
-      // val df_filtered = df.filter($"dec" < 0.0)
-      // df_filtered.show()
-      // println(df_filtered.count())
+      // Finalize
+      println(df_tot.select("1").count())
+      df_tot.show()
 
     }
   }
