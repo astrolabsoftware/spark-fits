@@ -106,9 +106,9 @@ object ReadFits {
       val nrows = data.getNRows
       println(s"Table with [col x row] = [$ncols x $nrows]")
 
-      val nBlock = 10
+      val nBlock = 100
       val sizeBlock : Int = nrows / nBlock
-      val nParts = 10
+      val nParts = 100
       val col0 = 0
 
       val it = data.getHeader.iterator
@@ -150,16 +150,8 @@ object ReadFits {
         )
       }
 
-      def getDF(rdd : RDD[(Any, Int)], fitstype : String, name : String) = {
-        fitstype match {
-          case "1J" => rdd.asInstanceOf[RDD[(Int, Int)]].toDF(name, "id")
-          case "1E" => rdd.asInstanceOf[RDD[(Double, Int)]].toDF(name, "id")
-          case "D" => rdd.asInstanceOf[RDD[(Double, Int)]].toDF(name, "id")
-          case _ => rdd.asInstanceOf[RDD[(Float, Int)]].toDF(name, "id")
-        }
-      }
+      def yieldRows2(x : Fits, col : Int, offset : Int, sizeBlock : Int) = {
 
-      def spanBlock(offset : Int, sizeBlock : Int) = {
         // Start of the block
         val start = offset * sizeBlock
 
@@ -171,9 +163,66 @@ object ReadFits {
           nrows - 1
         }
 
+        // Yield rows
+        for {
+          i <- start to stop
+        } yield (x.getHDU(1)
+          .asInstanceOf[BinaryTableHDU]
+          .getRow(i)
+          .map(x=>x.asInstanceOf[Array[Double]](0))
+        )
+      }
+
+      def yieldRows3(x : Fits, col : Int, offset : Int, sizeBlock : Int) = {
+
+        // Start of the block
+        val start = offset * sizeBlock
+
+        // End of the block
+        val stop_tmp = (offset + 1) * sizeBlock - 1
+        val stop = if (stop_tmp < nrows - 1) {
+          stop_tmp
+        } else {
+          nrows - 1
+        }
+
+        // Yield rows
+        for {
+          i <- start to stop
+        } yield (Array(x.getHDU(1)
+          .asInstanceOf[BinaryTableHDU]
+          .getRow(i).map(x=>x.asInstanceOf[Array[_]](0)))
+          .map{case x => (x(0), x(1), x(2))}.toList(0)
+        )
+      }
+
+      def yieldEmptyRows(offset : Int, sizeBlock : Int) = {
+
+        // Start of the block
+        val start = offset * sizeBlock
+
+        // End of the block
+        val stop_tmp = (offset + 1) * sizeBlock - 1
+        val stop = if (stop_tmp < nrows - 1) {
+          stop_tmp
+        } else {
+          nrows - 1
+        }
+
+        // Yield rows
         for {
           i <- start to stop
         } yield (i)
+      }
+
+      def getDF(rdd : RDD[(Any, Int)], fitstype : String, name : String) = {
+        val x = fitstype match {
+          case "1J" => rdd.asInstanceOf[RDD[(Int, Int)]].toDF(name, "id")
+          case "1E" => rdd.asInstanceOf[RDD[(Double, Int)]].toDF(name, "id")
+          case "D" => rdd.asInstanceOf[RDD[(Double, Int)]].toDF(name, "id")
+          case _ => rdd.asInstanceOf[RDD[(Float, Int)]].toDF(name, "id")
+        }
+        x
       }
 
       def recurDF(df : DataFrame, col : Int, colmax : Int) : DataFrame = {
@@ -182,34 +231,59 @@ object ReadFits {
         } else {
           val rdd_tmp = sc.parallelize(0 to nBlock - 1, nParts)
             .map(blockid => (blockid, new Fits(args(0).toString) with Serializable ))
-            .map(x => yieldRows(x._2, col, x._1, sizeBlock).zip(spanBlock(x._1, sizeBlock)))
+            .map(x => yieldRows(x._2, col, x._1, sizeBlock).zip(yieldEmptyRows(x._1, sizeBlock)))
             .flatMap(x => x)
+
           val fitstype : String = data.getColumnFormat(col)
           val df_tmp = getDF(rdd_tmp, fitstype, col.toString)
+
           println(df_tmp.count())
           println(df.join(df_tmp, "id").count())
           recurDF(df.join(df_tmp, "id"), col + 1, colmax)
         }
       }
+      // def recurDF(df : DataFrame, col : Int, colmax : Int) : DataFrame = {
+      //   if (col == colmax + 1) {
+      //     df
+      //   } else {
+      //     val rdd_tmp = sc.parallelize(0 to nBlock - 1, nParts)
+      //       .map(blockid => (blockid, new Fits(args(0).toString) with Serializable ))
+      //       .map(x => yieldRows(x._2, col, x._1, sizeBlock))
+      //       .flatMap(x => x)
+      //       .map(x => x.toString)
+      //
+      //     recurDF(df.rdd.map(x=>x(0).toString).zip(rdd_tmp).toDF, col + 1, colmax)
+      //   }
+      // }
+
 
       // Initialisation (1st column)
+      // val rdd = sc.parallelize(0 to nBlock - 1, nParts)
+      //   .map(blockid => (blockid, new Fits(args(0).toString) with Serializable ))
+      //   .map(x => yieldRows(x._2, col0, x._1, sizeBlock).zip(yieldEmptyRows(x._1, sizeBlock)))
+      //   .flatMap(x => x)
       val rdd = sc.parallelize(0 to nBlock - 1, nParts)
         .map(blockid => (blockid, new Fits(args(0).toString) with Serializable ))
-        .map(x => yieldRows(x._2, col0, x._1, sizeBlock).zip(spanBlock(x._1, sizeBlock)))
+        .map(x => yieldRows3(x._2, col0, x._1, sizeBlock))
         .flatMap(x => x)
+
+      println(rdd.count())
+      val df = rdd.toDF()
+      df.show()
 
       // Get the correct type for the column
       // Type of the data
-      val fitstype : String = data.getColumnFormat(col0)
-      val df = getDF(rdd, fitstype, col0.toString)
-      println(df.count())
+      // val fitstype : String = data.getColumnFormat(col0)
+      // val df = getDF(rdd, fitstype, col0.toString)
+      // val rddtyped = getRDDType(rdd, fitstype)
+      // println("Initial length = " + rddtyped.count().toString)
 
       // Recursion
-      val df_tot = recurDF(df, 1, 2)
+      // val df_tot = recurDF(df, 1, 2)
 
       // Finalize
-      println(df_tot.select("1").count())
-      df_tot.show()
+      // println(df_tot.select("1").count())
+      // df_tot.show()
 
     }
   }
