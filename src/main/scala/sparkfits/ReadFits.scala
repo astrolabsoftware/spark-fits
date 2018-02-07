@@ -192,7 +192,7 @@ object ReadFits {
         } yield (Array(x.getHDU(1)
           .asInstanceOf[BinaryTableHDU]
           .getRow(i).map(x=>x.asInstanceOf[Array[_]](0)))
-          .map{case x => (x(0), x(1), x(2))}.toList(0)
+          .map{case x => (x(0).toString, x(1).toString, x(2).toString)}.toList(0)
         )
       }
 
@@ -267,7 +267,8 @@ object ReadFits {
         .map(x => yieldRows3(x._2, col0, x._1, sizeBlock))
         .flatMap(x => x)
 
-      println(rdd.count())
+      // println(rdd.count())
+      // rdd.take(10)
       val df = rdd.toDF()
       df.show()
 
