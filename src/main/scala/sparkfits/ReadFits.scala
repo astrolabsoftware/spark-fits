@@ -191,7 +191,10 @@ object ReadFits {
           i <- start to stop
         } yield (Array(x.getHDU(1)
           .asInstanceOf[BinaryTableHDU]
-          .getRow(i).map(x=>x.asInstanceOf[Array[_]](0)))
+          .getRow(i).map {
+            case x : Array[_] => x.asInstanceOf[Array[_]](0)
+            case x : String => x
+          })
           .map{case x => (x(0).toString, x(1).toString, x(2).toString)}.toList(0)
         )
       }
@@ -271,7 +274,7 @@ object ReadFits {
       // rdd.take(10)
       val df = rdd.toDF()
       df.show()
-
+      df.printSchema()
       // Get the correct type for the column
       // Type of the data
       // val fitstype : String = data.getColumnFormat(col0)
