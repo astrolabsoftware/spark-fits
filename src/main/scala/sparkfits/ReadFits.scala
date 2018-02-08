@@ -154,7 +154,7 @@ object ReadFits {
       val it = data.getHeader.iterator
       val myheader = getMyHeader(it, "")
 
-      println(myheader)
+      myheader.split(",").foreach(println)
 
       println(data.getColumnName(0))
       println(data.getColumnName(1))
