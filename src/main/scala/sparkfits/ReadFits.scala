@@ -11,8 +11,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
-import nom.tam.fits.{Fits, HeaderCard, BinaryTableHDU, Header, BinaryTable}
-import nom.tam.util.{Cursor, BufferedFile, ArrayDataInput}
+import nom.tam.fits.{Fits, BinaryTableHDU, BinaryTable}
 
 object ReadFits {
 
@@ -28,41 +27,11 @@ object ReadFits {
     .builder()
     .getOrCreate()
 
+  // Internal classes
+  val sfu = new SparkFitsUtil
+
   // For implicit conversions like converting RDDs to DataFrames
   import spark.implicits._
-
-  // Get the number of HDUs
-  def getNHdus(f : Fits, n : Int) : Int = {
-    if (f.getHDU(n) != null) getNHdus(f, n + 1) else n
-  }
-
-  // Get the header
-  def getMyHeader(c : Cursor[String, HeaderCard], s : String) : String = {
-    if (c.hasNext() == true) getMyHeader(c, s + c.next() + ",") else s
-  }
-
-  def header(h : Header) = {
-    val c = h.iterator()
-    do {
-      val card = c.next()
-      val key = card.getKey
-      try {
-        val valueType = card.valueType
-        // println("===key", key)
-        val typ = key match {
-          case "END" => ""
-          case _ => card.valueType.getCanonicalName
-        }
-        val value = key match {
-          case "END" => ""
-          case _ => card.getValue.toString
-        }
-        // println(s"  key=$key type=$typ value=$value")
-      } catch {
-        case e:Exception =>
-      }
-    } while (c.hasNext)
-  }
 
   /**
     * Returns a block of rows as a Vector of Tuples.
@@ -117,12 +86,41 @@ object ReadFits {
     }.toList(0)) // Need a better handling of that...
   }
 
+  /**
+    * Returns a block of row indices as a Vector of Tuples.
+    *
+    * @param offset : int
+    *             Initial position of the cursor (first row)
+    * @param sizeBlock : int
+    *             Number of row to read.
+    * @param nRowMax : int
+    *             Number total of rows in the HDU.
+    */
+  def yieldIdRows(offset : Int, sizeBlock : Int, nRowMax : Int) = {
+
+    // Start of the block
+    val start = offset * sizeBlock
+
+    // End of the block
+    val stop_tmp = (offset + 1) * sizeBlock - 1
+    val stop = if (stop_tmp < nRowMax - 1) {
+      stop_tmp
+    } else {
+      nRowMax - 1
+    }
+
+    // Yield indices
+    for {
+      i <- start to stop
+    } yield (i)
+  }
+
   def main(args : Array[String]) {
     // Open the fits
     val ffits = new Fits(args(0).toString) with Serializable
 
     // Get the total number of HDUs
-    val nHDUs = getNHdus(ffits, 0)
+    val nHDUs = sfu.getNHdus(ffits, 0)
 
     println("Number of HDUs : " + nHDUs.toString)
 
@@ -152,7 +150,7 @@ object ReadFits {
       val col0 = 0
 
       val it = data.getHeader.iterator
-      val myheader = getMyHeader(it, "")
+      val myheader = sfu.getMyHeader(it, "")
 
       myheader.split(",").foreach(println)
 
@@ -166,25 +164,6 @@ object ReadFits {
           StructField("dec", DoubleType, false)
         )
       )
-
-      def yieldEmptyRows(offset : Int, sizeBlock : Int) = {
-
-        // Start of the block
-        val start = offset * sizeBlock
-
-        // End of the block
-        val stop_tmp = (offset + 1) * sizeBlock - 1
-        val stop = if (stop_tmp < nrows - 1) {
-          stop_tmp
-        } else {
-          nrows - 1
-        }
-
-        // Yield rows
-        for {
-          i <- start to stop
-        } yield (i)
-      }
 
       def getDF(rdd : RDD[(Any, Int)], fitstype : String, name : String) = {
         val x = fitstype match {
