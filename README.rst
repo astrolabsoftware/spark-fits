@@ -2,6 +2,8 @@
 Spark Fits
 ================
 
+.. contents:: **Table of Contents**
+
 The package
 ================
 
