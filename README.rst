@@ -22,17 +22,17 @@ Make a list of current features.
 Quick example : Scala API
 ================
 
-*Linking*
+**Linking**
 
 You can link against this library in your program at the following coordinates:
 
-Scala 2.10
+**Scala 2.10**
 
 ::
 
   toto
 
-Scala 2.11
+**Scala 2.11**
 
 ::
 
@@ -46,7 +46,7 @@ Using with Spark shell
 This package can be added to Spark using the `--packages` command line option.
 For example, to include it when starting the spark shell:
 
-*Spark compiled with Scala 2.11*
+**Spark compiled with Scala 2.11**
 
 ::
 
