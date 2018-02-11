@@ -7,15 +7,17 @@ import org.apache.log4j.Logger
 
 import sparkfits.fits._
 
-object ReadFits extends App {
+object ReadFits {
   val spark = SparkSession
     .builder()
     .getOrCreate()
 
-  val fn = "/Users/julien/Documents/Workspace_postdoc/Planck/COM_PCCS_143_R2.01.fits"
-  val df = spark.fitsFile(fn)
-  df.show()
-  df.printSchema()
+  def main(args : Array[String]) = {
+
+    val df = spark.read.fits(args(0).toString)
+    df.show()
+    df.printSchema()
+  }
 
 }
 
