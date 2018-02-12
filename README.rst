@@ -33,6 +33,9 @@ You can link against this library in your program at the following coordinates: 
 
 .. code:: scala
 
+  // SparkSession
+  import org.apache.spark.sql.SparkSession
+
   // Import the implicit to allow interaction with FITS
   import com.sparkfits.fits._
 
