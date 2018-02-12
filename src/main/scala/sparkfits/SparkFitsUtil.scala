@@ -3,7 +3,7 @@ package sparkfits
 import nom.tam.fits.{Fits, HeaderCard, Header}
 import nom.tam.util.{Cursor}
 
-class SparkFitsUtil {
+object SparkFitsUtil {
 
   /** Get the number of HDUs */
   def getNHdus(f : Fits, n : Int) : Int = {
