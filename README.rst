@@ -37,11 +37,12 @@ You can link against this library in your program at the following coordinates: 
   import com.sparkfits.fits._
 
   // Read as a DataFrame the first HDU of a table fits.
-  spark.readfits
+  val df = spark.readfits
     .option("datatype", "table")    // we support only table for the moment
     .option("HDU", 1)               // First HDU
     .option("printHDUHeader", true) // just print the HEADER on the screen
     .load("/path/to/myfits")        // load data as DataFrame
+
 
 Using with Spark shell
 ================
