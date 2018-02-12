@@ -36,6 +36,11 @@ You can link against this library in your program at the following coordinates: 
   // Import the implicit to allow interaction with FITS
   import com.sparkfits.fits._
 
+  // Initialise your SparkSession
+  val spark = SparkSession
+    .builder()
+    .getOrCreate()
+
   // Read as a DataFrame the first HDU of a table fits.
   val df = spark.readfits
     .option("datatype", "table")    // we support only table for the moment
