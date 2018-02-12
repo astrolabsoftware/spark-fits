@@ -5,7 +5,7 @@ lazy val root = (project in file(".")).
    inThisBuild(List(
      scalaVersion := "2.11.8",
      version      := "0.1.0",
-     mainClass in Compile := Some("sparkfits.ReadFits")
+     mainClass in Compile := Some("com.sparkfits.ReadFits")
    )),
    name := "spark-fits",
    parallelExecution in Test := false,
