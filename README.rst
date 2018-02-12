@@ -30,8 +30,10 @@ You can link against this library in your program at the following coordinates: 
 
 .. code:: scala
 
+  // Import the implicit
+  import com.sparkfits.fits._
+
   // Read as a DataFrame the first HDU of a table fits.
-  // Also print the HEADER.
   spark.readfits
     .option("datatype", "table")    // we support only table for the moment
     .option("HDU", 1)               // First HDU

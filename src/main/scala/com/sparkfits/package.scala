@@ -5,8 +5,8 @@ import org.apache.spark.sql.{DataFrameReader, DataFrame, Row, SparkSession}
 
 import nom.tam.fits.{Fits, BinaryTableHDU}
 
-import sparkfits.FitsSchema._
-import sparkfits.SparkFitsUtil._
+import com.sparkfits.FitsSchema._
+import com.sparkfits.SparkFitsUtil._
 
 package object fits {
 

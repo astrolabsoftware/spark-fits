@@ -16,7 +16,7 @@ verbosity=false
 # Run it!
 spark-submit \
   --master local[*] \
-  --class sparkfits.ReadFits \
+  --class com.sparkfits.ReadFits \
   target/scala-2.11/spark-fits-assembly-0.1.0.jar \
   $fitsfn $verbosity
 
