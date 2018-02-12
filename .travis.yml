@@ -1,0 +1,8 @@
+language: scala
+scala:
+  - 2.11.8
+
+script:
+  - echo "Scala version:" $TRAVIS_SCALA_VERSION
+  - sbt ++$TRAVIS_SCALA_VERSION coverage test coverageReport &&
+    sbt coverageAggregate
