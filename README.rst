@@ -7,7 +7,10 @@ Spark Fits
 The package
 ================
 
-Describe me.
+This library provides tools to manipulate FITS data with `Apache Spark <http://spark.apache.org/>`_.
+We use a "pimp my class" tactic, or in other (more polite!) words, we define
+an implicit on the ``SparkSession`` to allow interactions with the FITS file format.
+This is rather similar but not strictly equivalent to what was done previously for CSV.
 
 Requirements
 ================
@@ -30,7 +33,7 @@ You can link against this library in your program at the following coordinates: 
 
 .. code:: scala
 
-  // Import the implicit
+  // Import the implicit to allow interaction with FITS
   import com.sparkfits.fits._
 
   // Read as a DataFrame the first HDU of a table fits.
@@ -71,4 +74,9 @@ The build configuration includes support for Scala 2.11.
 TODO list
 ================
 
-Make a list of wishes!
+* Make the test suite!
+* Make the docker file
+* Make the Travis file
+* Build and publish the doc
+* Add possibility for the user to provide schema. Particularly useful if the HEADER of the FITS is not there.
+* ??
