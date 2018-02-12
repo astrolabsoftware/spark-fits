@@ -1,4 +1,4 @@
-package sparkfits
+package com.sparkfits
 
 import nom.tam.fits.{Fits, HeaderCard, Header}
 import nom.tam.util.{Cursor}

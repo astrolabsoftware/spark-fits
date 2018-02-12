@@ -1,4 +1,4 @@
-package sparkfits
+package com.sparkfits
 
 import org.apache.spark.sql.SparkSession
 
