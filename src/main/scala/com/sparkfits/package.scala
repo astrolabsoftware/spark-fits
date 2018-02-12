@@ -178,16 +178,31 @@ package object fits {
       // Grab the desired HDU number
       val indexHDU = extraOptions("HDU").toInt
 
-      // Check the number of HDUs
+      // Check that the user specifies table
       val numberOfHdus = getNHdus(f)
-      if (indexHDU >= numberOfHdus) {
-        System.err.println(s"""
+      val isHDUBelowMax = indexHDU < numberOfHdus
+      isHDUBelowMax match {
+        case true => isHDUBelowMax
+        case false => throw new AssertionError(s"""
           HDU number $indexHDU does not exist!
           """)
-        System.exit(1)
       }
 
       // Access the meta data
+      val hdu = f.getHDU(indexHDU)
+      // Check you have indeed a table...
+      val dataHdu = Try {
+        hdu.asInstanceOf[BinaryTableHDU]
+      }
+      dataHdu match {
+        case Success(value) => value
+        case Failure(e : NullPointerException) => throw new NullPointerException(e.getMessage)
+        case Failure(e : ClassCastException) => throw new ClassCastException("""
+          Data cannot be cast to nom.tam.fits.BinaryTableHDU!
+          Are you really trying to access a table as you declared in the option?
+          """)
+        case Failure(_) => println("Unknown Exception")
+      }
       val data = f.getHDU(indexHDU).asInstanceOf[BinaryTableHDU]
 
       // Get number of rows

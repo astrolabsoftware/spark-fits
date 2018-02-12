@@ -61,4 +61,22 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
     assert(exception.getMessage.contains("HDU"))
   }
 
+  // Test if the user provides the HDU index to be read
+  test("HDU test: Is HDU index above the max HDU index?") {
+    val results = spark.readfits
+    val exception = intercept[AssertionError] {
+      results.option("datatype", "table").option("HDU", 30).load(fn)
+    }
+    assert(exception.getMessage.contains("HDU"))
+  }
+
+  // Test if the user provides the data type in the HDU
+  test("Table test: Are you really accessing a Table?") {
+    val results = spark.readfits
+    val exception = intercept[ClassCastException] {
+      results.option("datatype", "table").option("HDU", 0).load(fn)
+    }
+    assert(exception.getMessage.contains("BinaryTableHDU"))
+  }
+
 }
