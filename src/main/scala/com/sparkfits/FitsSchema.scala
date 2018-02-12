@@ -11,12 +11,12 @@ object FitsSchema {
     */
   def ReadMyType(name : String, fitstype : String): StructField = {
     fitstype match {
-      case "1J" => StructField(name, IntegerType, false)
-      case "1E" => StructField(name, FloatType, false)
-      case "E" => StructField(name, FloatType, false)
-      case "L" => StructField(name, BooleanType, false)
-      case "D" => StructField(name, DoubleType, false)
-      case _ => StructField(name, StringType, false)
+      case "1J" => StructField(name, IntegerType, true)
+      case "1E" => StructField(name, FloatType, true)
+      case "E" => StructField(name, FloatType, true)
+      case "L" => StructField(name, BooleanType, true)
+      case "D" => StructField(name, DoubleType, true)
+      case _ => StructField(name, StringType, true)
     }
   }
 
