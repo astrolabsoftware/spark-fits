@@ -7,12 +7,14 @@ lazy val root = (project in file(".")).
      version      := "0.1.0",
      mainClass in Compile := Some("sparkfits.ReadFits")
    )),
-   name := "toto",
+   name := "spark-fits",
    parallelExecution in Test := false,
    coverageFailOnMinimum := true,
    coverageHighlighting := true,
    coverageMinimum := 70,
    publishArtifact in Test := false,
+   // Excluding Scala library JARs that are included in the binary Scala distribution
+   assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
    libraryDependencies ++= Seq(
      "gov.nasa.gsfc.heasarc" % "nom-tam-fits" % "1.15.2",
      "org.apache.spark" %% "spark-core" % "2.1.0" % "provided",
@@ -20,13 +22,3 @@ lazy val root = (project in file(".")).
      scalaTest % Test
    )
  )
-
-//  // META-INF discarding
-// mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
-//    {
-//     case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-//     case x => MergeStrategy.first
-//    }
-// }
-
-//"gov.nasa.gsfc.heasarc" % "nom-tam-fits" % "1.15.2",
