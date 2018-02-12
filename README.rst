@@ -33,10 +33,10 @@ You can link against this library in your program at the following coordinates: 
   // Read as a DataFrame the first HDU of a table fits.
   // Also print the HEADER.
   spark.readfits
-    .option("datatype", "table")
-    .option("HDU", 1)
-    .option("printHDUHeader", true)
-    .load("/path/to/myfits")
+    .option("datatype", "table")    // we support only table for the moment
+    .option("HDU", 1)               // First HDU
+    .option("printHDUHeader", true) // just print the HEADER on the screen
+    .load("/path/to/myfits")        // load data as DataFrame
 
 Using with Spark shell
 ================
@@ -63,7 +63,7 @@ Building From Source
 ================
 
 This library is built with SBT, and needs the `nom.tam.fits <https://github.com/nom-tam-fits/nom-tam-fits>`_ library.
-To build a JAR file simply run `sbt assembly` from the project root.
+To build a JAR file simply run ``sbt assembly`` from the project root.
 The build configuration includes support for Scala 2.11.
 
 TODO list
