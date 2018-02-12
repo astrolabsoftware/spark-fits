@@ -43,11 +43,19 @@ You can link against this library in your program at the following coordinates: 
 
   // Read as a DataFrame the first HDU of a table fits.
   val df = spark.readfits
-    .option("datatype", "table")    // we support only table for the moment
-    .option("HDU", 1)               // First HDU
-    .option("printHDUHeader", true) // just print the HEADER on the screen
-    .load("/path/to/myfits")        // load data as DataFrame
+    .option("datatype", "table")            // we support only table for the moment
+    .option("HDU", 1)                       // First HDU
+    .option("printHDUHeader", false)        // to print the HEADER on the screen
+    .load("src/test/resources/test.fits")   // load data as DataFrame
 
+  // To show the schema
+  df.printSchema
+
+  // To show the 20 top rows
+  df.show()
+
+Note that the schema is directly inferred from the HEADER of the hdu.
+In case the HEADER is not present or corrupted, you can also manually specify it (TBD).
 
 Using with Spark shell
 ================
