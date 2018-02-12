@@ -10,7 +10,6 @@ import com.sparkfits.fits._
 /**
   *Test class for the package object.
   */
-// class ReadFitsTest extends FlatSpec with Matchers with BeforeAndAfterAll {
 class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   private val master = "local[2]"
@@ -32,7 +31,9 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
     }
   }
   // END TODO
-  val fn = "/Users/julien/Documents/workspace/myrepos/ScalaTest/gridtest/data/cat29572.fits"
+
+  // Add more and put a loop for several tests!
+  val fn = "src/test/resources/test.fits"
 
   // Test if the user provides the data type in the HDU
   test("dataType test: is there table or image in options?") {
