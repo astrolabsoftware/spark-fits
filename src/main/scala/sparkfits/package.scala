@@ -53,6 +53,13 @@ package object fits {
       val f = new Fits(fn)
       val data = f.getHDU(indexHDU).asInstanceOf[BinaryTableHDU]
 
+      // A few checks
+      val numberOfHdus = getNHdus(f)
+      if (indexHDU >= numberOfHdus) {
+        System.err.println(s"HDU number $indexHDU does not exist!")
+        System.exit(1)
+      }
+
       // Get number of rows
       val nrows = data.getNRows
       val sizeBlock : Int = nrows / nBlock

@@ -6,7 +6,7 @@ import nom.tam.util.{Cursor}
 object SparkFitsUtil {
 
   /** Get the number of HDUs */
-  def getNHdus(f : Fits, n : Int) : Int = {
+  def getNHdus(f : Fits, n : Int = 0) : Int = {
     if (f.getHDU(n) != null) getNHdus(f, n + 1) else n
   }
 
