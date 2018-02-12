@@ -1,5 +1,7 @@
 package com.sparkfits
 
+import scala.util.{Try, Success, Failure}
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrameReader, DataFrame, Row, SparkSession}
 
@@ -128,35 +130,46 @@ package object fits {
       val nParts = 100
 
       // Check that you can read the data!
-      val dataType = if (extraOptions.contains("datatype")) {
+      val dataType = Try {
         extraOptions("datatype")
-      } else {
-        System.err.println("""
+      }
+      dataType match {
+        case Success(value) => extraOptions("datatype")
+        case Failure(e : NullPointerException) =>
+          throw new NullPointerException(e.getMessage)
+        case Failure(e : NoSuchElementException) =>
+          throw new NoSuchElementException("""
           You did not specify the data type!
           Please choose one of the following:
             spark.readfits.option("datatype", "table")
             spark.readfits.option("datatype", "image")
-          """)
-        System.exit(1)
+            """)
+        case Failure(_) => println("Unknown Exception")
       }
 
       // Check that the user specifies table
-      if (extraOptions("datatype") != "table") {
-        System.err.println("""
+      val dataTypeTable = extraOptions("datatype").contains("table")
+      dataTypeTable match {
+        case true => extraOptions("datatype")
+        case false => throw new AssertionError("""
           Currently only reading data from table is supported.
           Support for image data will be added later.
           Please use spark.readfits.option("datatype", "table")
           """)
-        System.exit(1)
       }
 
-      // Check that the user specifies the HDU number
-      if (!extraOptions.contains("HDU")) {
-        System.err.println(s"""
+      // Check that the user specifies table
+      val isIndexHDU = Try {
+        extraOptions("HDU")
+      }
+      isIndexHDU match {
+        case Success(value) => extraOptions("HDU")
+        case Failure(e : NullPointerException) => throw new NullPointerException(e.getMessage)
+        case Failure(e : NoSuchElementException) => throw new NoSuchElementException("""
           You need to specify the HDU to be read!
           spark.readfits.option("HDU", <Int>)
-          """)
-        System.exit(1)
+            """)
+        case Failure(_) => println("Unknown Exception")
       }
 
       // Open the file
