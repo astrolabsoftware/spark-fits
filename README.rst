@@ -28,7 +28,7 @@ You can link against this library in your program at the following coordinates: 
 
 **Scala 2.11**
 
-::
+.. code:: scala
 
   // Read as a DataFrame the first HDU of a table fits.
   // Also print the HEADER.
@@ -55,6 +55,7 @@ Alternatively you can build or download the jar, and add it when launching the s
 
 ::
 
+  // Available!
   $SPARK_HOME/bin/spark-shell --jars /path/to/jar/spark-fits.jar
 
 
