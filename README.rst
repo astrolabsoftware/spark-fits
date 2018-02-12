@@ -49,7 +49,7 @@ You can link against this library in your program at the following coordinates: 
     .load("src/test/resources/test.fits")   // load data as DataFrame
 
   // To show the schema
-  df.printSchema
+  df.printSchema()
 
   // To show the 20 top rows
   df.show()
