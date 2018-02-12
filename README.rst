@@ -12,7 +12,7 @@ Describe me.
 Requirements
 ================
 
-This library requires Spark 2.0+
+This library requires Spark 2.0+ (not tested for earlier version).
 
 Features
 ================
@@ -24,21 +24,19 @@ Quick example : Scala API
 
 **Linking**
 
-You can link against this library in your program at the following coordinates:
-
-**Scala 2.10**
-
-::
-
-  toto
+You can link against this library in your program at the following coordinates: TBD.
 
 **Scala 2.11**
 
 ::
 
-  toto
-
-*Make a few example of code with different options*
+  // Read as a DataFrame the first HDU of a table fits.
+  // Also print the HEADER.
+  spark.readfits
+    .option("datatype", "table")
+    .option("HDU", 1)
+    .option("printHDUHeader", true)
+    .load("/path/to/myfits")
 
 Using with Spark shell
 ================
@@ -50,9 +48,10 @@ For example, to include it when starting the spark shell:
 
 ::
 
+  // Not yet available!
   $SPARK_HOME/bin/spark-shell --packages com.toto:spark-fits_2.11:0.Y.0
 
-Alternatively you can download the jar, and add it when launching the spark shell
+Alternatively you can build or download the jar, and add it when launching the spark shell
 
 ::
 
@@ -62,11 +61,9 @@ Alternatively you can download the jar, and add it when launching the spark shel
 Building From Source
 ================
 
-For developers!
-Example: This library is built with SBT,
-which is automatically downloaded by the included shell script.
-To build a JAR file simply run sbt/sbt package from the project root.
-The build configuration includes support for both Scala 2.10 and 2.11.
+This library is built with SBT, and needs the `nom.tam.fits <https://github.com/nom-tam-fits/nom-tam-fits>`_ library.
+To build a JAR file simply run `sbt assembly` from the project root.
+The build configuration includes support for Scala 2.11.
 
 TODO list
 ================
