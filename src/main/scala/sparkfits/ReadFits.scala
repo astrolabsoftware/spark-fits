@@ -15,8 +15,9 @@ object ReadFits {
   def main(args : Array[String]) = {
 
     val df = spark.readfits
-      .option("printme", "toto")
+      .option("datatype", "table")
       .option("HDU", 1)
+      .option("printHDUHeader", true)
       .load(args(0).toString)
 
     df.show()
