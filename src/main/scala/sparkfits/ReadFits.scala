@@ -14,7 +14,12 @@ object ReadFits {
 
   def main(args : Array[String]) = {
 
-    val df = spark.read.fits(args(0).toString)
+    // val df = spark.read.fits(args(0).toString)
+    val df = spark.readfits
+      .option("printme", "toto")
+      .option("HDU", 1)
+      .load(args(0).toString)
+
     df.show()
     df.printSchema()
   }
