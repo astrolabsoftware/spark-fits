@@ -11,7 +11,32 @@ import sparkfits.SparkFitsUtil._
 package object fits {
 
   /**
-   * Adds a method, `fitsFile`, to SQLContext that allows reading FITS data.
+   * Adds a method, `fitsFile`, to SparkSession that allows reading FITS data.
+   * Note that for the moment, we provide support only for FITS table.
+   * We will add FITS image later on.
+   *
+   * The interpreter session below shows how to use basic functionalities:
+   *
+   * {{{
+   * scala> val fn = "/path/to/myfits"
+   * scala> val df = spark.readfits
+   *  .option("datatype", "table")
+   *  .option("HDU", 1)
+   *  .option("printHDUHeader", true)
+   *  .load(fn)
+   * +------ HEADER (HDU=1) ------+
+   * ...
+   * +----------------------------+
+   * df: org.apache.spark.sql.DataFrame = [...]
+   *
+   * scala> df.printSchema
+   * root
+   *  |-- var1: integer (nullable = false)
+   *  |-- var2: float (nullable = false)
+   *  |-- var3: double (nullable = false)
+   *
+   * }}}
+   * TODO: Add test file in resource.
    */
   // implicit class FitsContext(spark : SparkSession) extends Serializable {
   implicit class FitsContext(spark : SparkSession) extends Serializable {
@@ -21,7 +46,7 @@ package object fits {
 
     /**
       * Replace the current syntax in spark 2.X
-      * spark.read.format("fits") -> spark.readfits
+      * spark.read.format("fits") --> spark.readfits
       * This is a hack to avoid touching DataFrameReader class, for which the
       * constructor is private... If you have a better idea, bug me!
       *
@@ -34,7 +59,7 @@ package object fits {
       *
       * In general you can set the following option(s):
       * - option("HDU", <Int>)
-      * - option("Cols", <String>)
+      * - option("datatype", <String>)
       * - option("printHDUHeader", <Boolean>)
       *
       * Note that values pass as Boolean, Long, or Double will be first
