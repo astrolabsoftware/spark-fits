@@ -6,10 +6,15 @@ import nom.tam.fits.BinaryTableHDU
 
 object FitsSchema {
 
+  /**
+    * http://archive.stsci.edu/fits/users_guide/node47.html#SECTION00563000000000000000
+    */
   def ReadMyType(name : String, fitstype : String): StructField = {
     fitstype match {
       case "1J" => StructField(name, IntegerType, false)
       case "1E" => StructField(name, FloatType, false)
+      case "E" => StructField(name, FloatType, false)
+      case "L" => StructField(name, BooleanType, false)
       case "D" => StructField(name, DoubleType, false)
       case _ => StructField(name, StringType, false)
     }
