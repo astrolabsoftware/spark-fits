@@ -170,7 +170,7 @@ Alternatively, you can run it independently using
 
   sbt ++${SCALA_VERSION} coverage test coverageReport
 
-You should get the result on the screen, plus a details of the coverage at
+You should get the result on the screen, plus details of the coverage at
 ``target/scala_${SCALA_VERSION}/scoverage-report/index.html``.
 
 Building the doc
