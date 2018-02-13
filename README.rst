@@ -63,7 +63,7 @@ In case the HEADER is not present or corrupted, you can also manually specify it
 
 .. code:: scala
 
-  // Specify manually the columns with correct data types.
+  // Specify manually the columns for the first HDU with their data types.
   val userSchema = StructType(
     List(
       StructField("toto", StringType, true),
@@ -73,6 +73,7 @@ In case the HEADER is not present or corrupted, you can also manually specify it
     )
   )
 
+  // Read as a DataFrame the first HDU of a table fits.
   val df = spark.readfits
     .option("datatype", "table")
     .option("HDU", 1)
