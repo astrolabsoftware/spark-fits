@@ -8,7 +8,7 @@ import org.apache.spark.sql.SparkSession
 import com.sparkfits.fits._
 
 /**
-  *Test class for the package object.
+  * Test class for the package object.
   */
 class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
