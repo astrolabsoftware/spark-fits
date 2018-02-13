@@ -18,11 +18,30 @@ class FitsSchemaTest extends FunSuite with BeforeAndAfterAll {
   val fn = "src/test/resources/test.fits"
   val f = new Fits(fn)
   val hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
+  val hdu_2 = f.getHDU(2).asInstanceOf[BinaryTableHDU]
 
-  test("Schema test: can you convert the type for a column?") {
+  test("Schema test: can you convert the type Float for a column?") {
     val col = ReadMyType("RA", hdu.getColumnFormat(1))
 
     assert(col.dataType.isInstanceOf[FloatType])
+  }
+
+  test("Schema test: can you convert the type String for a column?") {
+    val col = ReadMyType("target", hdu_2.getColumnFormat(0))
+
+    assert(col.dataType.isInstanceOf[StringType])
+  }
+
+  test("Schema test: can you convert the type Int for a column?") {
+    val col = ReadMyType("index", hdu_2.getColumnFormat(1))
+
+    assert(col.dataType.isInstanceOf[IntegerType])
+  }
+
+  test("Schema test: can you convert the type Boolean for a column?") {
+    val col = ReadMyType("Discovery", hdu_2.getColumnFormat(2))
+
+    assert(col.dataType.isInstanceOf[BooleanType])
   }
 
   test("Schema test: can you convert the name for a column?") {

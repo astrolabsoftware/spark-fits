@@ -102,6 +102,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     val results = spark.readfits
       .option("datatype", "table")
       .option("HDU", 1)
+      .option("printHDUHeader", true)
       .load(fn)
     assert(results.isInstanceOf[DataFrame])
   }
