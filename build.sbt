@@ -3,7 +3,6 @@ import Dependencies._
 lazy val root = (project in file(".")).
  settings(
    inThisBuild(List(
-     scalaVersion := "2.11.8",
      version      := "0.1.0",
      mainClass in Compile := Some("com.sparkfits.ReadFits")
    )),
