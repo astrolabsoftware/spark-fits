@@ -3,6 +3,9 @@ scala:
   - 2.10.6
   - 2.11.8
 
+jdk:
+  - oraclejdk8
+
 script:
   - echo "Scala version:" $TRAVIS_SCALA_VERSION
   - sbt ++$TRAVIS_SCALA_VERSION coverage test coverageReport &&
