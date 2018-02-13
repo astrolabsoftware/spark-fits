@@ -73,7 +73,7 @@ In case the HEADER is not present or corrupted, you can also manually specify it
     )
   )
 
-  val results = spark.readfits
+  val df = spark.readfits
     .option("datatype", "table")
     .option("HDU", 1)
     .schema(userSchema)             // bypass the header, and read the userSchema
