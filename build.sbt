@@ -12,6 +12,7 @@ lazy val root = (project in file(".")).
    coverageHighlighting := true,
    coverageMinimum := 70,
    publishArtifact in Test := false,
+   coverageExcludedPackages := "<empty>;com.sparkfits.ReadFits*",
    // Excluding Scala library JARs that are included in the binary Scala distribution
    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
    libraryDependencies ++= Seq(
