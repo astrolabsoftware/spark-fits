@@ -83,16 +83,17 @@ Alternatively you can build or download the jar, and add it when launching the s
   // Available!
   $SPARK_HOME/bin/spark-shell --jars /path/to/jar/spark-fits.jar
 
+Then just try
+
 .. code :: scala
 
-  scala> val fn = "src/test/resources/test.fits"
   scala> val df = spark.readfits
     .option("datatype", "table")
     .option("HDU", 1)
     .option("printHDUHeader", true)
-    .load(fn)
+    .load("src/test/resources/test.fits")
   +------ HEADER (HDU=1) ------+
-  XTENSION= BINTABLE           / binary table extension
+  XTENSION= BINTABLE             / binary table extension
   BITPIX  =                    8 / array data type
   NAXIS   =                    2 / number of array dimensions
   NAXIS1  =                   32 / length of dimension 1
@@ -118,6 +119,33 @@ Alternatively you can build or download the jar, and add it when launching the s
     |-- RA: float (nullable = true)
     |-- Dec: float (nullable = true)
     |-- Redshift: float (nullable = true)
+
+  scala> df.show()
+  +-------+----------+-----------+-----------+
+  | target|        RA|        Dec|   Redshift|
+  +-------+----------+-----------+-----------+
+  |NGC0000|  3.448297|  0.5586271|  1.5589794|
+  |NGC0001|  4.493667| -0.7225413|  3.4817173|
+  |NGC0002|  3.787274|  0.7388838|  1.8887593|
+  |NGC0003|  3.423602|  1.4520081| 0.89801836|
+  |NGC0004| 2.6619017| -0.7893153| 0.12339364|
+  |NGC0005| 4.0582724| 0.23925532| 0.33624816|
+  |NGC0006| 2.7494416| 0.28915825|  3.3969638|
+  |NGC0007|  5.603175| 0.22698605|   2.268484|
+  |NGC0008| 6.0548716| -0.8699647|  2.6828961|
+  |NGC0009|  2.409234|  1.4223529|  4.4833565|
+  |NGC0010|  4.974555|-0.16611052|   4.951695|
+  |NGC0011| 3.3231447|   1.088275|  1.0844849|
+  |NGC0012| 3.5691292| 0.62668264|   3.315391|
+  |NGC0013| 5.8156953| -0.6363706|  1.3166119|
+  |NGC0014|0.44633272| 0.98582494|0.103254996|
+  |NGC0015| 0.5474495| -0.3251368|  3.7918932|
+  |NGC0016|0.12703593|   1.197271|  1.6000857|
+  |NGC0017|  5.231505| 0.25532627|  1.9173194|
+  |NGC0018|  4.889303|   1.199257|  2.9415855|
+  |NGC0019| 5.4664474| 0.60485584|  4.1552424|
+  +-------+----------+-----------+-----------+
+  only showing top 20 rows
 
 Building From Source
 ================
