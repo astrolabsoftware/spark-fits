@@ -83,6 +83,41 @@ Alternatively you can build or download the jar, and add it when launching the s
   // Available!
   $SPARK_HOME/bin/spark-shell --jars /path/to/jar/spark-fits.jar
 
+.. code :: scala
+
+  scala> val fn = "src/test/resources/test.fits"
+  scala> val df = spark.readfits
+    .option("datatype", "table")
+    .option("HDU", 1)
+    .option("printHDUHeader", true)
+    .load(fn)
+  +------ HEADER (HDU=1) ------+
+  XTENSION= BINTABLE           / binary table extension
+  BITPIX  =                    8 / array data type
+  NAXIS   =                    2 / number of array dimensions
+  NAXIS1  =                   32 / length of dimension 1
+  NAXIS2  =                  100 / length of dimension 2
+  PCOUNT  =                    0 / number of group parameters
+  GCOUNT  =                    1 / number of groups
+  TFIELDS =                    4 / number of table fields
+  TTYPE1  = target
+  TFORM1  = 20A
+  TTYPE2  = RA
+  TFORM2  = E
+  TTYPE3  = Dec
+  TFORM3  = E
+  TTYPE4  = Redshift
+  TFORM4  = E
+  END
+  +----------------------------+
+  df: org.apache.spark.sql.DataFrame = [target: string, RA: float ... 2 more fields]
+
+  scala> df.printSchema
+  root
+    |-- target: string (nullable = true)
+    |-- RA: float (nullable = true)
+    |-- Dec: float (nullable = true)
+    |-- Redshift: float (nullable = true)
 
 Building From Source
 ================
