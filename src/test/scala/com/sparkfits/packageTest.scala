@@ -4,6 +4,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.types._
 
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
@@ -105,5 +106,25 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       .option("printHDUHeader", true)
       .load(fn)
     assert(results.isInstanceOf[DataFrame])
+  }
+
+  // Test DataFrame
+  test("User schema test: can you really take an external header?") {
+    // Specify manually the header
+    val schema = StructType(
+      List(
+        StructField("toto", StringType, true),
+        StructField("tutu", FloatType, true),
+        StructField("tata", FloatType, true),
+        StructField("titi", FloatType, true)
+      )
+    )
+
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .schema(schema)
+      .load(fn)
+    assert(results.columns.deep == Array("toto", "tutu", "tata", "titi").deep)
   }
 }

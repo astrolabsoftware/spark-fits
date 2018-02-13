@@ -4,6 +4,7 @@ import scala.util.{Try, Success, Failure}
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrameReader, DataFrame, Row, SparkSession}
+import org.apache.spark.sql.types._
 
 import nom.tam.fits.{Fits, BinaryTableHDU}
 
@@ -61,6 +62,11 @@ package object fits {
 
     // This will contain all options use to load the data
     private[sparkfits] val extraOptions = new scala.collection.mutable.HashMap[String, String]
+
+    // This will contain the info about the schema
+    // By default, the schema is inferred from the HDU header,
+    // but the user can also manually specify the schema.
+    private[sparkfits] var userSpecifiedSchema: Option[StructType] = None
 
     /**
       * Replace the current syntax in spark 2.X
@@ -130,6 +136,19 @@ package object fits {
       */
     def option(key: String, value: Double): FitsContext = {
       option(key, value.toString)
+    }
+
+    /**
+      * Adds a schema to our data. It will overwrite the inferred schema from
+      * the HDU header. Useful if the header is corrupted.
+      *
+      * @param schema : (StructType)
+      *   The schema for the data (`StructType(List(StructField))`)
+      * @return return the FitsContext (to chain operations)
+      */
+    def schema(schema: StructType): FitsContext = {
+      FitsContext.this.userSpecifiedSchema = Option(schema)
+      FitsContext.this
     }
 
     /** Load a BinaryTableHDU data contained in one HDU as a DataFrame.
@@ -225,8 +244,9 @@ package object fits {
       val nrows = data.getNRows
       val sizeBlock : Int = nrows / nBlock
 
-      // Get the schema
-      val schema = getSchema(data)
+      // Get the schema. By default it is built from the header, but the user
+      // can also specify it manually.
+      val schema = userSpecifiedSchema.getOrElse(getSchema(data))
 
       // Check the header
       if (extraOptions.contains("printHDUHeader")) {
