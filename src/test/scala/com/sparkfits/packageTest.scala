@@ -4,9 +4,12 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite, FlatSpec, Matchers}
 import org.scalatest.Matchers._
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.DataFrame
 
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
+
+import nom.tam.fits.Fits
 
 import com.sparkfits.fits._
 
@@ -18,7 +21,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   // Set to Level.WARN is you want verbosity
   Logger.getLogger("org").setLevel(Level.OFF)
   Logger.getLogger("akka").setLevel(Level.OFF)
-  
+
   private val master = "local[2]"
   private val appName = "sparkfitsTest"
 
@@ -79,5 +82,28 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   test("Option test: can you record a Boolean value?") {
     val results = spark.readfits.option("toto", true)
     assert(results.extraOptions("toto").contains("true"))
+  }
+
+  // Test yieldRows
+  test("yieldRows test: can you spit a bunch of rows?") {
+    val f = new Fits(fn)
+    val results = spark.yieldRows(f, 1, 0, 10, 100)
+    assert(results.size == 10)
+  }
+
+  // Test yieldRows
+  test("yieldRows test: are you aware of the end of the table data?") {
+    val f = new Fits(fn)
+    val results = spark.yieldRows(f, 1, 8, 12, 100)
+    assert(results.size == 4)
+  }
+
+  // Test DataFrame
+  test("DataFrame test: can you really make a DF from the hdu?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .load(fn)
+    assert(results.isInstanceOf[DataFrame])
   }
 }
