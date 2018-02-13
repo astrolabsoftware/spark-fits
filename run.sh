@@ -1,7 +1,10 @@
 #!/bin/bash
 
+SBT_VERSION=2.11.8
+SBT_VERSION_SPARK=2.11
+
 # Package it
-sbt assembly
+sbt ++${SBT_VERSION} assembly
 
 # Jars
 FITS=lib/nom-tam-fits-1.15.2.jar
@@ -13,5 +16,5 @@ fitsfn="src/test/resources/test.fits"
 spark-submit \
   --master local[*] \
   --class com.sparkfits.ReadFits \
-  target/scala-2.11/spark-fits-assembly-0.1.0.jar \
+  target/scala-${SBT_VERSION_SPARK}/spark-fits-assembly-0.1.0.jar \
   $fitsfn

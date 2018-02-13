@@ -19,6 +19,8 @@ Requirements
 ================
 
 This library requires Spark 2.0+ (not tested for earlier version).
+The library has been tested with Scala 2.10.6 and 2.11.X. If you want to use another
+version, feel free to contact us.
 
 Features
 ================
@@ -32,36 +34,33 @@ Quick example : Scala API
 
 You can link against this library in your program at the following coordinates: TBD.
 
-**Scala 2.11**
+**Scala 2.10.6 and 2.11.X**
 
 .. code:: scala
 
-  // SparkSession
+  // Import SparkSession
   import org.apache.spark.sql.SparkSession
 
   // Import the implicit to allow interaction with FITS
   import com.sparkfits.fits._
 
-  // Initialise your SparkSession
-  val spark = SparkSession
-    .builder()
-    .getOrCreate()
+  object ReadFits extends App {
+    // Initialise your SparkSession
+    val spark = SparkSession
+      .builder()
+      .getOrCreate()
 
-  // Read as a DataFrame the first HDU of a table fits.
-  val df = spark.readfits
-    .option("datatype", "table")            // we support only table for the moment
-    .option("HDU", 1)                       // First HDU
-    .option("printHDUHeader", false)        // to print the HEADER on the screen
-    .load("src/test/resources/test.fits")   // load data as DataFrame
-
-  // To show the schema
-  df.printSchema()
-
-  // To show the 20 top rows
-  df.show()
+    // Read as a DataFrame the first HDU of a table fits.
+    val df = spark.readfits
+      .option("datatype", "table")            // we support only table for the moment
+      .option("HDU", 1)                       // First HDU
+      .option("printHDUHeader", false)        // to print the HEADER on the screen
+      .load("src/test/resources/test.fits")   // load data as DataFrame
+  }
 
 Note that the schema is directly inferred from the HEADER of the hdu.
 In case the HEADER is not present or corrupted, you can also manually specify it (TBD).
+See below for a use with spark-shell.
 
 Using with Spark shell
 ================
