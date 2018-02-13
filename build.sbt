@@ -11,7 +11,7 @@ lazy val root = (project in file(".")).
    parallelExecution in Test := false,
    coverageFailOnMinimum := true,
    coverageHighlighting := true,
-   coverageMinimum := 70,
+   coverageMinimum := 60,
    publishArtifact in Test := false,
    // Excluding Scala library JARs that are included in the binary Scala distribution
    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),

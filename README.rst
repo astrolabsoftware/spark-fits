@@ -2,6 +2,9 @@
 Spark Fits
 ================
 
+.. image:: https://travis-ci.org/JulienPeloton/spark-fits.svg?branch=master
+    :target: https://travis-ci.org/JulienPeloton/spark-fits
+
 .. contents:: **Table of Contents**
 
 The package
