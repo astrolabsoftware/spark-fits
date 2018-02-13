@@ -25,7 +25,8 @@ version, feel free to contact us.
 Features
 ================
 
-Make a list of current features.
+* Read fits table and organize HDU data into DataFrames.
+* Automatically infer DataFrame schema from HDU header. Alternatively, users can specify the schema.
 
 Quick example : Scala API
 ================
@@ -159,6 +160,19 @@ This library is built with SBT, and needs the `nom.tam.fits <https://github.com/
 To build a JAR file simply run ``sbt assembly`` from the project root.
 The build configuration includes support for Scala 2.11.
 
+Running the test suite
+================
+
+The test suite is automatically ran when you build the library (``sbt ++${SCALA_VERSION} assembly).
+Alternatively, you can run it independently using
+
+::
+
+  sbt ++${SCALA_VERSION} coverage test coverageReport
+
+You should get the result on the screen, plus a details of the coverage at
+``target/scala_${SCALA_VERSION}/scoverage-report/index.html``.
+
 Building the doc
 ================
 
@@ -167,7 +181,7 @@ Use SBT to build the doc:
 ::
 
   sbt doc
-  open target/scala_2.11/api/index.html
+  open target/scala_${SCALA_VERSION}/api/index.html
 
 
 TODO list
