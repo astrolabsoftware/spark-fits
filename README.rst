@@ -161,7 +161,7 @@ To build a JAR file simply run
 
 ::
 
-  ``sbt assembly``
+  ``sbt ++${SCALA_VERSION} assembly``
 
 from the project root. The build configuration includes support for Scala 2.10.6 and 2.11.X.
 
