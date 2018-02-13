@@ -5,12 +5,19 @@ import org.scalatest.Matchers._
 
 import org.apache.spark.sql.SparkSession
 
+import org.apache.log4j.Level
+import org.apache.log4j.Logger
+
 import com.sparkfits.fits._
 
 /**
   * Test class for the package object.
   */
 class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
+
+  // Set to Level.WARN is you want verbosity
+  Logger.getLogger("org").setLevel(Level.OFF)
+  Logger.getLogger("akka").setLevel(Level.OFF)
 
   private val master = "local[2]"
   private val appName = "sparkfitsTest"

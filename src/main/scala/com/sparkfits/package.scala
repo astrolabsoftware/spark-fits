@@ -44,7 +44,7 @@ package object fits {
   implicit class FitsContext(spark : SparkSession) extends Serializable {
 
     // This will contain all options use to load the data
-    private val extraOptions = new scala.collection.mutable.HashMap[String, String]
+    private[sparkfits] val extraOptions = new scala.collection.mutable.HashMap[String, String]
 
     /**
       * Replace the current syntax in spark 2.X
