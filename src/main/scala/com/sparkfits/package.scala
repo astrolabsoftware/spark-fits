@@ -250,7 +250,7 @@ package object fits {
       * @param nRowMax : (Int)
       *   Number total of rows in the HDU.
       */
-    private def yieldRows(x : Fits,
+    private[sparkfits] def yieldRows(x : Fits,
         indexHDU : Int,
         offset : Int,
         sizeBlock : Int,
