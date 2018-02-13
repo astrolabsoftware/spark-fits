@@ -1,7 +1,6 @@
 package com.sparkfits
 
-import org.scalatest.{BeforeAndAfterAll, FunSuite, FlatSpec, Matchers}
-import org.scalatest.Matchers._
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame

@@ -1,9 +1,6 @@
 package com.sparkfits
 
-import org.scalatest.{BeforeAndAfterAll, FunSuite, FlatSpec, Matchers}
-import org.scalatest.Matchers._
-
-import org.apache.spark.sql.types._
+import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import nom.tam.fits.BinaryTableHDU
 import nom.tam.fits.Fits
