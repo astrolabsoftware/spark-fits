@@ -84,7 +84,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   }
 
   // Test if one accesses column as expected for HDU 1
-  test("Count test 1: Do you count all elements in a column?") {
+  test("Count test: Do you count all elements in a column in HDU 1?") {
     val results = spark.readfits
       .option("datatype", "table")
       .option("HDU", 1)
@@ -93,12 +93,52 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   }
 
   // Test if one accesses column as expected for HDU 1
-  test("Count test 2: Do you count all elements in a column?") {
+  test("Count test: Do you count all elements in a column in HDU 2?") {
     val results = spark.readfits
       .option("datatype", "table")
       .option("HDU", 2)
       .load(fn)
     assert(results.select("Index").count() == 100)
+  }
+
+  // Test if type cast is done correctly
+  test("Type test: Do you see a Boolean?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 2)
+      .load(fn)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("Discovery").first()(0).isInstanceOf[Boolean])
+  }
+
+  // Test if type cast is done correctly
+  test("Type test: Do you see a Int?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 2)
+      .load(fn)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("Index").first()(0).isInstanceOf[Int])
+  }
+
+  // Test if type cast is done correctly
+  test("Type test: Do you see a Float?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .load(fn)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("RA").first()(0).isInstanceOf[Float])
+  }
+
+  // Test if type cast is done correctly
+  test("Type test: Do you see a String?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .load(fn)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("target").first()(0).isInstanceOf[String])
   }
 
 }
