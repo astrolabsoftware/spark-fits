@@ -17,17 +17,20 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   private var spark : SparkSession = _
 
-  def BeforeAll() {
-    val spark = SparkSession
+  override protected def beforeAll() : Unit = {
+    super.beforeAll()
+    spark = SparkSession
       .builder()
       .master(master)
       .appName(appName)
       .getOrCreate()
   }
 
-  def AfterAll {
-    if (spark != null) {
-      spark.stop()
+  override protected def afterAll(): Unit = {
+    try {
+      spark.sparkContext.stop()
+    } finally {
+      super.afterAll()
     }
   }
   // END TODO
@@ -78,6 +81,24 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       results.option("datatype", "table").option("HDU", 0).load(fn)
     }
     assert(exception.getMessage.contains("BinaryTableHDU"))
+  }
+
+  // Test if one accesses column as expected for HDU 1
+  test("Count test 1: Do you count all elements in a column?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .load(fn)
+    assert(results.select("RA").count() == 100)
+  }
+
+  // Test if one accesses column as expected for HDU 1
+  test("Count test 2: Do you count all elements in a column?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 2)
+      .load(fn)
+    assert(results.select("Index").count() == 100)
   }
 
 }
