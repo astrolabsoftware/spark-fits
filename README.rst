@@ -59,8 +59,25 @@ You can link against this library in your program at the following coordinates: 
   }
 
 Note that the schema is directly inferred from the HEADER of the hdu.
-In case the HEADER is not present or corrupted, you can also manually specify it (TBD).
-See below for a use with spark-shell.
+In case the HEADER is not present or corrupted, you can also manually specify it:
+
+.. code:: scala
+
+  // Specify manually the columns with correct data types.
+  val userSchema = StructType(
+    List(
+      StructField("toto", StringType, true),
+      StructField("tutu", FloatType, true),
+      StructField("tata", FloatType, true),
+      StructField("titi", FloatType, true)
+    )
+  )
+
+  val results = spark.readfits
+    .option("datatype", "table")
+    .option("HDU", 1)
+    .schema(userSchema)             // bypass the header, and read the userSchema
+    .load(fn)
 
 Using with Spark shell
 ================
