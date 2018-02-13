@@ -91,12 +91,22 @@ This library is built with SBT, and needs the `nom.tam.fits <https://github.com/
 To build a JAR file simply run ``sbt assembly`` from the project root.
 The build configuration includes support for Scala 2.11.
 
+Building the doc
+================
+
+Use SBT to build the doc:
+
+::
+
+  sbt doc
+  open target/scala_2.11/api/index.html
+
+
 TODO list
 ================
 
-* Make the test suite!
 * Make the docker file
-* Make the Travis file
-* Build and publish the doc
+* Build against scala 2.10? Test other Spark version?
+* Publish the doc.
 * Add possibility for the user to provide schema. Particularly useful if the HEADER of the FITS is not there.
 * ??
