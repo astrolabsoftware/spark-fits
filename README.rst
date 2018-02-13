@@ -163,7 +163,7 @@ The build configuration includes support for Scala 2.11.
 Running the test suite
 ================
 
-The test suite is automatically ran when you build the library (``sbt ++${SCALA_VERSION} assembly).
+The test suite is automatically ran when you build the library (``sbt ++${SCALA_VERSION} assembly``).
 Alternatively, you can run it independently using
 
 ::
