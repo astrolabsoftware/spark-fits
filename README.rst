@@ -157,8 +157,13 @@ Building From Source
 ================
 
 This library is built with SBT, and needs the `nom.tam.fits <https://github.com/nom-tam-fits/nom-tam-fits>`_ library.
-To build a JAR file simply run ``sbt assembly`` from the project root.
-The build configuration includes support for Scala 2.11.
+To build a JAR file simply run
+
+::
+
+  ``sbt assembly``
+
+from the project root. The build configuration includes support for Scala 2.10.6 and 2.11.X.
 
 Running the test suite
 ================
