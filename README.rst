@@ -64,6 +64,8 @@ In case the HEADER is not present or corrupted, you can also manually specify it
 .. code:: scala
 
   // Specify manually the columns for the first HDU with their data types.
+  // Note that you need to know in advance what is in the HDU (number
+  // of columns and data types).
   val userSchema = StructType(
     List(
       StructField("toto", StringType, true),
