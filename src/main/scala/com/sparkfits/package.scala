@@ -269,6 +269,7 @@ package object fits {
 
       // Assume one block has size 128 Mo
       // If total file size < 128 Mo, divide in 4 blocks.
+      // Put an option for the number of blocks!
       val isZero = fileSize < (128 * 1024 * 1024)
       val nBlock : Long = if (!isZero) {
         fileSize / (128 * 1024 * 1024)
