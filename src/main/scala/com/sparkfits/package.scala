@@ -176,8 +176,8 @@ package object fits {
       */
     def load(fn : String) : DataFrame = {
       // Partitioning of the data
-      val nBlock = 100
-      val nParts = 100
+      // val nBlock = 100
+      // val nParts = 100
 
       // Check that you can read the data!
       val dataType = Try {
@@ -256,8 +256,26 @@ package object fits {
       val data = f.getHDU(indexHDU).asInstanceOf[BinaryTableHDU]
 
       // Get number of rows
-      val nrows = data.getNRows
-      val sizeBlock : Int = nrows / nBlock
+      // WARNING: Need to modify nrows, because it could easily by > maxint = 2^31-1...
+      // Need also to open a PR to modify getRow to get Long... Moreover
+      // I would be able to simplify the stupid nom.tam structure... ;-)
+      val nrows : Int = data.getNRows
+      val ncols : Int = data.getNCols
+
+      // OMG! fileSize is easily bigger than an Int...
+      // Need to develop a test for that... Or put a warning?
+      val fileSize : Long = ncols.toLong * nrows.toLong * 8
+      // println(fileSize)
+
+      // Assume one block has size 128 Mo
+      // If total file size < 128 Mo, divide in 4 blocks.
+      val isZero = fileSize < (128 * 1024 * 1024)
+      val nBlock : Long = if (!isZero) {
+        fileSize / (128 * 1024 * 1024)
+      } else 4 // random number...
+      // println("################# " + nBlock.toString)
+
+      val sizeBlock : Int = (nrows / nBlock).toInt
 
       // Get the schema. By default it is built from the header, but the user
       // can also specify it manually.
@@ -275,7 +293,7 @@ package object fits {
       }
 
       // Distribute the data
-      val rdd = spark.sparkContext.parallelize(0 to nBlock - 1, nParts)
+      val rdd = spark.sparkContext.parallelize(0 to nBlock.toInt - 1, nBlock.toInt)
         .map(blockid => (blockid, new Fits(fn) with Serializable ))
         .map(x => yieldRows(x._2, indexHDU, x._1, sizeBlock, nrows))
         .flatMap(x => x)
