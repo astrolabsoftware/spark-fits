@@ -25,6 +25,7 @@ import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
 import nom.tam.fits.Fits
+import nom.tam.fits.BinaryTableHDU
 
 import com.sparkfits.fits._
 
@@ -141,5 +142,43 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       .schema(schema)
       .load(fn)
     assert(results.columns.deep == Array("toto", "tutu", "tata", "titi").deep)
+  }
+
+  // Test block option
+  test("Data distribution test: Can you record the desired number of blocks?") {
+    val results = spark.readfits.option("nBlock", 10)
+    assert(results.extraOptions("nBlock").contains("10"))
+  }
+
+  // Test Data distribution
+  test("Data distribution test (user side): can you propagate the number of blocks?") {
+    val results = spark.readfits.option("nBlock", 10)
+    val f = new Fits(fn)
+    val hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
+    val nrows : Int = hdu.getNRows
+    val ncols : Int = hdu.getNCols
+    val fileSize : Long = ncols.toLong * nrows.toLong * 8L
+    val nBlock : Int = results.getNblocks(fileSize)
+    assert(nBlock == 10)
+  }
+
+  test("Data distribution test (file side): can you propagate the number of blocks?") {
+    val results = spark.readfits
+    val f = new Fits(fn)
+    val hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
+    val nrows : Int = hdu.getNRows
+    val ncols : Int = hdu.getNCols
+    val fileSize : Long = ncols.toLong * nrows.toLong * 8L
+    val nBlock : Int = results.getNblocks(fileSize)
+    assert(nBlock == 4)
+  }
+
+  test("Data distribution test (Big Data side): can you propagate the number of blocks?") {
+    val results = spark.readfits
+
+    // Fake a big data set 1 TB
+    val fileSize : Long = 1024L * 1024L * 1024L * 1024L
+    val nBlock : Int = results.getNblocks(fileSize)
+    assert(nBlock == 8192)
   }
 }

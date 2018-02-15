@@ -166,6 +166,35 @@ package object fits {
       FitsContext.this
     }
 
+    /**
+      * Return the number of blocks used to split our data and that will be
+      * distributed over the machines. By default, the data set is split in
+      * blocks of 128 MB. The user can also manually specify the desired number of
+      * blocks using `.option("nBlock", Long)`. If not specified and the data set
+      * is smaller than 128 MB, we set the default number of blocks to 4.
+      *
+      * @param fileSize : (Long)
+      *   The size (or an estimation) in B of the data to distribute. We approximate
+      *   this by ncols * nrows * 8 Bytes.
+      * @param oneBlockSize : (Int)
+      *   Size of one block in B. Default is 128 MB.
+      * @param otherwise : (Int)
+      *   Default number of blocks if the fileSize is smaller than oneBlockSize,
+      *   and if the user did not specify manually the number of blocks.
+      * @return the number of blocks (Long).
+      */
+    def getNblocks(fileSize : Long, oneBlockSize : Long = 128L * 1024L * 1024L, otherwise : Int = 4) : Int = {
+      val isZero = fileSize < oneBlockSize
+      val nBlock : Long = if (FitsContext.this.extraOptions.contains("nBlock")) {
+        FitsContext.this.extraOptions("nBlock").toLong
+      } else if (!isZero) {
+        fileSize / oneBlockSize
+      } else {
+        otherwise // default number
+      }
+      nBlock.toInt
+    }
+
     /** Load a BinaryTableHDU data contained in one HDU as a DataFrame.
       * The schema of the DataFrame is directly inferred from the
       * header of the fits HDU.
@@ -175,9 +204,6 @@ package object fits {
       * @return : DataFrame
       */
     def load(fn : String) : DataFrame = {
-      // Partitioning of the data
-      // val nBlock = 100
-      // val nParts = 100
 
       // Check that you can read the data!
       val dataType = Try {
@@ -264,18 +290,16 @@ package object fits {
 
       // OMG! fileSize is easily bigger than an Int...
       // Need to develop a test for that... Or put a warning?
-      val fileSize : Long = ncols.toLong * nrows.toLong * 8
+      val fileSize : Long = ncols.toLong * nrows.toLong * 8L
       // println(fileSize)
 
-      // Assume one block has size 128 Mo
-      // If total file size < 128 Mo, divide in 4 blocks.
-      // Put an option for the number of blocks!
-      val isZero = fileSize < (128 * 1024 * 1024)
-      val nBlock : Long = if (!isZero) {
-        fileSize / (128 * 1024 * 1024)
-      } else 4 // random number...
-      // println("################# " + nBlock.toString)
+      // Partitioning of the data.
+      // nBlock can be passed as an option, otherwise
+      // assume each block has size 128 MB.
+      // If total file size < 128 MB, divide in 4 blocks.
+      val nBlock : Int = getNblocks(fileSize)
 
+      // Number of rows to yield per block of data
       val sizeBlock : Int = (nrows / nBlock).toInt
 
       // Get the schema. By default it is built from the header, but the user
@@ -294,7 +318,7 @@ package object fits {
       }
 
       // Distribute the data
-      val rdd = spark.sparkContext.parallelize(0 to nBlock.toInt - 1, nBlock.toInt)
+      val rdd = spark.sparkContext.parallelize(0 to nBlock - 1, nBlock)
         .map(blockid => (blockid, new Fits(fn) with Serializable ))
         .map(x => yieldRows(x._2, indexHDU, x._1, sizeBlock, nrows))
         .flatMap(x => x)
