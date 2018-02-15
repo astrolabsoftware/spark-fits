@@ -84,7 +84,6 @@ In case the HEADER is not present or corrupted, you can also manually specify it
   val dfAutoHeader = spark.readfits
     .option("datatype", "table")
     .option("HDU", 1)
-    .option("printHDUHeader", false)
     .load(fn)
 
   // Read as a DataFrame the first HDU of a table fits,
@@ -92,7 +91,6 @@ In case the HEADER is not present or corrupted, you can also manually specify it
   val dfCustomHeader = spark.readfits
     .option("datatype", "table")
     .option("HDU", 1)
-    .option("printHDUHeader", false)
     .schema(userSchema)             // bypass the header, and read the userSchema
     .load(fn)
 
