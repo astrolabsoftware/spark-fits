@@ -118,6 +118,7 @@ Then just try
 
 .. code :: scala
 
+  scala> import com.sparkfits.fits._
   scala> val df = spark.readfits
     .option("datatype", "table")
     .option("HDU", 1)
