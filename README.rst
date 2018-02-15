@@ -27,6 +27,7 @@ Features
 
 * Read fits table and organize HDU data into DataFrames.
 * Automatically infer DataFrame schema from HDU header. Alternatively, users can specify the schema.
+* Automatically distribute the data over machines. Alternatively, users can specify the block distribution.
 
 Quick example : Scala API
 ================
@@ -53,10 +54,12 @@ You can link against this library in your program at the following coordinates: 
 
     // Read as a DataFrame the first HDU of a table fits.
     val df = spark.readfits
-      .option("datatype", "table")            // we support only table for the moment
-      .option("HDU", 1)                       // First HDU
-      .option("printHDUHeader", false)        // to print the HEADER on the screen
-      .load("src/test/resources/test.fits")   // load data as DataFrame
+      .option("datatype", "table")            // [mandatory] We support only table for the moment.
+      .option("HDU", <Int>)                   // [mandatory] Which HDU you want to read.
+      .option("nBlock", <Long>)               // [optional]  If you want to define yourself the data splitting.
+      .option("printHDUHeader", <Boolean>)    // [optional]  If you want to print the HEADER on the screen.
+      .schema(<StructType>)                   // [optional]  If you want to bypass the header.
+      .load("src/test/resources/test.fits")   // [mandatory] Load data as DataFrame.
   }
 
 Note that the schema is directly inferred from the HEADER of the hdu.
