@@ -56,7 +56,7 @@ You can link against this library in your program at the following coordinates: 
     val df = spark.readfits
       .option("datatype", "table")            // [mandatory] We support only table for the moment.
       .option("HDU", <Int>)                   // [mandatory] Which HDU you want to read.
-      .option("nBlock", <Long>)               // [optional]  If you want to define yourself the data splitting.
+      .option("nBlock", <Long>)               // [optional]  If you want to define yourself the data split.
       .option("printHDUHeader", <Boolean>)    // [optional]  If you want to print the HEADER on the screen.
       .schema(<StructType>)                   // [optional]  If you want to bypass the header.
       .load("src/test/resources/test.fits")   // [mandatory] Load data as DataFrame.
@@ -79,8 +79,17 @@ In case the HEADER is not present or corrupted, you can also manually specify it
     )
   )
 
-  // Read as a DataFrame the first HDU of a table fits.
-  val df = spark.readfits
+  // Read as a DataFrame the first HDU of a table fits,
+  // and infer schema from the header.
+  val dfAutoHeader = spark.readfits
+    .option("datatype", "table")
+    .option("HDU", 1)
+    .option("printHDUHeader", false)
+    .load(fn)
+
+  // Read as a DataFrame the first HDU of a table fits,
+  // and use a custom schema.
+  val dfCustomHeader = spark.readfits
     .option("datatype", "table")
     .option("HDU", 1)
     .option("printHDUHeader", false)
