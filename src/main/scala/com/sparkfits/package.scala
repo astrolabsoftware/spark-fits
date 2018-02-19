@@ -286,6 +286,17 @@ package object fits {
       // Need also to open a PR to modify getRow to get Long... Moreover
       // I would be able to simplify the stupid nom.tam structure... ;-)
       val nrows : Int = data.getNRows
+      val nrowsLong : Long = getNRowsFromHeader(data)
+      val isNrowLowerThanMaxInt = nrows.toLong == nrowsLong
+      // val isBiggerThanInt = nrows > Int.MaxValue
+      isNrowLowerThanMaxInt match {
+        case true => isNrowLowerThanMaxInt
+        case false => throw new ClassCastException(s"""
+          The number of rows ($nrowsLong) is bigger than allowed by Int (2^31 - 1).
+          We currently do not support Long values due to dependency to nom.tam.fits.
+          We hope to fix that soon!
+          """)
+      }
       val ncols : Int = data.getNCols
 
       // OMG! fileSize is easily bigger than an Int...

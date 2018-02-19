@@ -45,4 +45,9 @@ class SparkFitsUtilTest extends FunSuite with BeforeAndAfterAll {
 
     assert(nElements == 17)
   }
+
+  // test("") {
+  //   val FakeBigNrowAsInt : Int = Int.MaxValue + 1
+  //   val nrowsLong : Long = getNRowsFromHeader(hdu)
+  // }
 }

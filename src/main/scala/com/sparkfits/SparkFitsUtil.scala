@@ -15,7 +15,7 @@
  */
 package com.sparkfits
 
-import nom.tam.fits.{Fits, HeaderCard, Header}
+import nom.tam.fits.{Fits, HeaderCard, Header, BinaryTableHDU}
 import nom.tam.util.{Cursor}
 
 /**
@@ -53,5 +53,18 @@ object SparkFitsUtil {
     */
   def getMyHeader(c : Cursor[String, HeaderCard], s : String) : String = {
     if (c.hasNext() == true) getMyHeader(c, s + c.next() + ",") else s
+  }
+
+  /**
+    * Return the number of Rows as Long (as opposed to the method getNRows
+    * which returns an Int).
+    *
+    * @param hdu : (BinaryTableHDU)
+    *   The HDU containing the header and the table data.
+    * @return The number of rows as a Long.
+    */
+  def getNRowsFromHeader(hdu : BinaryTableHDU) : Long = {
+    val nRowsLong = hdu.getHeader.getLongValue("NAXIS2")
+    nRowsLong
   }
 }
