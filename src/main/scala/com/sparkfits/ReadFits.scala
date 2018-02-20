@@ -16,11 +16,18 @@
 package com.sparkfits
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.SparkContext
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.sql.Row
+import org.apache.hadoop.io.{ObjectWritable, LongWritable}
+import nom.tam.fits.{Fits, BinaryTableHDU}
 
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
 import com.sparkfits.fits._
+import com.sparkfits.FitsFileInputFormat._
+import com.sparkfits.FitsSchema._
 
 object ReadFits {
   // Set to Level.WARN is you want verbosity
@@ -33,16 +40,29 @@ object ReadFits {
 
   def main(args : Array[String]) = {
 
-    for (hdu <- 1 to 2) {
-      val df = spark.readfits
-        .option("datatype", "table")
-        .option("HDU", hdu)
-        .option("printHDUHeader", true)
-        .option("nBlock", 100)
-        .load(args(0).toString)
+    val conf = new Configuration(spark.sparkContext.hadoopConfiguration)
+    val rdd = spark.sparkContext.newAPIHadoopFile(args(0).toString, classOf[FitsFileInputFormat],
+      classOf[LongWritable], classOf[Row], conf)
 
-      df.show()
-      df.printSchema()
-    }
+    println("Partitions = " + rdd.getNumPartitions.toString)
+
+    val f = new Fits(args(0).toString)
+    val hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
+    val schema = getSchema(hdu)
+
+    val df = spark.createDataFrame(rdd.map(x=>x._2), schema)
+    df.printSchema()
+    df.show()
+    // for (hdu <- 1 to 2) {
+    //   val df = spark.readfits
+    //     .option("datatype", "table")
+    //     .option("HDU", hdu)
+    //     .option("printHDUHeader", true)
+    //     .option("nBlock", 100)
+    //     .load(args(0).toString)
+    //
+    //   df.show()
+    //   df.printSchema()
+    // }
   }
 }

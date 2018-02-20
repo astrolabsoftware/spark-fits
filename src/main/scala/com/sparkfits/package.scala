@@ -25,7 +25,6 @@ import nom.tam.fits.{Fits, BinaryTableHDU}
 
 import com.sparkfits.FitsSchema._
 import com.sparkfits.SparkFitsUtil._
-import com.sparkfits.FitsToParquet._
 
 package object fits {
 
