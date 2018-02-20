@@ -15,8 +15,15 @@
  */
 package com.sparkfits
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{Path, FileSystem}
+
+import org.apache.spark.SparkContext
+
 import nom.tam.fits.{Fits, HeaderCard, Header, BinaryTableHDU}
 import nom.tam.util.{Cursor}
+
+
 
 /**
   * Object to manipulate metadata of the fits file.
@@ -66,5 +73,39 @@ object SparkFitsUtil {
   def getNRowsFromHeader(hdu : BinaryTableHDU) : Long = {
     val nRowsLong = hdu.getHeader.getLongValue("NAXIS2")
     nRowsLong
+  }
+
+  /**
+    * Check if the user is trying to read data from HDFS. Can be better...
+    * TODO: Check when executing that file format match requirements...
+    *
+    * @param fn : (String)
+    *   Filename. If local[*], you must specify the full path to the fits file
+    *   If cluster mode (standalone or mesos), you must specify the path to
+    *   the directory containing parquet files in hdfs.
+    * @return Boolean. True if the file is local, otherwise false.
+    */
+  def checkIsHdfsFile(fn : String) : Boolean = {
+    // check if file starts by hdfs:
+    fn.startsWith("hdfs:")
+  }
+
+  /**
+    * Check if the we are running a job in local or in cluster mode
+    *
+    * @param sc : (SparkContext)
+    *   The spark context of the job.
+    * @return Boolean. True if we are in spark standalone mode, otherwise false.
+    */
+  def checkIsClusterMode(sc : SparkContext) : Boolean = {
+    // check if file starts by hdfs:
+    sc.master.startsWith("spark:")
+  }
+
+  def hdfsDirExists(hdfsDirectory: String) : Boolean = {
+    val hadoopConf = new Configuration()
+    val fs = FileSystem.get(hadoopConf)
+    val exists = fs.exists(new Path(hdfsDirectory))
+    return exists
   }
 }

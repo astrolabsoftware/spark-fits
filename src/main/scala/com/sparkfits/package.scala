@@ -25,6 +25,7 @@ import nom.tam.fits.{Fits, BinaryTableHDU}
 
 import com.sparkfits.FitsSchema._
 import com.sparkfits.SparkFitsUtil._
+import com.sparkfits.FitsToParquet._
 
 package object fits {
 
@@ -205,6 +206,62 @@ package object fits {
       */
     def load(fn : String) : DataFrame = {
 
+      // Check if we need to access HDFS
+      val isCluster = checkIsClusterMode(spark.sparkContext)
+      isCluster match {
+        // Local mode, we just read the fits data into a DF
+        case false => loadLocalDF(fn)
+        // Spark Standalone mode
+        case true => loadLocalDF(fn)
+      }
+    }
+
+    /** Load a DF data contained in parquet files stored in HDFS.
+      * The schema of the DataFrame is directly inferred from the
+      * header of the fits HDU. Can not use on standalone mode.
+      *
+      * @param fn : (String)
+      *  Path + filename of the fits file to be read
+      * @return : DataFrame
+      */
+    // def loadClusterDF(fn : String) : DataFrame = {
+    //   val hdfsPath = Try {
+    //     extraOptions("HDFSPath")
+    //   }
+    //   hdfsPath match {
+    //     case Success(value) => extraOptions("HDFSPath")
+    //     case Failure(e : NullPointerException) =>
+    //       throw new NullPointerException(e.getMessage)
+    //     case Failure(e : NoSuchElementException) =>
+    //       throw new NoSuchElementException("""
+    //       You did not specify the path to HDFS!
+    //         spark.readfits.option("HDFSPath", "hdfs://IP:port")
+    //         """)
+    //     case Failure(_) => println("Unknown Exception")
+    //   }
+    //
+    //   nameFile = fn.split("/").tail(1).split(".fits")(0)
+    //   val hdfsDataPath = extraOptions("HDFSPath") + "/" + nameFile
+    //   val hdfsHDUDataPath = hdfsDataPath + "/HDU" + extraOptions("HDU").toString
+    //   val exists = hdfsDirExists(hdfsHDUDataPath)
+    //
+    //   exists match {
+    //     // Folder exists, just load data
+    //     case true => spark.read.parquet(hdfsHDUDataPath)
+    //     // If not, need to transfer data to HDFS first, and then load
+    //     case false => convertFitsToParquet(spark, fn)
+    //   }
+    // }
+
+    /** Load a BinaryTableHDU data contained in a local FITS file a DataFrame.
+      * The schema of the DataFrame is directly inferred from the
+      * header of the fits HDU. Can not use on standalone mode.
+      *
+      * @param fn : (String)
+      *  Path + filename of the fits file to be read
+      * @return : DataFrame
+      */
+    def loadLocalDF(fn : String) : DataFrame = {
       // Check that you can read the data!
       val dataType = Try {
         extraOptions("datatype")
