@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 package com.sparkfits
-
+import java.io.EOFException
+import java.io.InputStream
+import org.apache.hadoop.fs.FSDataInputStream
+import scala.util.{Try, Success, Failure}
+import scala.collection.mutable.HashMap
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path, FileSystem}
 
 import org.apache.spark.SparkContext
 
 import nom.tam.fits.{Fits, HeaderCard, Header, BinaryTableHDU}
-import nom.tam.util.{Cursor}
+import nom.tam.util.{Cursor, AsciiFuncs}
 
 
 

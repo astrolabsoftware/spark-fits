@@ -83,18 +83,15 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
     // get the record length
     recordLength = 1//FitsFileInputFormat.getRecordLength(context)
     // get the filesystem
-    // val fs = file.getFileSystem(conf)
+    val fs = file.getFileSystem(conf)
     // open the File --> Make Fits!
-    // fileInputStream = fs.open(file)
-    val f = new Fits(file.toString)
-    hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
+    fileInputStream = fs.open(file)
+
     val nrowsLong : Long = getNRowsFromHeader(hdu)
     splitEnd = if (nrowsLong < splitStart + fileSplit.getLength) {
       nrowsLong
     } else splitStart + fileSplit.getLength
 
-    // seek to the splitStart position
-    // fileInputStream.seek(splitStart)
     // set our current position
     currentPosition = splitStart
   }
@@ -106,18 +103,17 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
     // the key is a linear index of the record, given by the
     // position the record starts divided by the record length
     recordKey.set(currentPosition / recordLength)
-    // the recordValue to place the bytes into
+
+    // the recordValue to place the Row into
     if (recordValue == null) {
       // recordValue = new BytesWritable(new Array[Byte](recordLength))
       // recordValue = new ObjectWritable(new Array[Object](recordLength))
-      // recordValue = new Row(recordLength)
       recordValue = Row.empty
     }
     // read a record if the currentPosition is less than the split end
     if (currentPosition < splitEnd) {
-      // setup a buffer to store the record
-      // val buffer = recordValue.getBytes
-      // fileInputStream.readFully(buffer)
+
+      // Store the record
       recordValue = Array(hdu.getRow(currentPosition.toInt)
       .map {
         case x : Array[_] => x.asInstanceOf[Array[_]](0)
@@ -125,13 +121,14 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
         }
       // Map to Row to allow the conversion to DF later on
       ).map { x => Row.fromSeq(x)}.toList(0)
-      // println(recordValue.deep)
 
       // update our current position
       currentPosition = currentPosition + recordLength
+
       // return true
       return true
     }
+    println(currentPosition)
     false
 }
 }

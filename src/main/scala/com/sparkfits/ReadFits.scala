@@ -28,6 +28,8 @@ import org.apache.log4j.Logger
 import com.sparkfits.fits._
 import com.sparkfits.FitsFileInputFormat._
 import com.sparkfits.FitsSchema._
+import com.sparkfits.SparkFitsUtil._
+import com.sparkfits.FitsBlock._
 
 object ReadFits {
   // Set to Level.WARN is you want verbosity
@@ -41,18 +43,47 @@ object ReadFits {
   def main(args : Array[String]) = {
 
     val conf = new Configuration(spark.sparkContext.hadoopConfiguration)
-    val rdd = spark.sparkContext.newAPIHadoopFile(args(0).toString, classOf[FitsFileInputFormat],
-      classOf[LongWritable], classOf[Row], conf)
 
-    println("Partitions = " + rdd.getNumPartitions.toString)
+    // test HEADER
+    val path = new org.apache.hadoop.fs.Path(args(0).toString)
+    val fs = path.getFileSystem(conf)
+    // val file = fs.open(path)
+    // val header = readHeader(file)
+    // val keys = getKeys(header)
+    // val values = getValues(header)
+    // val names = getNames(header)
+    // val comments = getComments(header)
+    // header.foreach(println)
+    // println(keys.deep)
+    // println(values)
+    // println(names)
+    // println(comments)
+    // println(getNRows(header))
+    // println(getNCols(header))
+    // println(file.getPos)
+    // for (i <- 0 to 10) {
+    //   file.readFloat
+    // }
 
-    val f = new Fits(args(0).toString)
-    val hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
-    val schema = getSchema(hdu)
+    val fB = new FitsBlock(path, conf, 0)
+    val startstop = fB.BlockBoundaries
+    val header = fB.readHeader
+    header.foreach(println)
+    println(startstop)
 
-    val df = spark.createDataFrame(rdd.map(x=>x._2), schema)
-    df.printSchema()
-    df.show()
+
+    // val rdd = spark.sparkContext.newAPIHadoopFile(args(0).toString, classOf[FitsFileInputFormat],
+    //   classOf[LongWritable], classOf[Row], conf)
+    //
+    // println("Partitions = " + rdd.getNumPartitions.toString)
+    //
+    // val f = new Fits(args(0).toString)
+    // val hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
+    // val schema = getSchema(hdu)
+    //
+    // val df = spark.createDataFrame(rdd.map(x=>x._2), schema)
+    // df.printSchema()
+    // df.take(10)
     // for (hdu <- 1 to 2) {
     //   val df = spark.readfits
     //     .option("datatype", "table")
