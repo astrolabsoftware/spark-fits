@@ -37,7 +37,8 @@ lazy val root = (project in file(".")).
    // Excluding Scala library JARs that are included in the binary Scala distribution
    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
    // Shading to avoid conflicts with pre-installed nom.tam.fits library
-   assemblyShadeRules in assembly := Seq(ShadeRule.rename("nom.**" -> "new_nom.@1").inAll),
+   // Uncomment if you have such conflicts.
+   // assemblyShadeRules in assembly := Seq(ShadeRule.rename("nom.**" -> "new_nom.@1").inAll),
    // Put dependencies of the library
    libraryDependencies ++= Seq(
      "gov.nasa.gsfc.heasarc" % "nom-tam-fits" % "1.15.2",
