@@ -40,6 +40,9 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
   val fs = hdfsPath.getFileSystem(conf)
   val data = fs.open(hdfsPath)
 
+  // Initialise the cursor
+  val startstop = BlockBoundaries
+
   /**
     * Return the indices of the first and last bytes of the HDU.
     *
@@ -86,25 +89,63 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
   }
 
   /**
-    * Read the header of a HDU.
+    * Reposition the cursor at the beginning of the block
+    */
+  def resetCursor = {
+    // Position the cursor at the beginning of the block
+    data.seek(BlockBoundaries._1)
+  }
+
+  def setCursor(position : Long) = {
+    data.seek(position)
+  }
+
+  /**
+    * Read a header at a given position
+    */
+  def readHeader(position : Long) : Array[String] = {
+    setCursor(position)
+    readHeader
+  }
+
+  /**
+    * Read the header of the HDU.
     */
   def readHeader : Array[String] = {
+
+    // Initialise a line of the header
     var buffer = new Array[Byte](FITS_HEADER_CARD_SIZE)
+
     var len = 0
     var stop = 0
     var pos = 0
     var header = new Array[String](HEADER_SIZE_BYTES / FITS_HEADER_CARD_SIZE)
-    var need = FITS_HEADER_CARD_SIZE
+
+    // Loop until the end of the header.
+    // TODO: what if the header has an non-standard size?
     do {
-      len = data.read(buffer, FITS_HEADER_CARD_SIZE - need, need)
+      len = data.read(buffer, 0, FITS_HEADER_CARD_SIZE)
       if (len == 0) {
         throw new EOFException("nothing to read left")
       }
       stop += len
+
+      // Bytes to String
       header(pos) = AsciiFuncs.asciiString(buffer)
+
+      // Increment the line
       pos += 1
     } while (stop < HEADER_SIZE_BYTES)
+
+    // Return the header
     header
+  }
+
+  def readLine: Array[_] = {
+    resetCursor
+
+    // Need to know the type of object
+    // Need to output a line of objects as seq?
   }
 
   def getKeys(header : Array[String]) : Array[String] = {

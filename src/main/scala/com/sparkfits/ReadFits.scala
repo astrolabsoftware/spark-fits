@@ -65,11 +65,15 @@ object ReadFits {
     //   file.readFloat
     // }
 
-    val fB = new FitsBlock(path, conf, 0)
-    val startstop = fB.BlockBoundaries
+    val fB = new FitsBlock(path, conf, 1)
+
     val header = fB.readHeader
     header.foreach(println)
+
+    val startstop = fB.BlockBoundaries
     println(startstop)
+
+
 
 
     // val rdd = spark.sparkContext.newAPIHadoopFile(args(0).toString, classOf[FitsFileInputFormat],
