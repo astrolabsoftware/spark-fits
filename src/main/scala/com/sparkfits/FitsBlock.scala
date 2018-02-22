@@ -169,6 +169,24 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
     }
   }
 
+  def readLineFromBuffer(header : Array[String], col : Int = 0): List[_] = {
+
+    // If the cursor is in the header, reposition the cursor at
+    // the beginning of the data block.
+    if (data.getPos < blockBoundaries._2) {
+      resetCursorAtData
+    }
+
+    val rowTypes = getRowTypes(header)
+    val ncols = rowTypes.size
+
+    if (col == ncols) {
+      Nil
+    } else {
+      getElement(rowTypes(col)) :: readLine(header, col + 1)
+    }
+  }
+
   def readLines(header : Array[String], nlines : Long, row : Long = 0): List[Row] = {
 
     // If the cursor is in the header, reposition the cursor at

@@ -29,7 +29,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 
 import org.apache.spark.sql.Row
 
-class FitsRecordReader extends RecordReader[LongWritable, Array[Byte]] {
+class FitsRecordReader extends RecordReader[LongWritable, List[Row]] {
   private var splitStart: Long = 0L
   private var splitEnd: Long = 0L
   private var currentPosition: Long = 0L
@@ -40,7 +40,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Array[Byte]] {
   private var rowSizeLong : Long = 0L
   private var recordKey: LongWritable = null
   // private var recordValue: List[Row] = null
-  private var recordValue: Array[Byte] = null
+  private var recordValue: List[Row] = null
 
   override def close() {
     if (fB.data != null) {
@@ -52,7 +52,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Array[Byte]] {
     recordKey
   }
 
-  override def getCurrentValue: Array[Byte] = {
+  override def getCurrentValue: List[Row] = {
     recordValue
   }
 
@@ -72,7 +72,6 @@ class FitsRecordReader extends RecordReader[LongWritable, Array[Byte]] {
     // the byte position this fileSplit starts at
     // Need to move to an HDU and skip the header to jump to the data straight.
     splitStart = fileSplit.getStart
-    println("Start : " + splitStart.toString)
 
     // splitEnd byte marker that the fileSplit ends at
 
@@ -96,12 +95,15 @@ class FitsRecordReader extends RecordReader[LongWritable, Array[Byte]] {
     rowSizeLong = fB.getSizeRowBytes(header)
 
     // get the record length nlines
-    recordLength = 128 * 1024 * 1024 //100 * rowSizeLong.toInt
+    // recordLength = FitsFileInputFormat.getRecordLength(context)
+    // println(recordLength)
+    recordLength = 32 * 1024 * 1024 //100 * rowSizeLong.toInt
+    // recordLength = 20 * 1000
 
-
-    splitEnd = if (nrowsLong < splitStart + fileSplit.getLength) {
-      nrowsLong
-    } else splitStart + fileSplit.getLength
+    splitEnd = splitStart + fileSplit.getLength//splitStart + fileSplit.getLength
+    // splitEnd = if (nrowsLong < splitStart + fileSplit.getLength) {
+    //   nrowsLong
+    // } else splitStart + fileSplit.getLength
 
     // println(splitStart + nrowsLong * rowSizeLong/69L)
     // println(splitStart + fileSplit.getLength)
@@ -109,7 +111,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Array[Byte]] {
     currentPosition = splitStart
   }
 
-  override def nextKeyValue(): Boolean = {
+  override def nextKeyValue() : Boolean = {
     if (recordKey == null) {
       recordKey = new LongWritable()
     }
@@ -118,12 +120,12 @@ class FitsRecordReader extends RecordReader[LongWritable, Array[Byte]] {
     recordKey.set(currentPosition / recordLength)
 
     // the recordValue to place the Row into
-    if (recordValue == null) {
-      // recordValue = new BytesWritable(new Array[Byte](recordLength))
-      // recordValue = new ObjectWritable(new Array[Object](recordLength))
-      // recordValue = Row.empty
-      recordValue = new Array[Byte](recordLength)
-    }
+    // if (recordValue == null) {
+    //   // recordValue = new BytesWritable(new Array[Byte](recordLength))
+    //   // recordValue = new ObjectWritable(new Array[Object](recordLength))
+    //   // recordValue = Row.empty
+    //   recordValue = new Array[Byte](recordLength)
+    // }
     // read a record if the currentPosition is less than the split end
     if (currentPosition < splitEnd) {
 
@@ -141,7 +143,17 @@ class FitsRecordReader extends RecordReader[LongWritable, Array[Byte]] {
       // println(recordValue.size)
       // val buffer = recordValue.getBytes
       // fB.data.readFully(buffer)
-      fB.data.read(recordValue, 0, recordLength)
+
+      // fB.data.read(recordValue, 0, recordLength)
+
+      recordValue = (for {
+        i <- 0 to recordLength / rowSizeLong.toInt
+
+      } yield(Row.fromSeq(fB.readLine(header)))).toList
+      //yield(Row.fromSeq(fB.readLine(header)))).toList
+      //yield(i)).toList
+
+      // recordValue.sliding(20)
 
       // update our current position
       currentPosition = currentPosition + recordLength
@@ -151,5 +163,5 @@ class FitsRecordReader extends RecordReader[LongWritable, Array[Byte]] {
     }
     println(s"Start: $splitStart EndPosition : " + currentPosition.toString)
     false
-}
+  }
 }
