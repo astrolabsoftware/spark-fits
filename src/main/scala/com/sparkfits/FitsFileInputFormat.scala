@@ -31,7 +31,7 @@ private[sparkfits] object FitsFileInputFormat {
   }
 }
 
-class FitsFileInputFormat extends FileInputFormat[LongWritable, Row] {
+class FitsFileInputFormat extends FileInputFormat[LongWritable, List[Row]] {
   override def createRecordReader(split: InputSplit, context: TaskAttemptContext):
-    RecordReader[LongWritable, Row] = new FitsRecordReader()
+    RecordReader[LongWritable, List[Row]] = new FitsRecordReader()
 }

@@ -29,15 +29,17 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 
 import org.apache.spark.sql.Row
 
-class FitsRecordReader extends RecordReader[LongWritable, Row] {
+class FitsRecordReader extends RecordReader[LongWritable, List[Row]] {
   private var splitStart: Long = 0L
   private var splitEnd: Long = 0L
   private var currentPosition: Long = 0L
   private var recordLength: Int = 0
   private var fB: FitsBlock = null
   private var header: Array[String] = null
+  private var nrowsLong : Long = 0L
+  private var rowSizeLong : Long = 0L
   private var recordKey: LongWritable = null
-  private var recordValue: Row = null
+  private var recordValue: List[Row] = null
 
   override def close() {
     if (fB.data != null) {
@@ -49,7 +51,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
     recordKey
   }
 
-  override def getCurrentValue: Row = {
+  override def getCurrentValue: List[Row] = {
     recordValue
   }
 
@@ -69,6 +71,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
     // the byte position this fileSplit starts at
     // Need to move to an HDU and skip the header to jump to the data straight.
     splitStart = fileSplit.getStart
+    println("Start : " + splitStart.toString)
 
     // splitEnd byte marker that the fileSplit ends at
 
@@ -81,8 +84,6 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
     if (codec != null) {
       throw new IOException("FixedLengthRecordReader does not support reading compressed files")
     }
-    // get the record length
-    recordLength = 1//FitsFileInputFormat.getRecordLength(context)
     // get the filesystem
     // val fs = file.getFileSystem(conf)
     // open the File --> Make Fits!
@@ -90,11 +91,19 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
     fB = new FitsBlock(file, conf, 1)
     header = fB.readHeader
 
-    val nrowsLong : Long = fB.getNRows(header)
+    nrowsLong = fB.getNRows(header)
+    rowSizeLong = fB.getSizeRowBytes(header)
+
+    // get the record length nlines
+    recordLength = 128 * 1024 * 1024 //100 * rowSizeLong.toInt
+
+
     splitEnd = if (nrowsLong < splitStart + fileSplit.getLength) {
       nrowsLong
     } else splitStart + fileSplit.getLength
 
+    // println(splitStart + nrowsLong * rowSizeLong/69L)
+    // println(splitStart + fileSplit.getLength)
     // set our current position
     currentPosition = splitStart
   }
@@ -108,11 +117,12 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
     recordKey.set(currentPosition / recordLength)
 
     // the recordValue to place the Row into
-    if (recordValue == null) {
-      // recordValue = new BytesWritable(new Array[Byte](recordLength))
-      // recordValue = new ObjectWritable(new Array[Object](recordLength))
-      recordValue = Row.empty
-    }
+    // if (recordValue == null) {
+    //   // recordValue = new BytesWritable(new Array[Byte](recordLength))
+    //   // recordValue = new ObjectWritable(new Array[Object](recordLength))
+    //   // recordValue = Row.empty
+    //   recordValue = new Array[Byte](recordLength)
+    // }
     // read a record if the currentPosition is less than the split end
     if (currentPosition < splitEnd) {
 
@@ -124,7 +134,13 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
       //   }
       // // Map to Row to allow the conversion to DF later on
       // ).map { x => Row.fromSeq(x)}.toList(0)
-      recordValue = Row.fromSeq(fB.readLine(header))
+
+      // recordValue = Row.fromSeq(fB.readLine(header))
+      recordValue = fB.readLines(header, recordLength / rowSizeLong)
+      // println(recordValue.size)
+      // val buffer = recordValue.getBytes
+      // fB.data.readFully(buffer)
+      // fB.data.read(recordValue, 0, recordLength)
 
       // update our current position
       currentPosition = currentPosition + recordLength
@@ -132,7 +148,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
       // return true
       return true
     }
-    println(currentPosition)
+    println("EndPosition : " + currentPosition.toString)
     false
 }
 }

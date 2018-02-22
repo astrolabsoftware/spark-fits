@@ -21,7 +21,7 @@ import java.io.EOFException
 import java.io.IOError
 import java.nio.charset.StandardCharsets
 import nom.tam.util.{Cursor, AsciiFuncs}
-
+import org.apache.spark.sql.Row
 import scala.util.{Try, Success, Failure}
 import scala.collection.mutable.HashMap
 import org.apache.hadoop.fs.{Path, FileSystem}
@@ -167,6 +167,30 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
     } else {
       getElement(rowTypes(col)) :: readLine(header, col + 1)
     }
+  }
+
+  def readLines(header : Array[String], nlines : Long, row : Long = 0): List[Row] = {
+
+    // If the cursor is in the header, reposition the cursor at
+    // the beginning of the data block.
+    if (data.getPos < blockBoundaries._2) {
+      resetCursorAtData
+    }
+
+    val rowTypes = getRowTypes(header)
+    val ncols = rowTypes.size
+
+    if (row == nlines) {
+      Nil
+    } else {
+      Row.fromSeq(readLine(header)) +: readLines(header, nlines, row + 1)
+    }
+
+    // if (col == ncols) {
+    //   Nil
+    // } else {
+    //   getElement(rowTypes(col)) :: readLine(header, col + 1)
+    // }
   }
 
   def getRowTypes(header : Array[String], col : Int = 0): List[String] = {
