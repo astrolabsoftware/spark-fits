@@ -18,7 +18,8 @@ package com.sparkfits
 import org.apache.hadoop.fs.FSDataInputStream
 import org.apache.hadoop.conf.Configuration
 import java.io.EOFException
-
+import java.io.IOError
+import java.nio.charset.StandardCharsets
 import nom.tam.util.{Cursor, AsciiFuncs}
 
 import scala.util.{Try, Success, Failure}
@@ -290,13 +291,21 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
   }
 
   def getElement(fitstype : String) = {
+
     fitstype match {
       case "1J" => data.readInt
       case "1E" => data.readFloat
       case "E" => data.readFloat
       case "L" => data.readBoolean
       case "D" => data.readDouble
-      case _ => data.readChar
+      case x if fitstype.endsWith("A") => {
+        // Example 20A means string on 20 bytes
+        val buffersize = x.slice(0, x.length - 1).toInt
+        val buffer = new Array[Byte](buffersize)
+        data.read(buffer, 0, buffersize)
+        new String(buffer, StandardCharsets.UTF_8).trim()
+      }
+      // case _ => throw new IOError("""Data type not understood!"""")
     }
   }
 }
