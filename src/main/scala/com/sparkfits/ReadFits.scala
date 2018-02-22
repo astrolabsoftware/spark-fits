@@ -27,7 +27,7 @@ import org.apache.log4j.Logger
 
 import com.sparkfits.fits._
 import com.sparkfits.FitsFileInputFormat._
-import com.sparkfits.FitsSchema._
+import com.sparkfits.FitsSchema_new._
 import com.sparkfits.SparkFitsUtil._
 import com.sparkfits.FitsBlock._
 
@@ -73,20 +73,27 @@ object ReadFits {
     val startstop = fB.BlockBoundaries
     println(startstop)
 
+    val rowTypes = fB.getRowTypes(header)
+    println(rowTypes)
 
+    for (i <- 0 to 10) {
+      println(fB.readLine(header))
+    }
 
+    val rdd = spark.sparkContext.newAPIHadoopFile(args(0).toString, classOf[FitsFileInputFormat],
+      classOf[LongWritable], classOf[Row], conf)
 
-    // val rdd = spark.sparkContext.newAPIHadoopFile(args(0).toString, classOf[FitsFileInputFormat],
-    //   classOf[LongWritable], classOf[Row], conf)
-    //
-    // println("Partitions = " + rdd.getNumPartitions.toString)
+    println("Partitions = " + rdd.getNumPartitions.toString)
+    // println("Count = " + rdd.count())
     //
     // val f = new Fits(args(0).toString)
     // val hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
-    // val schema = getSchema(hdu)
+    val schema = getSchema(fB)
+    println(schema)
     //
-    // val df = spark.createDataFrame(rdd.map(x=>x._2), schema)
-    // df.printSchema()
+    val df = spark.createDataFrame(rdd.map(x=>x._2), schema)
+    df.printSchema()
+    df.show()
     // df.take(10)
     // for (hdu <- 1 to 2) {
     //   val df = spark.readfits

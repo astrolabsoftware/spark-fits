@@ -17,12 +17,12 @@ package com.sparkfits
 
 import org.apache.spark.sql.types._
 
-import com.sparkfits.FitsBlock._
+import nom.tam.fits.BinaryTableHDU
 
 /**
   * Object to handle the conversion from a HDU header to a DataFrame Schema.
   */
-object FitsSchema_new {
+object FitsSchema {
 
   /**
     * Conversion from fits type to DataFrame Schema type.
@@ -60,15 +60,11 @@ object FitsSchema_new {
     *   The total number of columns in the HDU.
     * @return a `List[StructField]` with informations about name and type for all columns.
     */
-  def ListOfStruct(fB : FitsBlock, col : Int) : List[StructField] = {
-    fB.resetCursorAtHeader
-    val header = fB.readHeader
-    println(fB.data.getPos)
-    val colmax = fB.getNCols(header)
+  def ListOfStruct(data : BinaryTableHDU, col : Int, colmax : Int) : List[StructField] = {
     if (col == colmax)
       Nil
     else
-      ReadMyType(fB.getColumnName(header, col), fB.getColumnType(header, col)) :: ListOfStruct(fB, col + 1)
+      ReadMyType(data.getColumnName(col), data.getColumnFormat(col)) :: ListOfStruct(data, col + 1, colmax)
   }
 
   /**
@@ -79,9 +75,8 @@ object FitsSchema_new {
     * @return Return a `StructType` which contain a list of `StructField` with informations about name and type for all columns.
     *
     */
-  def getSchema(fB : FitsBlock) : StructType = {
-    fB.resetCursorAtHeader
-    val header = fB.readHeader
-    StructType(ListOfStruct(fB, 0))
+  def getSchema(data : BinaryTableHDU) : StructType = {
+    val ncols = data.getNCols
+    StructType(ListOfStruct(data, 0, ncols))
   }
 }

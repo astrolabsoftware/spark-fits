@@ -40,8 +40,9 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
   val fs = hdfsPath.getFileSystem(conf)
   val data = fs.open(hdfsPath)
 
-  // Initialise the cursor
-  val startstop = BlockBoundaries
+  // Compute the bound and initialise the cursor
+  // indices (headerStart, dataStart, dataStop) in bytes.
+  val blockBoundaries = BlockBoundaries
 
   /**
     * Return the indices of the first and last bytes of the HDU.
@@ -49,23 +50,26 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
     * @return (data_start, data_stop) = (Long, Long), the bytes indices of the HDU.
     *
     */
-  def BlockBoundaries : (Long, Long) = {
+  def BlockBoundaries : (Long, Long, Long) = {
 
     // Initialise the file
     data.seek(0)
     var hdu_tmp = 0
 
     // Initialise the boundaries
+    var header_start : Long = 0
     var data_start : Long = 0
     var data_stop : Long = 0
 
     do {
-      // Initialise the offset
-      data_start = data.getPos
+      // Initialise the offset to the header position
+      header_start = data.getPos
 
-      // Get the header and move the offset to the data part
-      // Carefull, data will point at the end of the header after the call
+      // Get the header (and move after it)
       val header = readHeader
+
+      // Data block starts after the header
+      data_start = data.getPos
 
       // Size of the data block in Bytes.
       // Skip Data if None (typically HDU=0)
@@ -82,18 +86,23 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
     } while (hdu_tmp < hduIndex + 1 )
 
     // Reposition the cursor at the beginning of the block
-    data.seek(data_start)
+    data.seek(header_start)
 
     // Return boundaries (included)
-    (data_start, data_stop)
+    (header_start, data_start, data_stop)
   }
 
   /**
     * Reposition the cursor at the beginning of the block
     */
-  def resetCursor = {
+  def resetCursorAtHeader = {
     // Position the cursor at the beginning of the block
     data.seek(BlockBoundaries._1)
+  }
+
+  def resetCursorAtData = {
+    // Position the cursor at the beginning of the block
+    data.seek(BlockBoundaries._2)
   }
 
   def setCursor(position : Long) = {
@@ -141,28 +150,49 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
     header
   }
 
-  def readLine: Array[_] = {
-    resetCursor
+  def readLine(header : Array[String], col : Int = 0): List[_] = {
 
-    // Need to know the type of object
-    // Need to output a line of objects as seq?
+    // If the cursor is in the header, reposition the cursor at
+    // the beginning of the data block.
+    if (data.getPos < blockBoundaries._2) {
+      resetCursorAtData
+    }
+
+    val rowTypes = getRowTypes(header)
+    val ncols = rowTypes.size
+
+    if (col == ncols) {
+      Nil
+    } else {
+      getElement(rowTypes(col)) :: readLine(header, col + 1)
+    }
   }
 
-  def getKeys(header : Array[String]) : Array[String] = {
+  def getRowTypes(header : Array[String], col : Int = 0): List[String] = {
+    val headerNames = getHeaderNames(header)
+    val ncols = getNCols(header)
+    if (col == ncols) {
+      Nil
+    } else {
+      headerNames("TFORM" + (col + 1).toString) :: getRowTypes(header, col + 1)
+    }
+  }
+
+  def getHeaderKeys(header : Array[String]) : Array[String] = {
     val keys = new Array[String](header.size)
     val MAX_KEYWORD_LENGTH = 8
     for (i <- 0 to header.size - 1) {
       val line = header(i)
-      // Key
+      // Get the key
       keys(i) = line.substring(0, MAX_KEYWORD_LENGTH).trim()
     }
     keys
   }
 
-  def getValues(header : Array[String]) : HashMap[String, Int] = {
+  def getHeaderValues(header : Array[String]) : HashMap[String, Int] = {
     val headerMap = new HashMap[String, Int]
 
-    val keys = getKeys(header)
+    val keys = getHeaderKeys(header)
     for (i <- 0 to header.size - 1) {
       val line = header(i)
 
@@ -182,10 +212,10 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
     headerMap
   }
 
-  def getNames(header : Array[String]) : HashMap[String, String] = {
+  def getHeaderNames(header : Array[String]) : HashMap[String, String] = {
     val headerMap = new HashMap[String, String]
     val MAX_KEYWORD_LENGTH = 8
-    val keys = getKeys(header)
+    val keys = getHeaderKeys(header)
     for (i <- 0 to header.size - 1) {
       val line = header(i)
 
@@ -219,10 +249,10 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
     headerMap
   }
 
-  def getComments(header : Array[String]) : HashMap[String, String] = {
+  def getHeaderComments(header : Array[String]) : HashMap[String, String] = {
     val headerMap = new HashMap[String, String]
     val MAX_KEYWORD_LENGTH = 8
-    val keys = getKeys(header)
+    val keys = getHeaderKeys(header)
     for (i <- 0 to header.size - 1) {
       val line = header(i)
 
@@ -233,32 +263,40 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
   }
 
   def getNRows(header : Array[String]) : Long = {
-    val values = getValues(header)
+    val values = getHeaderValues(header)
     values("NAXIS2")
   }
 
   def getNCols(header : Array[String]) : Long = {
-    val values = getValues(header)
+    val values = getHeaderValues(header)
     values("TFIELDS")
   }
 
   def getSizeRowBytes(header : Array[String]) : Long = {
-    val values = getValues(header)
+    val values = getHeaderValues(header)
     values("NAXIS1")
   }
 
-  def getElement(file : FSDataInputStream, fitstype : String) = {
-    fitstype match {
-      case "1J" => file.readInt
-      case "1E" => file.readFloat
-      case "E" => file.readFloat
-      case "L" => file.readBoolean
-      case "D" => file.readDouble
-      case _ => file.readChar
-    }
+  def getColumnName(header : Array[String], colIndex : Int) : String = {
+    val names = getHeaderNames(header)
+    // zero-based index
+    names("TTYPE" + (colIndex + 1).toString)
   }
 
+  def getColumnType(header : Array[String], colIndex : Int) : String = {
+    val names = getHeaderNames(header)
+    // zero-based index
+    names("TFORM" + (colIndex + 1).toString)
+  }
 
-
-
+  def getElement(fitstype : String) = {
+    fitstype match {
+      case "1J" => data.readInt
+      case "1E" => data.readFloat
+      case "E" => data.readFloat
+      case "L" => data.readBoolean
+      case "D" => data.readDouble
+      case _ => data.readChar
+    }
+  }
 }

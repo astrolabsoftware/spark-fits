@@ -17,6 +17,7 @@ package com.sparkfits
 
 import nom.tam.fits.{Fits, BinaryTableHDU}
 import com.sparkfits.SparkFitsUtil._
+import com.sparkfits.FitsBlock._
 
 import java.io.IOException
 
@@ -33,14 +34,14 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
   private var splitEnd: Long = 0L
   private var currentPosition: Long = 0L
   private var recordLength: Int = 0
-  private var fileInputStream: FSDataInputStream = null
-  private var hdu: BinaryTableHDU = null
+  private var fB: FitsBlock = null
+  private var header: Array[String] = null
   private var recordKey: LongWritable = null
   private var recordValue: Row = null
 
   override def close() {
-    if (fileInputStream != null) {
-      fileInputStream.close()
+    if (fB.data != null) {
+      fB.data.close()
     }
   }
 
@@ -83,11 +84,13 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
     // get the record length
     recordLength = 1//FitsFileInputFormat.getRecordLength(context)
     // get the filesystem
-    val fs = file.getFileSystem(conf)
+    // val fs = file.getFileSystem(conf)
     // open the File --> Make Fits!
-    fileInputStream = fs.open(file)
+    // fileInputStream = fs.open(file)
+    fB = new FitsBlock(file, conf, 1)
+    header = fB.readHeader
 
-    val nrowsLong : Long = getNRowsFromHeader(hdu)
+    val nrowsLong : Long = fB.getNRows(header)
     splitEnd = if (nrowsLong < splitStart + fileSplit.getLength) {
       nrowsLong
     } else splitStart + fileSplit.getLength
@@ -114,13 +117,14 @@ class FitsRecordReader extends RecordReader[LongWritable, Row] {
     if (currentPosition < splitEnd) {
 
       // Store the record
-      recordValue = Array(hdu.getRow(currentPosition.toInt)
-      .map {
-        case x : Array[_] => x.asInstanceOf[Array[_]](0)
-        case x : String => x
-        }
-      // Map to Row to allow the conversion to DF later on
-      ).map { x => Row.fromSeq(x)}.toList(0)
+      // recordValue = Array(hdu.getRow(currentPosition.toInt)
+      // .map {
+      //   case x : Array[_] => x.asInstanceOf[Array[_]](0)
+      //   case x : String => x
+      //   }
+      // // Map to Row to allow the conversion to DF later on
+      // ).map { x => Row.fromSeq(x)}.toList(0)
+      recordValue = Row.fromSeq(fB.readLine(header))
 
       // update our current position
       currentPosition = currentPosition + recordLength
