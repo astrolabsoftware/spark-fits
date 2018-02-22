@@ -81,20 +81,18 @@ object ReadFits {
     }
 
     val rdd = spark.sparkContext.newAPIHadoopFile(args(0).toString, classOf[FitsFileInputFormat],
-      classOf[LongWritable], classOf[List[Row]], conf)
+      classOf[LongWritable], classOf[Array[Byte]], conf)
 
 
     println("Partitions = " + rdd.getNumPartitions.toString)
-    // println("Count = " + rdd.count())
+    println("Count = " + rdd.count())
+
+    // val schema = getSchema(fB)
+    // println(schema)
     //
-    // val f = new Fits(args(0).toString)
-    // val hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
-    val schema = getSchema(fB)
-    println(schema)
-    //
-    val df = spark.createDataFrame(rdd.flatMap(x=>x._2), schema)
-    df.printSchema()
-    df.show()
+    // val df = spark.createDataFrame(rdd.flatMap(x=>x._2), schema)
+    // df.printSchema()
+    // df.show()
     // df.take(1000)
     // df.take(10)
     // for (hdu <- 1 to 2) {

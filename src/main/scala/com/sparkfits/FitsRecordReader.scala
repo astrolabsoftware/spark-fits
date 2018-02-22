@@ -29,7 +29,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 
 import org.apache.spark.sql.Row
 
-class FitsRecordReader extends RecordReader[LongWritable, List[Row]] {
+class FitsRecordReader extends RecordReader[LongWritable, Array[Byte]] {
   private var splitStart: Long = 0L
   private var splitEnd: Long = 0L
   private var currentPosition: Long = 0L
@@ -39,7 +39,8 @@ class FitsRecordReader extends RecordReader[LongWritable, List[Row]] {
   private var nrowsLong : Long = 0L
   private var rowSizeLong : Long = 0L
   private var recordKey: LongWritable = null
-  private var recordValue: List[Row] = null
+  // private var recordValue: List[Row] = null
+  private var recordValue: Array[Byte] = null
 
   override def close() {
     if (fB.data != null) {
@@ -51,7 +52,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[Row]] {
     recordKey
   }
 
-  override def getCurrentValue: List[Row] = {
+  override def getCurrentValue: Array[Byte] = {
     recordValue
   }
 
@@ -117,12 +118,12 @@ class FitsRecordReader extends RecordReader[LongWritable, List[Row]] {
     recordKey.set(currentPosition / recordLength)
 
     // the recordValue to place the Row into
-    // if (recordValue == null) {
-    //   // recordValue = new BytesWritable(new Array[Byte](recordLength))
-    //   // recordValue = new ObjectWritable(new Array[Object](recordLength))
-    //   // recordValue = Row.empty
-    //   recordValue = new Array[Byte](recordLength)
-    // }
+    if (recordValue == null) {
+      // recordValue = new BytesWritable(new Array[Byte](recordLength))
+      // recordValue = new ObjectWritable(new Array[Object](recordLength))
+      // recordValue = Row.empty
+      recordValue = new Array[Byte](recordLength)
+    }
     // read a record if the currentPosition is less than the split end
     if (currentPosition < splitEnd) {
 
@@ -136,11 +137,11 @@ class FitsRecordReader extends RecordReader[LongWritable, List[Row]] {
       // ).map { x => Row.fromSeq(x)}.toList(0)
 
       // recordValue = Row.fromSeq(fB.readLine(header))
-      recordValue = fB.readLines(header, recordLength / rowSizeLong)
+      // recordValue = fB.readLines(header, recordLength / rowSizeLong)
       // println(recordValue.size)
       // val buffer = recordValue.getBytes
       // fB.data.readFully(buffer)
-      // fB.data.read(recordValue, 0, recordLength)
+      fB.data.read(recordValue, 0, recordLength)
 
       // update our current position
       currentPosition = currentPosition + recordLength
@@ -148,7 +149,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[Row]] {
       // return true
       return true
     }
-    println("EndPosition : " + currentPosition.toString)
+    println(s"Start: $splitStart EndPosition : " + currentPosition.toString)
     false
 }
 }
