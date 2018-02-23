@@ -48,23 +48,6 @@ object ReadFits {
     // test HEADER
     val path = new org.apache.hadoop.fs.Path(args(0).toString)
     val fs = path.getFileSystem(conf)
-    // val file = fs.open(path)
-    // val header = readHeader(file)
-    // val keys = getKeys(header)
-    // val values = getValues(header)
-    // val names = getNames(header)
-    // val comments = getComments(header)
-    // header.foreach(println)
-    // println(keys.deep)
-    // println(values)
-    // println(names)
-    // println(comments)
-    // println(getNRows(header))
-    // println(getNCols(header))
-    // println(file.getPos)
-    // for (i <- 0 to 10) {
-    //   file.readFloat
-    // }
 
     val fB = new FitsBlock(path, conf, 1)
 
@@ -78,32 +61,26 @@ object ReadFits {
     println(rowTypes)
 
     for (i <- 0 to 10) {
-      println(fB.readLine(header))
+      println(fB.readLine(0))
     }
 
-    // val rdd = spark.sparkContext.newAPIHadoopFile(args(0).toString, classOf[FitsFileInputFormat],
-    //   classOf[LongWritable], classOf[Array[Byte]], conf)
-    //   .map(x=>x._2.sliding(5).map(y=>ByteBuffer.wrap(y).getFloat()).toList)
-    //   .flatMap(x=>x)
+    // FitsRDD
     val rdd = spark.sparkContext.newAPIHadoopFile(args(0).toString, classOf[FitsFileInputFormat],
-      classOf[LongWritable], classOf[List[Row]], conf)
-      // .map(x => x._2.sliding(20)
-      //   .map(y => y.sliding(4)
-      //     .map(z=>ByteBuffer.wrap(z).getFloat()).toList)
-      //   ).flatMap(x=>x)
-
+      classOf[LongWritable], classOf[List[List[_]]], conf)
+        .flatMap(x=>x._2)
+        .map(x => Row.fromSeq(x))
 
     println("Partitions = " + rdd.getNumPartitions.toString)
-    // println("Count = " + rdd.count())
-    // println(rdd.collect()(0))
+    println("Count = " + rdd.count())
 
     val schema = getSchema(fB)
     println(schema)
-    //
-    val df = spark.createDataFrame(rdd.flatMap(x=>x._2), schema)
+
+    // To DataFrame
+    val df = spark.createDataFrame(rdd, schema)
     df.printSchema()
     df.show()
-    println(df.count())
+    // println(df.count())
     // df.take(1000)
     // df.take(10)
     // for (hdu <- 1 to 2) {

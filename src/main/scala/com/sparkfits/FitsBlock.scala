@@ -15,6 +15,7 @@
  */
 package com.sparkfits
 
+import java.nio.ByteBuffer
 import org.apache.hadoop.fs.FSDataInputStream
 import org.apache.hadoop.conf.Configuration
 import java.io.EOFException
@@ -44,6 +45,15 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
   // Compute the bound and initialise the cursor
   // indices (headerStart, dataStart, dataStop) in bytes.
   val blockBoundaries = BlockBoundaries
+
+  val header = readHeader
+  resetCursorAtHeader
+
+  val rowTypes = getRowTypes(header)
+  val ncols = rowTypes.size
+
+  val splitLocations = (0 :: rowSplitLocations(0)).scan(0)(_ +_).tail
+  println(splitLocations)
 
   /**
     * Return the indices of the first and last bytes of the HDU.
@@ -151,65 +161,54 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
     header
   }
 
-  def readLine(header : Array[String], col : Int = 0): List[_] = {
+  def readLine(col : Int = 0): List[_] = {
 
     // If the cursor is in the header, reposition the cursor at
     // the beginning of the data block.
     if (data.getPos < blockBoundaries._2) {
       resetCursorAtData
     }
-
-    val rowTypes = getRowTypes(header)
-    val ncols = rowTypes.size
 
     if (col == ncols) {
       Nil
     } else {
-      getElement(rowTypes(col)) :: readLine(header, col + 1)
+      getElement(rowTypes(col)) :: readLine(col + 1)
     }
   }
 
-  def readLineFromBuffer(header : Array[String], col : Int = 0): List[_] = {
-
-    // If the cursor is in the header, reposition the cursor at
-    // the beginning of the data block.
-    if (data.getPos < blockBoundaries._2) {
-      resetCursorAtData
-    }
-
-    val rowTypes = getRowTypes(header)
-    val ncols = rowTypes.size
+  def readLineFromBuffer(buf : Array[Byte], col : Int = 0): List[_] = {
 
     if (col == ncols) {
       Nil
     } else {
-      getElement(rowTypes(col)) :: readLine(header, col + 1)
+      // getElementFromBuffer(buf.slice(pos*4, (pos+1)*4), rowTypes(col)) :: readLineFromBuffer(buf, col + 1, pos+1)
+      getElementFromBuffer(buf.slice(splitLocations(col), splitLocations(col+1)), rowTypes(col)) :: readLineFromBuffer(buf, col + 1)
     }
   }
 
-  def readLines(header : Array[String], nlines : Long, row : Long = 0): List[Row] = {
-
-    // If the cursor is in the header, reposition the cursor at
-    // the beginning of the data block.
-    if (data.getPos < blockBoundaries._2) {
-      resetCursorAtData
-    }
-
-    val rowTypes = getRowTypes(header)
-    val ncols = rowTypes.size
-
-    if (row == nlines) {
-      Nil
-    } else {
-      Row.fromSeq(readLine(header)) +: readLines(header, nlines, row + 1)
-    }
-
-    // if (col == ncols) {
-    //   Nil
-    // } else {
-    //   getElement(rowTypes(col)) :: readLine(header, col + 1)
-    // }
-  }
+  // def readLines(header : Array[String], nlines : Long, row : Long = 0): List[Row] = {
+  //
+  //   // If the cursor is in the header, reposition the cursor at
+  //   // the beginning of the data block.
+  //   if (data.getPos < blockBoundaries._2) {
+  //     resetCursorAtData
+  //   }
+  //
+  //   val rowTypes = getRowTypes(header)
+  //   val ncols = rowTypes.size
+  //
+  //   if (row == nlines) {
+  //     Nil
+  //   } else {
+  //     Row.fromSeq(readLine(header)) +: readLines(header, nlines, row + 1)
+  //   }
+  //
+  //   // if (col == ncols) {
+  //   //   Nil
+  //   // } else {
+  //   //   getElement(rowTypes(col)) :: readLine(header, col + 1)
+  //   // }
+  // }
 
   def getRowTypes(header : Array[String], col : Int = 0): List[String] = {
     val headerNames = getHeaderNames(header)
@@ -348,6 +347,52 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
         new String(buffer, StandardCharsets.UTF_8).trim()
       }
       // case _ => throw new IOError("""Data type not understood!"""")
+    }
+  }
+
+  def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {
+    fitstype match {
+      case "1J" => {
+        ByteBuffer.wrap(subbuf, 0, 4).getInt()
+      }
+      case "1E" => {
+        ByteBuffer.wrap(subbuf, 0, 4).getFloat()
+      }
+      case "E" => {
+        ByteBuffer.wrap(subbuf, 0, 4).getFloat()
+      }
+      case "D" => {
+        ByteBuffer.wrap(subbuf, 0, 8).getDouble()
+      }
+      case x if fitstype.endsWith("A") => {
+        // Example 20A means string on 20 bytes
+        // val buffersize = x.slice(0, x.length - 1).toInt
+        // val buffer = new Array[Byte](buffersize)
+        // data.read(buffer, 0, buffersize)
+        new String(subbuf, StandardCharsets.UTF_8).trim()
+      }
+    }
+  }
+
+  def rowSplitLocations(col : Int = 0) : List[Int] = {
+    if (col == ncols) {
+      Nil
+    } else {
+      getSplitLocation(rowTypes(col)) :: rowSplitLocations(col + 1)
+    }
+  }
+
+  def getSplitLocation(fitstype : String) : Int = {
+    fitstype match {
+      case "1J" => 4
+      case "1E" => 4
+      case "E" => 4
+      case "B" => 4
+      case "D" => 8
+      case x if fitstype.endsWith("A") => {
+        // Example 20A means string on 20 bytes
+        x.slice(0, x.length - 1).toInt
+      }
     }
   }
 }

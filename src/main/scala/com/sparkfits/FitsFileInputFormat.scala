@@ -15,7 +15,7 @@
  */
 package com.sparkfits
 
-import org.apache.hadoop.io.{ObjectWritable, LongWritable}
+import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.mapreduce.{InputSplit, JobContext, RecordReader, TaskAttemptContext}
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.sql.Row
@@ -31,7 +31,7 @@ private[sparkfits] object FitsFileInputFormat {
   }
 }
 
-class FitsFileInputFormat extends FileInputFormat[LongWritable, List[Row]] {
+class FitsFileInputFormat extends FileInputFormat[LongWritable, List[List[_]]] {
   override def createRecordReader(split: InputSplit, context: TaskAttemptContext):
-    RecordReader[LongWritable, List[Row]] = new FitsRecordReader()
+    RecordReader[LongWritable, List[List[_]]] = new FitsRecordReader()
 }

@@ -15,47 +15,90 @@
  */
 package com.sparkfits
 
-import nom.tam.fits.{Fits, BinaryTableHDU}
+// Internal dependencies
 import com.sparkfits.SparkFitsUtil._
 import com.sparkfits.FitsBlock._
 
+// Java dependencies
 import java.io.IOException
+import java.nio.ByteBuffer
 
-import org.apache.hadoop.fs.FSDataInputStream
-import org.apache.hadoop.io.{BytesWritable, LongWritable, ObjectWritable}
+// Hadoop dependencies
+import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.io.compress.CompressionCodecFactory
 import org.apache.hadoop.mapreduce.{InputSplit, RecordReader, TaskAttemptContext}
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
 
+// Spark dependencies
 import org.apache.spark.sql.Row
 
-class FitsRecordReader extends RecordReader[LongWritable, List[Row]] {
+/**
+  * Class to handle the relationship between (driver/executors) & HDFS.
+  * The idea is to describe the split of the FITS file in block in HDFS.
+  * The data is first read in chunks of binary data, then converted to the correct
+  * type element by element, and finally grouped into rows.
+  *
+  * TODO: move the conversion step outside this class (because has no access
+  * FitsBlock). However one needs to know where the block starts and stops...
+  */
+class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
+
+  // Initialise mutable variables to be used by the executors
+  // Handle the HDFS block boundaries
   private var splitStart: Long = 0L
   private var splitEnd: Long = 0L
+
+  // Cursor position when reading the file
   private var currentPosition: Long = 0L
+
+  // Size of the records to read from the file
   private var recordLength: Int = 0
+
+  // Object to manipulate the fits file
   private var fB: FitsBlock = null
   private var header: Array[String] = null
   private var nrowsLong : Long = 0L
   private var rowSizeLong : Long = 0L
-  private var recordKey: LongWritable = null
-  // private var recordValue: List[Row] = null
-  private var recordValue: List[Row] = null
 
+  // The (key, value) used to create the RDD
+  private var recordKey: LongWritable = null
+  private var recordValue: List[List[_]] = null
+
+  // Intermediate variable to store binary data
+  private var recordValueBytes: Array[Byte] = null
+
+  /**
+    * Close the file after reading it.
+    */
   override def close() {
     if (fB.data != null) {
       fB.data.close()
     }
   }
 
+  /**
+    * Get the current Key.
+    * @return (LongWritable) key.
+    */
   override def getCurrentKey: LongWritable = {
     recordKey
   }
 
-  override def getCurrentValue: List[Row] = {
+  /**
+    * Get the current Value.
+    * @return (List[List[_]]) Value is a list of heterogeneous lists. It will
+    *   be converted to List[Row] later.
+    */
+  override def getCurrentValue: List[List[_]] = {
     recordValue
   }
 
+  /**
+    * Fancy way of getting a process bar. Useful to know whether you have
+    * time for a coffee and a cigarette before the next run.
+    *
+    * @return (Float) progression inside a block.
+    */
   override def getProgress: Float = {
     splitStart match {
       case x if x == splitEnd => 0.0.toFloat
@@ -65,52 +108,76 @@ class FitsRecordReader extends RecordReader[LongWritable, List[Row]] {
     }
   }
 
+  /**
+    * Core functionality. Here you initialize the data and its split, namely:
+    * the data file, the starting index of a block (byte index),
+    * the size of one record of data (byte), the ending index of a block (byte).
+    * Note that a block can be bigger than a record from the file.
+    *
+    * @param inputSplit : (InputSplit)
+    *   ??
+    * @param context : (TaskAttemptContext)
+    *   ??
+    *
+    */
   override def initialize(inputSplit: InputSplit, context: TaskAttemptContext) {
     // the file input
     val fileSplit = inputSplit.asInstanceOf[FileSplit]
 
     // the byte position this fileSplit starts at
-    // Need to move to an HDU and skip the header to jump to the data straight.
     splitStart = fileSplit.getStart
-
-    // splitEnd byte marker that the fileSplit ends at
 
     // the actual file we will be reading from
     val file = fileSplit.getPath
+
     // job configuration
     val conf = context.getConfiguration
+
     // check compression
     val codec = new CompressionCodecFactory(conf).getCodec(file)
     if (codec != null) {
       throw new IOException("FixedLengthRecordReader does not support reading compressed files")
     }
+
     // get the filesystem
-    // val fs = file.getFileSystem(conf)
-    // open the File --> Make Fits!
-    // fileInputStream = fs.open(file)
     fB = new FitsBlock(file, conf, 1)
+    val startstop = fB.BlockBoundaries
+
     header = fB.readHeader
 
     nrowsLong = fB.getNRows(header)
     rowSizeLong = fB.getSizeRowBytes(header)
 
-    // get the record length nlines
-    // recordLength = FitsFileInputFormat.getRecordLength(context)
-    // println(recordLength)
-    recordLength = 32 * 1024 * 1024 //100 * rowSizeLong.toInt
-    // recordLength = 20 * 1000
+    // splitEnd byte marker that the fileSplit ends at
+    // splitEnd = splitStart + fileSplit.getLength
+    splitEnd = if (nrowsLong * rowSizeLong < splitStart + fileSplit.getLength) {
+      nrowsLong * rowSizeLong
+    } else splitStart + fileSplit.getLength
 
-    splitEnd = splitStart + fileSplit.getLength//splitStart + fileSplit.getLength
-    // splitEnd = if (nrowsLong < splitStart + fileSplit.getLength) {
-    //   nrowsLong
-    // } else splitStart + fileSplit.getLength
+    // get the record length in Bytes (get integer!)
+    // recordLength = (1 * 1024 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt
+    recordLength = if ((1 * 1024 * 1024 / rowSizeLong.toInt) < nrowsLong.toInt) {
+      (1 * 1024 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt
+    } else {
+      nrowsLong.toInt * rowSizeLong.toInt
+    }
 
-    // println(splitStart + nrowsLong * rowSizeLong/69L)
-    // println(splitStart + fileSplit.getLength)
-    // set our current position
+    // set our starting block position
     currentPosition = splitStart
   }
 
+  /**
+    * Core functionality. Here you describe the relationship between the
+    * executors and HDFS. Schematically, when an executor asks to HDFS what to
+    * do, the executor executes nextKeyValue.
+    *
+    * @return (Boolean) true if the executor did not reach the end of the block.
+    * false otherwise.
+    *
+    * TODO: test a while loop instead of the current if. Moreover the boundaries
+    * are not correctly handled.
+    *
+    */
   override def nextKeyValue() : Boolean = {
     if (recordKey == null) {
       recordKey = new LongWritable()
@@ -119,41 +186,27 @@ class FitsRecordReader extends RecordReader[LongWritable, List[Row]] {
     // position the record starts divided by the record length
     recordKey.set(currentPosition / recordLength)
 
-    // the recordValue to place the Row into
-    // if (recordValue == null) {
-    //   // recordValue = new BytesWritable(new Array[Byte](recordLength))
-    //   // recordValue = new ObjectWritable(new Array[Object](recordLength))
-    //   // recordValue = Row.empty
-    //   recordValue = new Array[Byte](recordLength)
-    // }
+    // the recordValue to place the binary data into
+    if (recordValue == null) {
+      recordValueBytes = new Array[Byte](recordLength)
+    }
     // read a record if the currentPosition is less than the split end
     if (currentPosition < splitEnd) {
 
-      // Store the record
-      // recordValue = Array(hdu.getRow(currentPosition.toInt)
-      // .map {
-      //   case x : Array[_] => x.asInstanceOf[Array[_]](0)
-      //   case x : String => x
-      //   }
-      // // Map to Row to allow the conversion to DF later on
-      // ).map { x => Row.fromSeq(x)}.toList(0)
+      // Read a record of length `0 to recordLength - 1`
+      fB.data.read(recordValueBytes, 0, recordLength)
 
-      // recordValue = Row.fromSeq(fB.readLine(header))
-      // recordValue = fB.readLines(header, recordLength / rowSizeLong)
-      // println(recordValue.size)
-      // val buffer = recordValue.getBytes
-      // fB.data.readFully(buffer)
+      // Group by row
+      val it = recordValueBytes.grouped(rowSizeLong.toInt)
 
-      // fB.data.read(recordValue, 0, recordLength)
+      // Convert each row
+      val tmp = for {
+        i <- 0 to recordLength / rowSizeLong.toInt - 1
+      } yield (fB.readLineFromBuffer(it.next()))
 
-      recordValue = (for {
-        i <- 0 to recordLength / rowSizeLong.toInt
-
-      } yield(Row.fromSeq(fB.readLine(header)))).toList
-      //yield(Row.fromSeq(fB.readLine(header)))).toList
-      //yield(i)).toList
-
-      // recordValue.sliding(20)
+      // Back to List
+      // recordValue = tmp.map(x=>Row.fromSeq(x)).toList
+      recordValue = tmp.toList
 
       // update our current position
       currentPosition = currentPosition + recordLength
