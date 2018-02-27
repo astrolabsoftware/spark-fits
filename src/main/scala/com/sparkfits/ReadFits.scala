@@ -45,6 +45,9 @@ object ReadFits {
 
     val conf = new Configuration(spark.sparkContext.hadoopConfiguration)
 
+    // Store user options into conf
+    conf.setInt("HDU", 1)
+
     // test HEADER
     val path = new org.apache.hadoop.fs.Path(args(0).toString)
     val fs = path.getFileSystem(conf)

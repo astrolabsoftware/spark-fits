@@ -32,6 +32,29 @@ private[sparkfits] object FitsFileInputFormat {
 }
 
 class FitsFileInputFormat extends FileInputFormat[LongWritable, List[List[_]]] {
+
+  private var recordLength = -1
+
+  /**
+    * This input format overrides computeSplitSize() to make sure that each split
+    * only contains full records. Each InputSplit passed to FitsRecordReader
+    * will start at the first byte of a record, and the last byte will be
+    * the last byte of a record.
+    */
+  override def computeSplitSize(blockSize: Long, minSize: Long, maxSize: Long): Long = {
+    val defaultSize = super.computeSplitSize(blockSize, minSize, maxSize)
+    // If the default size is less than the length of a record, make it equal to it
+    // Otherwise, make sure the split size is as close to possible as the default size,
+    // but still contains a complete set of records, with the first record
+    // starting at the first byte in the split and the last
+    // record ending with the last byte.
+    if (defaultSize < recordLength) {
+      recordLength.toLong
+    } else {
+      (Math.floor(defaultSize / recordLength) * recordLength).toLong
+    }
+  }
+
   override def createRecordReader(split: InputSplit, context: TaskAttemptContext):
     RecordReader[LongWritable, List[List[_]]] = new FitsRecordReader()
 }

@@ -140,7 +140,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     }
 
     // get the filesystem
-    fB = new FitsBlock(file, conf, 1)
+    fB = new FitsBlock(file, conf, conf.get("HDU").toInt)
     val startstop = fB.BlockBoundaries
 
     header = fB.readHeader
