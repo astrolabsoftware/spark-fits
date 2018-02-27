@@ -119,8 +119,8 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     *
     * @param inputSplit : (InputSplit)
     *   ??
-    * @param context : (TaskAttemptContext)
-    *   ??
+    * @param context : (TaskAttemptContext) currently active context to
+    *   access contextual information about running tasks.
     *
     */
   override def initialize(inputSplit: InputSplit, context: TaskAttemptContext) {

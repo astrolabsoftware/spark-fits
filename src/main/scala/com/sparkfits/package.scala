@@ -256,7 +256,7 @@ package object fits {
       // can also specify it manually.
       val schema = userSpecifiedSchema.getOrElse(getSchema(fB))
 
-      // Distribute the data
+      // Distribute the table data
       val rdd = spark.sparkContext.newAPIHadoopFile(
         fn,
         classOf[FitsFileInputFormat],
