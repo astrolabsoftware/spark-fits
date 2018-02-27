@@ -60,21 +60,20 @@ object FitsLib {
     val fs = hdfsPath.getFileSystem(conf)
     val data = fs.open(hdfsPath)
 
-    // // Check that the HDU asked is below the max HDU index.
-    // val numberOfHdus = getNHDU
-    // println(numberOfHdus)
-    // val isHDUBelowMax = hduIndex < numberOfHdus
-    // isHDUBelowMax match {
-    //   case true => isHDUBelowMax
-    //   case false => throw new AssertionError(s"""
-    //     HDU number $hduIndex does not exist!
-    //     """)
-    // }
+    // Check that the HDU asked is below the max HDU index.
+    val numberOfHdus = getNHDU
+    val isHDUBelowMax = hduIndex < numberOfHdus
+    isHDUBelowMax match {
+      case true => isHDUBelowMax
+      case false => throw new AssertionError(s"""
+        HDU number $hduIndex does not exist!
+        """)
+    }
 
     // Compute the bound and initialise the cursor
     // indices (headerStart, dataStart, dataStop) in bytes.
     val blockBoundaries = BlockBoundaries
-    println(blockBoundaries)
+    // println(blockBoundaries)
 
     // Get the header and set the cursor to its start.
     val blockHeader = readHeader

@@ -127,9 +127,6 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     // the file input
     val fileSplit = inputSplit.asInstanceOf[FileSplit]
 
-    // the byte position this fileSplit starts at
-    splitStart = fileSplit.getStart
-
     // the actual file we will be reading from
     val file = fileSplit.getPath
 
@@ -142,6 +139,9 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     // Define the bytes indices of our block
     val startstop = fB.BlockBoundaries
 
+    // the byte position this fileSplit starts at
+    splitStart = fileSplit.getStart + startstop._2
+
     // Get the header
     header = fB.readHeader
 
@@ -150,8 +150,8 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     rowSizeLong = fB.getSizeRowBytes(header)
 
     // splitEnd byte marker that the fileSplit ends at
-    splitEnd = if (nrowsLong * rowSizeLong < splitStart + fileSplit.getLength) {
-      nrowsLong * rowSizeLong
+    splitEnd = if (startstop._2 + nrowsLong * rowSizeLong < splitStart + fileSplit.getLength) {
+      startstop._2 + nrowsLong * rowSizeLong
     } else splitStart + fileSplit.getLength
 
     // Get the record length in Bytes (get integer!). First look if the user
@@ -165,6 +165,9 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     } else {
       nrowsLong.toInt * rowSizeLong.toInt
     }
+
+    // Move to the starting binary index
+    fB.data.seek(splitStart)
 
     // set our starting block position
     currentPosition = splitStart
