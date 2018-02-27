@@ -23,8 +23,13 @@ import org.apache.spark.sql.types._
 
 import nom.tam.fits.{Fits, BinaryTableHDU}
 
-import com.sparkfits.FitsSchema._
+import com.sparkfits.FitsSchema_new._
 import com.sparkfits.SparkFitsUtil._
+
+import com.sparkfits.FitsBlock._
+import org.apache.hadoop.conf.Configuration
+import com.sparkfits.FitsFileInputFormat._
+import org.apache.hadoop.io.LongWritable
 
 package object fits {
 
@@ -75,6 +80,9 @@ package object fits {
   // implicit class FitsContext(spark : SparkSession) extends Serializable {
   implicit class FitsContext(spark : SparkSession) extends Serializable {
 
+    // Initialise Hadoop configuration
+    val conf = new Configuration(spark.sparkContext.hadoopConfiguration)
+
     // This will contain all options use to load the data
     private[sparkfits] val extraOptions = new scala.collection.mutable.HashMap[String, String]
 
@@ -110,7 +118,13 @@ package object fits {
       *   Value of the option.
       */
     def option(key: String, value: String) : FitsContext = {
+      // Update options
       FitsContext.this.extraOptions += (key -> value)
+
+      // Update the conf (redundant?)
+      conf.set(key, value)
+
+      // Return FitsContext
       FitsContext.this
     }
 
@@ -205,62 +219,6 @@ package object fits {
       */
     def load(fn : String) : DataFrame = {
 
-      // Check if we need to access HDFS
-      val isCluster = checkIsClusterMode(spark.sparkContext)
-      isCluster match {
-        // Local mode, we just read the fits data into a DF
-        case false => loadLocalDF(fn)
-        // Spark Standalone mode
-        case true => loadLocalDF(fn)
-      }
-    }
-
-    /** Load a DF data contained in parquet files stored in HDFS.
-      * The schema of the DataFrame is directly inferred from the
-      * header of the fits HDU. Can not use on standalone mode.
-      *
-      * @param fn : (String)
-      *  Path + filename of the fits file to be read
-      * @return : DataFrame
-      */
-    // def loadClusterDF(fn : String) : DataFrame = {
-    //   val hdfsPath = Try {
-    //     extraOptions("HDFSPath")
-    //   }
-    //   hdfsPath match {
-    //     case Success(value) => extraOptions("HDFSPath")
-    //     case Failure(e : NullPointerException) =>
-    //       throw new NullPointerException(e.getMessage)
-    //     case Failure(e : NoSuchElementException) =>
-    //       throw new NoSuchElementException("""
-    //       You did not specify the path to HDFS!
-    //         spark.readfits.option("HDFSPath", "hdfs://IP:port")
-    //         """)
-    //     case Failure(_) => println("Unknown Exception")
-    //   }
-    //
-    //   nameFile = fn.split("/").tail(1).split(".fits")(0)
-    //   val hdfsDataPath = extraOptions("HDFSPath") + "/" + nameFile
-    //   val hdfsHDUDataPath = hdfsDataPath + "/HDU" + extraOptions("HDU").toString
-    //   val exists = hdfsDirExists(hdfsHDUDataPath)
-    //
-    //   exists match {
-    //     // Folder exists, just load data
-    //     case true => spark.read.parquet(hdfsHDUDataPath)
-    //     // If not, need to transfer data to HDFS first, and then load
-    //     case false => convertFitsToParquet(spark, fn)
-    //   }
-    // }
-
-    /** Load a BinaryTableHDU data contained in a local FITS file a DataFrame.
-      * The schema of the DataFrame is directly inferred from the
-      * header of the fits HDU. Can not use on standalone mode.
-      *
-      * @param fn : (String)
-      *  Path + filename of the fits file to be read
-      * @return : DataFrame
-      */
-    def loadLocalDF(fn : String) : DataFrame = {
       // Check that you can read the data!
       val dataType = Try {
         extraOptions("datatype")
@@ -304,146 +262,163 @@ package object fits {
         case Failure(_) => println("Unknown Exception")
       }
 
-      // Open the file
-      val f = new Fits(fn)
+      val path = new org.apache.hadoop.fs.Path(fn)
+      val fs = path.getFileSystem(conf)
 
-      // Grab the desired HDU number
-      val indexHDU = extraOptions("HDU").toInt
+      val fB = new FitsBlock(path, conf, conf.get("HDU").toInt)
 
-      // Check that the user specifies table
-      val numberOfHdus = getNHdus(f)
-      val isHDUBelowMax = indexHDU < numberOfHdus
-      isHDUBelowMax match {
-        case true => isHDUBelowMax
-        case false => throw new AssertionError(s"""
-          HDU number $indexHDU does not exist!
-          """)
-      }
+      val header = fB.readHeader
+      // header.foreach(println)
 
-      // Access the meta data
-      val hdu = f.getHDU(indexHDU)
-      // Check you have indeed a table...
-      val dataHdu = Try {
-        hdu.asInstanceOf[BinaryTableHDU]
-      }
-      dataHdu match {
-        case Success(value) => value
-        case Failure(e : NullPointerException) => throw new NullPointerException(e.getMessage)
-        case Failure(e : ClassCastException) => throw new ClassCastException("""
-          Data cannot be cast to nom.tam.fits.BinaryTableHDU!
-          Are you really trying to access a table as you declared in the option?
-          """)
-        case Failure(_) => println("Unknown Exception")
-      }
-      val data = f.getHDU(indexHDU).asInstanceOf[BinaryTableHDU]
+      // // Open the file
+      // val f = new Fits(fn)
+      //
+      // // Grab the desired HDU number
+      // val indexHDU = extraOptions("HDU").toInt
+      //
+      // // Check that the user specifies table
+      // val numberOfHdus = getNHdus(f)
+      // val isHDUBelowMax = indexHDU < numberOfHdus
+      // isHDUBelowMax match {
+      //   case true => isHDUBelowMax
+      //   case false => throw new AssertionError(s"""
+      //     HDU number $indexHDU does not exist!
+      //     """)
+      // }
 
-      // Get number of rows
-      // WARNING: Need to modify nrows, because it could easily by > maxint = 2^31-1...
-      // Need also to open a PR to modify getRow to get Long... Moreover
-      // I would be able to simplify the stupid nom.tam structure... ;-)
-      val nrows : Int = data.getNRows
-      val nrowsLong : Long = getNRowsFromHeader(data)
-      val isNrowLowerThanMaxInt = nrows.toLong == nrowsLong
-      // val isBiggerThanInt = nrows > Int.MaxValue
-      isNrowLowerThanMaxInt match {
-        case true => isNrowLowerThanMaxInt
-        case false => throw new ClassCastException(s"""
-          The number of rows ($nrowsLong) is bigger than allowed by Int (2^31 - 1).
-          We currently do not support Long values due to dependency to nom.tam.fits.
-          We hope to fix that soon!
-          """)
-      }
-      val ncols : Int = data.getNCols
+      // // Access the meta data
+      // val hdu = f.getHDU(indexHDU)
+      // // Check you have indeed a table...
+      // val dataHdu = Try {
+      //   hdu.asInstanceOf[BinaryTableHDU]
+      // }
+      // dataHdu match {
+      //   case Success(value) => value
+      //   case Failure(e : NullPointerException) => throw new NullPointerException(e.getMessage)
+      //   case Failure(e : ClassCastException) => throw new ClassCastException("""
+      //     Data cannot be cast to nom.tam.fits.BinaryTableHDU!
+      //     Are you really trying to access a table as you declared in the option?
+      //     """)
+      //   case Failure(_) => println("Unknown Exception")
+      // }
+      // val data = f.getHDU(indexHDU).asInstanceOf[BinaryTableHDU]
 
-      // OMG! fileSize is easily bigger than an Int...
-      // Need to develop a test for that... Or put a warning?
-      val fileSize : Long = ncols.toLong * nrows.toLong * 8L
-      // println(fileSize)
-
-      // Partitioning of the data.
-      // nBlock can be passed as an option, otherwise
-      // assume each block has size 128 MB.
-      // If total file size < 128 MB, divide in 4 blocks.
-      val nBlock : Int = getNblocks(fileSize)
-
-      // Number of rows to yield per block of data
-      val sizeBlock : Int = (nrows / nBlock).toInt
+      // // Get number of rows
+      // // WARNING: Need to modify nrows, because it could easily by > maxint = 2^31-1...
+      // // Need also to open a PR to modify getRow to get Long... Moreover
+      // // I would be able to simplify the stupid nom.tam structure... ;-)
+      // val nrows : Int = data.getNRows
+      // val nrowsLong : Long = getNRowsFromHeader(data)
+      // val isNrowLowerThanMaxInt = nrows.toLong == nrowsLong
+      // // val isBiggerThanInt = nrows > Int.MaxValue
+      // isNrowLowerThanMaxInt match {
+      //   case true => isNrowLowerThanMaxInt
+      //   case false => throw new ClassCastException(s"""
+      //     The number of rows ($nrowsLong) is bigger than allowed by Int (2^31 - 1).
+      //     We currently do not support Long values due to dependency to nom.tam.fits.
+      //     We hope to fix that soon!
+      //     """)
+      // }
+      // val ncols : Int = data.getNCols
+      //
+      // // OMG! fileSize is easily bigger than an Int...
+      // // Need to develop a test for that... Or put a warning?
+      // val fileSize : Long = ncols.toLong * nrows.toLong * 8L
+      // // println(fileSize)
+      //
+      // // Partitioning of the data.
+      // // nBlock can be passed as an option, otherwise
+      // // assume each block has size 128 MB.
+      // // If total file size < 128 MB, divide in 4 blocks.
+      // val nBlock : Int = getNblocks(fileSize)
+      //
+      // // Number of rows to yield per block of data
+      // val sizeBlock : Int = (nrows / nBlock).toInt
 
       // Get the schema. By default it is built from the header, but the user
       // can also specify it manually.
-      val schema = userSpecifiedSchema.getOrElse(getSchema(data))
+      val schema = userSpecifiedSchema.getOrElse(getSchema(fB))
 
-      // Check the header
-      if (extraOptions.contains("printHDUHeader")) {
-        if (extraOptions("printHDUHeader").toBoolean) {
-          val it = data.getHeader.iterator
-          val myheader = getMyHeader(it, "")
-          println(s"+------ HEADER (HDU=$indexHDU) ------+")
-          myheader.split(",").foreach(println)
-          println("+----------------------------+")
-        }
-      }
+      // // Check the header
+      // if (extraOptions.contains("printHDUHeader")) {
+      //   if (extraOptions("printHDUHeader").toBoolean) {
+      //     val it = data.getHeader.iterator
+      //     val myheader = getMyHeader(it, "")
+      //     println(s"+------ HEADER (HDU=$indexHDU) ------+")
+      //     myheader.split(",").foreach(println)
+      //     println("+----------------------------+")
+      //   }
+      // }
 
       // Distribute the data
-      val rdd = spark.sparkContext.parallelize(0 to nBlock - 1, nBlock)
-        .map(blockid => (blockid, new Fits(fn) with Serializable ))
-        .map(x => yieldRows(x._2, indexHDU, x._1, sizeBlock, nrows))
-        .flatMap(x => x)
+      // val rdd = spark.sparkContext.parallelize(0 to nBlock - 1, nBlock)
+      //   .map(blockid => (blockid, new Fits(fn) with Serializable ))
+      //   .map(x => yieldRows(x._2, indexHDU, x._1, sizeBlock, nrows))
+      //   .flatMap(x => x)
+      // FitsRDD
+      val rdd = spark.sparkContext.newAPIHadoopFile(
+        fn,
+        classOf[FitsFileInputFormat],
+        classOf[LongWritable],
+        classOf[List[List[_]]],
+        conf)
+          .flatMap(x => x._2)
+          .map(x => Row.fromSeq(x))
 
       // Return DataFrame with Schema
       spark.createDataFrame(rdd, schema)
     }
 
-    /**
-      * Returns a block of rows as a sequence of sql.Row.
-      * Useful to turn RDD into DF.
-      * /!\ return tuple of Any (you need a conversion later on,
-      * providing the schema for example)
-      *
-      * @param x : (nom.tam.fits.Fits)
-      *   Instance of Fits.
-      * @param indexHDU : (Int)
-      *   The HDU to be read.
-      * @param offset : (int)
-      *   Initial position of the cursor (first row)
-      * @param sizeBlock : (Int)
-      *   Number of row to read.
-      * @param nRowMax : (Int)
-      *   Number total of rows in the HDU.
-      */
-    private[sparkfits] def yieldRows(x : Fits,
-        indexHDU : Int,
-        offset : Int,
-        sizeBlock : Int,
-        nRowMax : Int) = {
-
-      // Start of the block
-      val start = offset * sizeBlock
-
-      // End of the block
-      val stop_tmp = (offset + 1) * sizeBlock - 1
-      val stop = if (stop_tmp < nRowMax - 1) {
-        stop_tmp
-      } else {
-        nRowMax - 1
-      }
-
-      // Yield rows
-      for {
-        i <- start to stop
-      } yield (
-        // Get the data as Array[Table]
-        Array(x.getHDU(indexHDU).asInstanceOf[BinaryTableHDU]
-        // Get ith row as an Array[Object]
-        .getRow(i)
-        // Get each element inside Objects
-        // /!\ Strings are not returned as Object...
-        .map {
-          case x : Array[_] => x.asInstanceOf[Array[_]](0)
-          case x : String => x
-        }
-      // Map to Row to allow the conversion to DF later on
-      ).map { x => Row.fromSeq(x)}.toList(0)) // Need a better handling of that...
-    }
+    // /**
+    //   * Returns a block of rows as a sequence of sql.Row.
+    //   * Useful to turn RDD into DF.
+    //   * /!\ return tuple of Any (you need a conversion later on,
+    //   * providing the schema for example)
+    //   *
+    //   * @param x : (nom.tam.fits.Fits)
+    //   *   Instance of Fits.
+    //   * @param indexHDU : (Int)
+    //   *   The HDU to be read.
+    //   * @param offset : (int)
+    //   *   Initial position of the cursor (first row)
+    //   * @param sizeBlock : (Int)
+    //   *   Number of row to read.
+    //   * @param nRowMax : (Int)
+    //   *   Number total of rows in the HDU.
+    //   */
+    // private[sparkfits] def yieldRows(x : Fits,
+    //     indexHDU : Int,
+    //     offset : Int,
+    //     sizeBlock : Int,
+    //     nRowMax : Int) = {
+    //
+    //   // Start of the block
+    //   val start = offset * sizeBlock
+    //
+    //   // End of the block
+    //   val stop_tmp = (offset + 1) * sizeBlock - 1
+    //   val stop = if (stop_tmp < nRowMax - 1) {
+    //     stop_tmp
+    //   } else {
+    //     nRowMax - 1
+    //   }
+    //
+    //   // Yield rows
+    //   for {
+    //     i <- start to stop
+    //   } yield (
+    //     // Get the data as Array[Table]
+    //     Array(x.getHDU(indexHDU).asInstanceOf[BinaryTableHDU]
+    //     // Get ith row as an Array[Object]
+    //     .getRow(i)
+    //     // Get each element inside Objects
+    //     // /!\ Strings are not returned as Object...
+    //     .map {
+    //       case x : Array[_] => x.asInstanceOf[Array[_]](0)
+    //       case x : String => x
+    //     }
+    //   // Map to Row to allow the conversion to DF later on
+    //   ).map { x => Row.fromSeq(x)}.toList(0)) // Need a better handling of that...
+    // }
   }
 }
