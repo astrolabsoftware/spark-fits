@@ -23,15 +23,14 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.LongWritable
 
 // Spark import
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 
 // Internal import
-import com.sparkfits.FitsSchema_new._
-import com.sparkfits.FitsBlock._
+import com.sparkfits.FitsSchema._
+import com.sparkfits.FitsLib.FitsBlock
 import com.sparkfits.FitsFileInputFormat._
 
 package object fits {

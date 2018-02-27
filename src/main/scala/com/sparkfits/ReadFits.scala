@@ -15,21 +15,12 @@
  */
 package com.sparkfits
 
-import java.nio.ByteBuffer
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.SparkContext
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.sql.Row
-import org.apache.hadoop.io.{ObjectWritable, LongWritable}
 
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
 import com.sparkfits.fits._
-import com.sparkfits.FitsFileInputFormat._
-import com.sparkfits.FitsSchema_new._
-import com.sparkfits.SparkFitsUtil._
-import com.sparkfits.FitsBlock._
 
 object ReadFits {
   // Set to Level.WARN is you want verbosity
@@ -53,6 +44,7 @@ object ReadFits {
 
       df.show()
       df.printSchema()
+      println(df.count())
     }
   }
 }

@@ -15,10 +15,6 @@
  */
 package com.sparkfits
 
-// Internal dependencies
-import com.sparkfits.SparkFitsUtil._
-import com.sparkfits.FitsBlock._
-
 // Java dependencies
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -28,12 +24,16 @@ import scala.util.{Try, Success, Failure}
 
 // Hadoop dependencies
 import org.apache.hadoop.io.LongWritable
-import org.apache.hadoop.io.compress.CompressionCodecFactory
-import org.apache.hadoop.mapreduce.{InputSplit, RecordReader, TaskAttemptContext}
+import org.apache.hadoop.mapreduce.InputSplit
+import org.apache.hadoop.mapreduce.RecordReader
+import org.apache.hadoop.mapreduce.TaskAttemptContext
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
 
 // Spark dependencies
 import org.apache.spark.sql.Row
+
+// Internal dependencies
+import com.sparkfits.FitsLib.FitsBlock
 
 /**
   * Class to handle the relationship between (driver/executors) & HDFS.

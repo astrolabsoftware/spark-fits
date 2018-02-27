@@ -17,12 +17,12 @@ package com.sparkfits
 
 import org.apache.spark.sql.types._
 
-import com.sparkfits.FitsBlock._
+import com.sparkfits.FitsLib.FitsBlock
 
 /**
   * Object to handle the conversion from a HDU header to a DataFrame Schema.
   */
-object FitsSchema_new {
+object FitsSchema {
 
   /**
     * Conversion from fits type to DataFrame Schema type.

@@ -22,7 +22,7 @@ import nom.tam.fits.BinaryTableHDU
 /**
   * Object to handle the conversion from a HDU header to a DataFrame Schema.
   */
-object FitsSchema {
+object FitsSchema_old {
 
   /**
     * Conversion from fits type to DataFrame Schema type.
