@@ -21,7 +21,6 @@ import org.apache.spark.SparkContext
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.Row
 import org.apache.hadoop.io.{ObjectWritable, LongWritable}
-import nom.tam.fits.{Fits, BinaryTableHDU}
 
 import org.apache.log4j.Level
 import org.apache.log4j.Logger

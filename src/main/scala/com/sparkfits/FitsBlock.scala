@@ -21,7 +21,6 @@ import org.apache.hadoop.conf.Configuration
 import java.io.EOFException
 import java.io.IOError
 import java.nio.charset.StandardCharsets
-import nom.tam.util.{Cursor, AsciiFuncs}
 import org.apache.spark.sql.Row
 import scala.util.{Try, Success, Failure}
 import scala.collection.mutable.HashMap
@@ -217,8 +216,8 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
       }
       stop += len
 
-      // Bytes to String
-      header(pos) = AsciiFuncs.asciiString(buffer)
+      // Bytes to Strings
+      header(pos) = new String(buffer, StandardCharsets.UTF_8)
 
       // Increment the line
       pos += 1

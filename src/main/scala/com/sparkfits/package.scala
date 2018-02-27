@@ -31,7 +31,6 @@ import org.apache.spark.sql.types._
 
 // Internal import
 import com.sparkfits.FitsSchema_new._
-// import com.sparkfits.SparkFitsUtil._
 import com.sparkfits.FitsBlock._
 import com.sparkfits.FitsFileInputFormat._
 
