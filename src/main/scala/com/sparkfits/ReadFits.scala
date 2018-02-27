@@ -43,59 +43,17 @@ object ReadFits {
 
   def main(args : Array[String]) = {
 
-    val conf = new Configuration(spark.sparkContext.hadoopConfiguration)
+    // Loop over the two HDU of the test file
+    for (hdu <- 1 to 2) {
+      val df = spark.readfits
+        .option("datatype", "table")
+        .option("HDU", hdu)
+        .option("printHDUHeader", true)
+        .option("nBlock", 100)
+        .load(args(0).toString)
 
-    // Store user options into conf
-    conf.setInt("HDU", 1)
-
-    // test HEADER
-    val path = new org.apache.hadoop.fs.Path(args(0).toString)
-    val fs = path.getFileSystem(conf)
-
-    val fB = new FitsBlock(path, conf, 1)
-
-    val header = fB.readHeader
-    header.foreach(println)
-
-    val startstop = fB.BlockBoundaries
-    println(startstop)
-
-    val rowTypes = fB.getRowTypes(header)
-    println(rowTypes)
-
-    for (i <- 0 to 10) {
-      println(fB.readLine(0))
+      df.show()
+      df.printSchema()
     }
-
-    // FitsRDD
-    val rdd = spark.sparkContext.newAPIHadoopFile(args(0).toString, classOf[FitsFileInputFormat],
-      classOf[LongWritable], classOf[List[List[_]]], conf)
-        .flatMap(x=>x._2)
-        .map(x => Row.fromSeq(x))
-
-    println("Partitions = " + rdd.getNumPartitions.toString)
-    println("Count = " + rdd.count())
-
-    val schema = getSchema(fB)
-    println(schema)
-
-    // To DataFrame
-    val df = spark.createDataFrame(rdd, schema)
-    df.printSchema()
-    df.show()
-    // println(df.count())
-    // df.take(1000)
-    // df.take(10)
-    // for (hdu <- 1 to 2) {
-    //   val df = spark.readfits
-    //     .option("datatype", "table")
-    //     .option("HDU", hdu)
-    //     .option("printHDUHeader", true)
-    //     .option("nBlock", 100)
-    //     .load(args(0).toString)
-    //
-    //   df.show()
-    //   df.printSchema()
-    // }
   }
 }

@@ -53,7 +53,6 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
   val ncols = rowTypes.size
 
   val splitLocations = (0 :: rowSplitLocations(0)).scan(0)(_ +_).tail
-  println(splitLocations)
 
   /**
     * Return the indices of the first and last bytes of the HDU.
@@ -89,11 +88,18 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
       }.getOrElse(0L)
 
       // Store the final offset
-      data_stop = data.getPos + datalen
+      // FITS is made of blocks of size 2880 bytes, so we might need to
+      // pad to jump from the end of the data to the next header.
+      data_stop = if ((data.getPos + datalen) % HEADER_SIZE_BYTES == 0) {
+        data.getPos + datalen
+      } else {
+        data.getPos + datalen + HEADER_SIZE_BYTES -  (data.getPos + datalen) % HEADER_SIZE_BYTES
+      }
 
       // Move to the another HDU if needed
       hdu_tmp = hdu_tmp + 1
       data.seek(data_stop)
+      
     } while (hdu_tmp < hduIndex + 1 )
 
     // Reposition the cursor at the beginning of the block
@@ -361,14 +367,15 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
       case "E" => {
         ByteBuffer.wrap(subbuf, 0, 4).getFloat()
       }
+      case "L" => {
+        // 1 Byte containing the ASCII char T(rue) or F(alse).
+        subbuf(0).toChar == 'T'
+      }
       case "D" => {
         ByteBuffer.wrap(subbuf, 0, 8).getDouble()
       }
       case x if fitstype.endsWith("A") => {
         // Example 20A means string on 20 bytes
-        // val buffersize = x.slice(0, x.length - 1).toInt
-        // val buffer = new Array[Byte](buffersize)
-        // data.read(buffer, 0, buffersize)
         new String(subbuf, StandardCharsets.UTF_8).trim()
       }
     }
@@ -388,6 +395,7 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
       case "1E" => 4
       case "E" => 4
       case "B" => 4
+      case "L" => 1
       case "D" => 8
       case x if fitstype.endsWith("A") => {
         // Example 20A means string on 20 bytes
