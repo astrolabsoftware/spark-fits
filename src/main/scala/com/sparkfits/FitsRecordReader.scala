@@ -23,6 +23,9 @@ import com.sparkfits.FitsBlock._
 import java.io.IOException
 import java.nio.ByteBuffer
 
+// Scala dependencies
+import scala.util.{Try, Success, Failure}
+
 // Hadoop dependencies
 import org.apache.hadoop.io.LongWritable
 import org.apache.hadoop.io.compress.CompressionCodecFactory
@@ -133,31 +136,32 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     // job configuration
     val conf = context.getConfiguration
 
-    // check compression
-    val codec = new CompressionCodecFactory(conf).getCodec(file)
-    if (codec != null) {
-      throw new IOException("FixedLengthRecordReader does not support reading compressed files")
-    }
-
-    // get the filesystem
+    // Initialise our block (header + data)
     fB = new FitsBlock(file, conf, conf.get("HDU").toInt)
+
+    // Define the bytes indices of our block
     val startstop = fB.BlockBoundaries
 
+    // Get the header
     header = fB.readHeader
 
+    // Get the number of rows and the size (B) of one row.
     nrowsLong = fB.getNRows(header)
     rowSizeLong = fB.getSizeRowBytes(header)
 
     // splitEnd byte marker that the fileSplit ends at
-    // splitEnd = splitStart + fileSplit.getLength
     splitEnd = if (nrowsLong * rowSizeLong < splitStart + fileSplit.getLength) {
       nrowsLong * rowSizeLong
     } else splitStart + fileSplit.getLength
 
-    // get the record length in Bytes (get integer!)
-    // recordLength = (1 * 1024 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt
-    recordLength = if ((1 * 1024 * 1024 / rowSizeLong.toInt) < nrowsLong.toInt) {
-      (1 * 1024 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt
+    // Get the record length in Bytes (get integer!). First look if the user
+    // specify a size for the recordLength. If not, set it to 1MB.
+    val recordLengthFromUser = Try{conf.get("recordLength").toInt}
+      .getOrElse((1 * 1024 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt)
+
+    // Make sure that the recordLength is not bigger than the block size!
+    recordLength = if ((recordLengthFromUser / rowSizeLong.toInt) < nrowsLong.toInt) {
+      recordLengthFromUser
     } else {
       nrowsLong.toInt * rowSizeLong.toInt
     }
@@ -214,7 +218,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
       // return true
       return true
     }
-    println(s"Start: $splitStart EndPosition : " + currentPosition.toString)
+    // println(s"Start: $splitStart EndPosition : " + currentPosition.toString)
     false
   }
 }

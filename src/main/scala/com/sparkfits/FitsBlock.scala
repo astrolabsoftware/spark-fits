@@ -42,6 +42,16 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
   val fs = hdfsPath.getFileSystem(conf)
   val data = fs.open(hdfsPath)
 
+  // Check that the HDU asked is below the max.
+  val numberOfHdus = getNHDU
+  val isHDUBelowMax = hduIndex < numberOfHdus
+  isHDUBelowMax match {
+    case true => isHDUBelowMax
+    case false => throw new AssertionError(s"""
+      HDU number $hduIndex does not exist!
+      """)
+  }
+
   // Compute the bound and initialise the cursor
   // indices (headerStart, dataStart, dataStop) in bytes.
   val blockBoundaries = BlockBoundaries
@@ -57,7 +67,7 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
   /**
     * Return the indices of the first and last bytes of the HDU.
     *
-    * @return (data_start, data_stop) = (Long, Long), the bytes indices of the HDU.
+    * @return (data_start, data_stop) = (Long, Long, Long), the bytes indices of the HDU.
     *
     */
   def BlockBoundaries : (Long, Long, Long) = {
@@ -99,7 +109,7 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
       // Move to the another HDU if needed
       hdu_tmp = hdu_tmp + 1
       data.seek(data_stop)
-      
+
     } while (hdu_tmp < hduIndex + 1 )
 
     // Reposition the cursor at the beginning of the block
@@ -107,6 +117,57 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
 
     // Return boundaries (included)
     (header_start, data_start, data_stop)
+  }
+
+  /**
+    * Return the number of HDUs in the file.
+    *
+    * @return (Int) the number of HDU.
+    *
+    */
+  def getNHDU : Int = {
+
+    // Initialise the file
+    data.seek(0)
+    var hdu_tmp = 0
+
+    // Initialise the boundaries
+    var data_stop : Long = 0
+    var e : Boolean = true
+
+    do {
+
+      // Get the header (and move after it)
+      // Could be better handled with Try/Success/Failure.
+      val header = Try{readHeader}.getOrElse(Array[String]())
+
+      // If the header cannot be read,
+      e = if (header.size == 0) {
+        false
+      } else true
+
+      // Size of the data block in Bytes.
+      // Skip Data if None (typically HDU=0)
+      val datalen = Try {
+        getNRows(header) * getSizeRowBytes(header)
+      }.getOrElse(0L)
+
+      // Store the final offset
+      // FITS is made of blocks of size 2880 bytes, so we might need to
+      // pad to jump from the end of the data to the next header.
+      data_stop = if ((data.getPos + datalen) % HEADER_SIZE_BYTES == 0) {
+        data.getPos + datalen
+      } else {
+        data.getPos + datalen + HEADER_SIZE_BYTES -  (data.getPos + datalen) % HEADER_SIZE_BYTES
+      }
+
+      // Move to the another HDU if needed
+      hdu_tmp = hdu_tmp + 1
+      data.seek(data_stop)
+
+    } while (e)
+
+    hdu_tmp - 1
   }
 
   /**
@@ -191,30 +252,6 @@ class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
       getElementFromBuffer(buf.slice(splitLocations(col), splitLocations(col+1)), rowTypes(col)) :: readLineFromBuffer(buf, col + 1)
     }
   }
-
-  // def readLines(header : Array[String], nlines : Long, row : Long = 0): List[Row] = {
-  //
-  //   // If the cursor is in the header, reposition the cursor at
-  //   // the beginning of the data block.
-  //   if (data.getPos < blockBoundaries._2) {
-  //     resetCursorAtData
-  //   }
-  //
-  //   val rowTypes = getRowTypes(header)
-  //   val ncols = rowTypes.size
-  //
-  //   if (row == nlines) {
-  //     Nil
-  //   } else {
-  //     Row.fromSeq(readLine(header)) +: readLines(header, nlines, row + 1)
-  //   }
-  //
-  //   // if (col == ncols) {
-  //   //   Nil
-  //   // } else {
-  //   //   getElement(rowTypes(col)) :: readLine(header, col + 1)
-  //   // }
-  // }
 
   def getRowTypes(header : Array[String], col : Int = 0): List[String] = {
     val headerNames = getHeaderNames(header)

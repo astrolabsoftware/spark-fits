@@ -49,7 +49,7 @@ object ReadFits {
         .option("datatype", "table")
         .option("HDU", hdu)
         .option("printHDUHeader", true)
-        .option("nBlock", 100)
+        .option("recordLength", 1 * 1024 * 1024)
         .load(args(0).toString)
 
       df.show()

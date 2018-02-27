@@ -63,7 +63,6 @@ object FitsSchema_new {
   def ListOfStruct(fB : FitsBlock, col : Int) : List[StructField] = {
     fB.resetCursorAtHeader
     val header = fB.readHeader
-    println(fB.data.getPos)
     val colmax = fB.getNCols(header)
     if (col == colmax)
       Nil
