@@ -39,12 +39,31 @@ object ReadFits {
         .option("datatype", "table")
         .option("HDU", hdu)
         .option("printHDUHeader", true)
-        .option("recordLength", 1 * 1024 * 1024)
+        .option("recordLength", 8 * 1024 * 1024)
         .load(args(0).toString)
 
       df.show()
       df.printSchema()
-      println(df.count())
+      import spark.sqlContext.implicits._
+      import org.apache.spark.sql.functions._
+      // println(df.select(col("RA")).map(x => x(0).asInstanceOf[Float]).collect().deep)
+      val c = df.select(col("RA")).count().toInt
+      val c_d = df.select(col("RA")).distinct.count().toInt
+      val s = df.select(col("RA")).rdd.map(_(0).asInstanceOf[Float]).reduce(_+_)
+
+      // val c = df.select(col("RA")).count().toInt
+
+      println("Total count: " + c.toString)
+      println("Unique count: " + c_d.toString)
+      println("Total sum: " + s.toString)
+
+      // println(df.select(col("RA")).rdd.map(_(0).asInstanceOf[Float]).collect().deep)
+      // println(df.select(col("RA")).rdd.map(_(0).asInstanceOf[Double]).collect().deep.slice(c-100, c))
+      // println(df.select(col("RA")).filter(x => x(0).asInstanceOf[Float] > 3.14).collect().deep)
+      // println(df.select(col("RA")).filter(x => x(0).asInstanceOf[Double] < 0).collect().deep)
+      // println(df.select(col("RA")).distinct().count())
+      // println(df.select("target").distinct.count())
+      // println(df.select(col("RA")).rdd.map(_(0).asInstanceOf[Double]).reduce(_+_))
     }
   }
 }

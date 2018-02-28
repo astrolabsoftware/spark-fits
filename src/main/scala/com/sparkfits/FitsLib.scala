@@ -92,11 +92,11 @@ object FitsLib {
     /**
       * Return the indices of the first and last bytes of the HDU.
       *
-      * @return (data_start, data_stop) = (Long, Long, Long),
+      * @return (header_start, data_start, data_stop, block_stop) = (Long, Long, Long, Long),
       *   the bytes indices of the HDU.
       *
       */
-    def BlockBoundaries : (Long, Long, Long) = {
+    def BlockBoundaries : (Long, Long, Long, Long) = {
 
       // Initialise the cursor position at the beginning of the file
       data.seek(0)
@@ -106,6 +106,7 @@ object FitsLib {
       var header_start : Long = 0
       var data_start : Long = 0
       var data_stop : Long = 0
+      var block_stop : Long = 0
 
       // Loop over HDUs, and stop at the desired one.
       do {
@@ -125,18 +126,21 @@ object FitsLib {
           getNRows(localHeader) * getSizeRowBytes(localHeader)
         }.getOrElse(0L)
 
+        // Where the actual data stopped
+        data_stop = data.getPos + datalen
+
         // Store the final offset
         // FITS is made of blocks of size 2880 bytes, so we might need to
         // pad to jump from the end of the data to the next header.
-        data_stop = if ((data.getPos + datalen) % HEADER_SIZE_BYTES == 0) {
-          data.getPos + datalen
+        block_stop = if ((data.getPos + datalen) % HEADER_SIZE_BYTES == 0) {
+          data_stop
         } else {
-          data.getPos + datalen + HEADER_SIZE_BYTES -  (data.getPos + datalen) % HEADER_SIZE_BYTES
+          data_stop + HEADER_SIZE_BYTES -  (data_stop) % HEADER_SIZE_BYTES
         }
 
         // Move to the another HDU if needed
         hdu_tmp = hdu_tmp + 1
-        data.seek(data_stop)
+        data.seek(block_stop)
 
       } while (hdu_tmp < hduIndex + 1 )
 
@@ -144,7 +148,7 @@ object FitsLib {
       data.seek(header_start)
 
       // Return boundaries (included)
-      (header_start, data_start, data_stop)
+      (header_start, data_start, data_stop, block_stop)
     }
 
     /**

@@ -62,6 +62,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
   private var header: Array[String] = null
   private var nrowsLong : Long = 0L
   private var rowSizeLong : Long = 0L
+  private var startstop : (Long, Long, Long, Long) = (0L, 0L, 0L, 0L)
 
   // The (key, value) used to create the RDD
   private var recordKey: LongWritable = null
@@ -137,10 +138,15 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     fB = new FitsBlock(file, conf, conf.get("HDU").toInt)
 
     // Define the bytes indices of our block
-    val startstop = fB.BlockBoundaries
+    startstop = fB.BlockBoundaries
+    println("startstop: ", startstop)
 
     // the byte position this fileSplit starts at
+    // Add the offset of the block
     splitStart = fileSplit.getStart + startstop._2
+    splitStart = if (splitStart > startstop._3) {
+      startstop._3
+    } else splitStart
 
     // Get the header
     header = fB.readHeader
@@ -150,26 +156,47 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     rowSizeLong = fB.getSizeRowBytes(header)
 
     // splitEnd byte marker that the fileSplit ends at
-    splitEnd = if (startstop._2 + nrowsLong * rowSizeLong < splitStart + fileSplit.getLength) {
-      startstop._2 + nrowsLong * rowSizeLong
+    splitEnd = if (splitStart + fileSplit.getLength > startstop._3) {
+      startstop._3
     } else splitStart + fileSplit.getLength
+
+    println(s"BLOCK: Start: $splitStart, Stop: $splitEnd")
 
     // Get the record length in Bytes (get integer!). First look if the user
     // specify a size for the recordLength. If not, set it to 1MB.
     val recordLengthFromUser = Try{conf.get("recordLength").toInt}
       .getOrElse((1 * 1024 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt)
 
+    // Seek for a round number of lines
+    recordLength = (recordLengthFromUser / rowSizeLong.toInt) * rowSizeLong.toInt
+
+
+    // recordLength = if ((recordLengthFromUser / rowSizeLong.toInt) < nrowsLong.toInt) {
+    //   (recordLengthFromUser / rowSizeLong.toInt) * rowSizeLong.toInt
+    // } else {
+    //   nrowsLong.toInt * rowSizeLong.toInt
+    // }
+
     // Make sure that the recordLength is not bigger than the block size!
-    recordLength = if ((recordLengthFromUser / rowSizeLong.toInt) < nrowsLong.toInt) {
-      recordLengthFromUser
+    // This is a guard for small files
+    recordLength = if ((recordLength / rowSizeLong.toInt)  < nrowsLong.toInt) {
+      // OK less than the total number of lines
+      recordLength
     } else {
+      // Small files, one record is the entire file.
       nrowsLong.toInt * rowSizeLong.toInt
     }
 
+    println(s"recordLength: $recordLength")
+
     // Move to the starting binary index
+    // This should be the getStart of the system offseted by the start
+    // of the data block.
     fB.data.seek(splitStart)
 
     // set our starting block position
+    // This should be the getStart of the system offseted by the start
+    // of the data block.
     currentPosition = splitStart
   }
 
@@ -186,22 +213,53 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     *
     */
   override def nextKeyValue() : Boolean = {
+
+    // Close the file if start is above end!
+    if (splitStart > splitEnd) {
+      fB.data.close()
+      return false
+    }
+
+    // Close the file if we went outside the block!
+    if (fB.data.getPos > startstop._3) {
+      fB.data.close()
+      return false
+    }
+
+    // Initialise the key of the HDFS block
     if (recordKey == null) {
       recordKey = new LongWritable()
     }
+
     // the key is a linear index of the record, given by the
     // position the record starts divided by the record length
     recordKey.set(currentPosition / recordLength)
 
-    // the recordValue to place the binary data into
-    if (recordValue == null) {
-      recordValueBytes = new Array[Byte](recordLength)
+    // If recordLength goes above the end of the data block
+    recordLength = if ((startstop._3 - fB.data.getPos) < recordLength.toLong) {
+        (startstop._3 - fB.data.getPos).toInt
+    } else {
+        recordLength
     }
+
+    // If recordLength goes above splitEnd
+    recordLength = if ((splitEnd - currentPosition) < recordLength.toLong) {
+        (splitEnd - currentPosition).toInt
+    } else {
+        recordLength
+    }
+
+    // the recordValue to place the binary data into
+    // if (recordValue == null) {
+    //     recordValueBytes = new Array[Byte](recordLength)
+    // }
+    recordValueBytes = new Array[Byte](recordLength)
+
     // read a record if the currentPosition is less than the split end
     if (currentPosition < splitEnd) {
-
       // Read a record of length `0 to recordLength - 1`
-      fB.data.read(recordValueBytes, 0, recordLength)
+      fB.data.readFully(recordValueBytes, 0, recordLength)
+      println("pos: ", fB.data.getPos)
 
       // Group by row
       val it = recordValueBytes.grouped(rowSizeLong.toInt)
@@ -217,11 +275,13 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
 
       // update our current position
       currentPosition = currentPosition + recordLength
+      // println("position (after):" + fB.data.getPos)
 
       // return true
       return true
     }
-    // println(s"Start: $splitStart EndPosition : " + currentPosition.toString)
+    // println(s"EndPosition: $currentPosition (splitEnd: $splitEnd)")
+    // println("+-------------------------------------+")
     false
   }
 }
