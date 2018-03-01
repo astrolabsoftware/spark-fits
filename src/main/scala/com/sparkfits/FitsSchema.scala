@@ -39,12 +39,20 @@ object FitsSchema {
     */
   def ReadMyType(name : String, fitstype : String, isNullable : Boolean = true): StructField = {
     fitstype match {
-      case "1J" => StructField(name, IntegerType, isNullable)
-      case "1E" => StructField(name, FloatType, isNullable)
-      case "E" => StructField(name, FloatType, isNullable)
-      case "L" => StructField(name, BooleanType, isNullable)
-      case "D" => StructField(name, DoubleType, isNullable)
-      case _ => StructField(name, StringType, isNullable)
+      case x if fitstype.contains("I") => StructField(name, ShortType, isNullable)
+      case x if fitstype.contains("J") => StructField(name, IntegerType, isNullable)
+      case x if fitstype.contains("K") => StructField(name, LongType, isNullable)
+      case x if fitstype.contains("E") => StructField(name, FloatType, isNullable)
+      case x if fitstype.contains("D") => StructField(name, DoubleType, isNullable)
+      case x if fitstype.contains("L") => StructField(name, BooleanType, isNullable)
+      case x if fitstype.contains("A") => StructField(name, StringType, isNullable)
+      case _ => {
+        println(s"""
+            Cannot infer type $fitstype from the header!
+            See com.sparkfits.FitsSchema.scala
+            """)
+        StructField(name, StringType, isNullable)
+      }
     }
   }
 
