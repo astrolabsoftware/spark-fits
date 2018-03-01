@@ -659,7 +659,7 @@ object FitsLib {
       * @param fitstype : (String)
       *   Element type according to FITS standards (I, J, K, E, D, L, A, etc)
       * @return (Int), the size (bytes) of the element.
-      * 
+      *
       */
     def getSplitLocation(fitstype : String) : Int = {
       fitstype match {
