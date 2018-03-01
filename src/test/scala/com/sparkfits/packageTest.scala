@@ -20,12 +20,10 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.functions._
 
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-
-import nom.tam.fits.Fits
-import nom.tam.fits.BinaryTableHDU
 
 import com.sparkfits.fits._
 
@@ -62,7 +60,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   // END TODO
 
   // Add more and put a loop for several tests!
-  val fn = "src/test/resources/test.fits"
+  val fn = "src/test/resources/test_file.fits"
 
   // Test if readfits does nothing :D
   test("Readfits test: Do you send back a FitsContext?") {
@@ -100,26 +98,11 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     assert(results.extraOptions("toto").contains("true"))
   }
 
-  // Test yieldRows
-  test("yieldRows test: can you spit a bunch of rows?") {
-    val f = new Fits(fn)
-    val results = spark.yieldRows(f, 1, 0, 10, 100)
-    assert(results.size == 10)
-  }
-
-  // Test yieldRows
-  test("yieldRows test: are you aware of the end of the table data?") {
-    val f = new Fits(fn)
-    val results = spark.yieldRows(f, 1, 8, 12, 100)
-    assert(results.size == 4)
-  }
-
   // Test DataFrame
   test("DataFrame test: can you really make a DF from the hdu?") {
     val results = spark.readfits
       .option("datatype", "table")
       .option("HDU", 1)
-      .option("printHDUHeader", true)
       .load(fn)
     assert(results.isInstanceOf[DataFrame])
   }
@@ -131,8 +114,9 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       List(
         StructField("toto", StringType, true),
         StructField("tutu", FloatType, true),
-        StructField("tata", FloatType, true),
-        StructField("titi", FloatType, true)
+        StructField("tata", DoubleType, true),
+        StructField("titi", LongType, true),
+        StructField("tete", IntegerType, true)
       )
     )
 
@@ -141,44 +125,46 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       .option("HDU", 1)
       .schema(schema)
       .load(fn)
-    assert(results.columns.deep == Array("toto", "tutu", "tata", "titi").deep)
+    assert(results.columns.deep == Array("toto", "tutu", "tata", "titi", "tete").deep)
   }
 
   // Test block option
-  test("Data distribution test: Can you record the desired number of blocks?") {
-    val results = spark.readfits.option("nBlock", 10)
-    assert(results.extraOptions("nBlock").contains("10"))
+  test("Data distribution test: Can you set the record size?") {
+    val results = spark.readfits.option("recordLength", 128 * 1024)
+    assert(results.extraOptions("recordLength").contains("131072"))
   }
 
   // Test Data distribution
-  test("Data distribution test (user side): can you propagate the number of blocks?") {
-    val results = spark.readfits.option("nBlock", 10)
-    val f = new Fits(fn)
-    val hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
-    val nrows : Int = hdu.getNRows
-    val ncols : Int = hdu.getNCols
-    val fileSize : Long = ncols.toLong * nrows.toLong * 8L
-    val nBlock : Int = results.getNblocks(fileSize)
-    assert(nBlock == 10)
+  test("Data distribution test: Can you count all elements?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .load(fn)
+    assert(results.select(col("Index")).count().toInt == 20000)
   }
 
-  test("Data distribution test (file side): can you propagate the number of blocks?") {
+  test("Data distribution test: Can you sum up all elements?") {
     val results = spark.readfits
-    val f = new Fits(fn)
-    val hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
-    val nrows : Int = hdu.getNRows
-    val ncols : Int = hdu.getNCols
-    val fileSize : Long = ncols.toLong * nrows.toLong * 8L
-    val nBlock : Int = results.getNblocks(fileSize)
-    assert(nBlock == 4)
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .load(fn)
+    assert(
+      results.select(
+        col("Index")).rdd
+          .map(_(0).asInstanceOf[Long])
+          .reduce(_+_) == 199990000)
   }
 
-  test("Data distribution test (Big Data side): can you propagate the number of blocks?") {
+  test("Data distribution test: Do you pass over all blocks?") {
     val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .option("recordLength", 16 * 1024)
+      .load(fn)
 
-    // Fake a big data set 1 TB
-    val fileSize : Long = 1024L * 1024L * 1024L * 1024L
-    val nBlock : Int = results.getNblocks(fileSize)
-    assert(nBlock == 8192)
+    val count = results.select(col("Index")).count().toInt
+    val count_unique = results.select(col("Index")).distinct().count().toInt
+
+    assert(count == count_unique)
   }
 }

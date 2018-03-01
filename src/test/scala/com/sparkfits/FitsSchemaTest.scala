@@ -17,11 +17,12 @@ package com.sparkfits
 
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.conf.Configuration
+
 import org.apache.spark.sql.types._
 
-import nom.tam.fits.BinaryTableHDU
-import nom.tam.fits.Fits
-
+import com.sparkfits.FitsLib._
 import com.sparkfits.FitsSchema._
 
 /**
@@ -30,51 +31,72 @@ import com.sparkfits.FitsSchema._
 class FitsSchemaTest extends FunSuite with BeforeAndAfterAll {
 
   // Open the test fits file and get meta info
-  val fn = "src/test/resources/test.fits"
-  val f = new Fits(fn)
-  val hdu = f.getHDU(1).asInstanceOf[BinaryTableHDU]
-  val hdu_2 = f.getHDU(2).asInstanceOf[BinaryTableHDU]
+  val file = new Path("src/test/resources/test_file.fits")
+  val conf = new Configuration()
+  val fB1 = new FitsBlock(file, conf, 1)
+  val header1 = fB1.readHeader
+  val fB2 = new FitsBlock(file, conf, 2)
+  val header2 = fB2.readHeader
 
   test("Schema test: can you convert the type Float for a column?") {
-    val col = ReadMyType("RA", hdu.getColumnFormat(1))
+    val col = ReadMyType("toto", "E")
 
     assert(col.dataType.isInstanceOf[FloatType])
   }
 
+  test("Schema test: can you convert the type Double for a column?") {
+    val col = ReadMyType("toto", "D")
+
+    assert(col.dataType.isInstanceOf[DoubleType])
+  }
+
   test("Schema test: can you convert the type String for a column?") {
-    val col = ReadMyType("target", hdu_2.getColumnFormat(0))
+    val col = ReadMyType("toto", "28A")
 
     assert(col.dataType.isInstanceOf[StringType])
   }
 
+  test("Schema test: can you convert the type Short for a column?") {
+    val col = ReadMyType("toto", "I")
+
+    assert(col.dataType.isInstanceOf[ShortType])
+  }
+
   test("Schema test: can you convert the type Int for a column?") {
-    val col = ReadMyType("index", hdu_2.getColumnFormat(1))
+    val col = ReadMyType("toto", "J")
 
     assert(col.dataType.isInstanceOf[IntegerType])
   }
 
+  test("Schema test: can you convert the type Long for a column?") {
+    val col = ReadMyType("toto", "K")
+
+    assert(col.dataType.isInstanceOf[LongType])
+  }
+
   test("Schema test: can you convert the type Boolean for a column?") {
-    val col = ReadMyType("Discovery", hdu_2.getColumnFormat(2))
+    val col = ReadMyType("toto", "L")
 
     assert(col.dataType.isInstanceOf[BooleanType])
   }
 
   test("Schema test: can you convert the name for a column?") {
-    val col = ReadMyType(hdu.getColumnName(1), "E")
+    val col = ReadMyType("toto", "E")
 
-    assert(col.name == "RA")
+    assert(col.name == "toto")
   }
 
   test("Schema test: can you generate a list for all columns?") {
-    val ncols = hdu.getNCols
-    val myList = ListOfStruct(hdu, 0, ncols)
+    val ncols = fB1.getNCols(header1)
+    val myList = ListOfStruct(fB1)
 
     assert(myList.size == ncols)
   }
 
   test("Schema test: can you generate a schema from the hdu header?") {
-    val schema = getSchema(hdu)
+    val schema1 = getSchema(fB1)
+    val schema2 = getSchema(fB2)
 
-    assert(schema.isInstanceOf[StructType])
+    assert(schema1.isInstanceOf[StructType] && schema2.isInstanceOf[StructType])
   }
 }
