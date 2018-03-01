@@ -22,13 +22,20 @@ import java.nio.charset.StandardCharsets
 
 import scala.collection.mutable.HashMap
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.conf.Configuration
 
 import scala.util.{Try, Success, Failure}
 
+/**
+  * This is the beginning of a FITS library in Scala.
+  * You will find a large number of methodes to manipulate Binary Table HDUs.
+  * There is no support for image HDU for the moment.
+  */
 object FitsLib {
+
+  // Define some FITS standards.
 
   // Standard size of a header (bytes)
   val HEADER_SIZE_BYTES = 2880
@@ -40,7 +47,7 @@ object FitsLib {
   val MAX_KEYWORD_LENGTH = 8
 
   /**
-    * Main class to handle a block of a fits file. Main features are
+    * Main class to handle a HDU of a fits file. Main features are
     *   - Retrieving a HDU (block) of data
     *   - Split the HDU into a header and a data block
     *   - Get informations on data from the header (column name, element types, ...)
@@ -73,7 +80,6 @@ object FitsLib {
     // Compute the bound and initialise the cursor
     // indices (headerStart, dataStart, dataStop) in bytes.
     val blockBoundaries = BlockBoundaries
-    // println(blockBoundaries)
 
     // Get the header and set the cursor to its start.
     val blockHeader = readHeader
@@ -90,10 +96,10 @@ object FitsLib {
     val splitLocations = (0 :: rowSplitLocations(0)).scan(0)(_ +_).tail
 
     /**
-      * Return the indices of the first and last bytes of the HDU.
+      * Return the indices of the first and last bytes of the HDU:
+      * hdu_start=header_start, data_start, data_stop, hdu_stop
       *
-      * @return (header_start, data_start, data_stop, block_stop) = (Long, Long, Long, Long),
-      *   the bytes indices of the HDU.
+      * @return (Long, Long, Long, Long), the split of the HDU.
       *
       */
     def BlockBoundaries : (Long, Long, Long, Long) = {
@@ -114,7 +120,6 @@ object FitsLib {
         header_start = data.getPos
 
         // add the header size (and move after it)
-        // data.seek(header_start + HEADER_SIZE_BYTES)
         val localHeader = readHeader
 
         // Data block starts after the header
@@ -147,7 +152,8 @@ object FitsLib {
       // Reposition the cursor at the beginning of the block
       data.seek(header_start)
 
-      // Return boundaries (included)
+      // Return boundaries (included):
+      // hdu_start=header_start, data_start, data_stop, hdu_stop
       (header_start, data_start, data_stop, block_stop)
     }
 
@@ -205,20 +211,20 @@ object FitsLib {
     }
 
     /**
-      * Reposition the cursor at the beginning of the header of the block
+      * Place the cursor at the beginning of the header of the block
       *
       */
     def resetCursorAtHeader = {
-      // Position the cursor at the beginning of the block
+      // Place the cursor at the beginning of the block
       data.seek(blockBoundaries._1)
     }
 
     /**
-      * Reposition the cursor at the beginning of the data of the block
+      * Place the cursor at the beginning of the data of the block
       *
       */
     def resetCursorAtData = {
-      // Position the cursor at the beginning of the block
+      // Place the cursor at the beginning of the block
       data.seek(blockBoundaries._2)
     }
 
@@ -250,7 +256,8 @@ object FitsLib {
 
     /**
       * Read the header of a HDU. The cursor needs to be at the start of
-      * the header.
+      * the header. We assume that each header row has a standard
+      * size of 80 Bytes, and the total size of the header is 2880 Bytes.
       *
       * @return (Array[String) the header is an array of Strings, each String
       *   being one line of the header.
@@ -335,28 +342,42 @@ object FitsLib {
       */
     def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {
       fitstype match {
-        case "1J" => {
+        // 16-bit Integer
+        case x if fitstype.contains("I") => {
+          ByteBuffer.wrap(subbuf, 0, 2).getShort()
+        }
+        // 32-bit Integer
+        case x if fitstype.contains("J") => {
           ByteBuffer.wrap(subbuf, 0, 4).getInt()
         }
-        // case "1E" => {
-        //   ByteBuffer.wrap(subbuf, 0, 4).getFloat()
-        // }
+        // 64-bit Integer
+        case x if fitstype.contains("K") => {
+          ByteBuffer.wrap(subbuf, 0, 8).getLong()
+        }
+        // Single precision floating-point
         case x if fitstype.contains("E") => {
           ByteBuffer.wrap(subbuf, 0, 4).getFloat()
         }
-        // case "E" => {
-        //   ByteBuffer.wrap(subbuf, 0, 4).getFloat()
-        // }
-        case "L" => {
+        // Double precision floating-point
+        case x if fitstype.contains("D") => {
+          ByteBuffer.wrap(subbuf, 0, 8).getDouble()
+        }
+        // Boolean
+        case x if fitstype.contains("L") => {
           // 1 Byte containing the ASCII char T(rue) or F(alse).
           subbuf(0).toChar == 'T'
         }
-        case "D" => {
-          ByteBuffer.wrap(subbuf, 0, 8).getDouble()
-        }
+        // Chain of characters
         case x if fitstype.endsWith("A") => {
           // Example 20A means string on 20 bytes
           new String(subbuf, StandardCharsets.UTF_8).trim()
+        }
+        case _ => {
+          println(s"""
+              Cannot infer size of type $fitstype from the header!
+              See com.sparkfits.FitsLib.getElementFromBuffer
+              """)
+          0
         }
       }
     }
@@ -374,7 +395,7 @@ object FitsLib {
       // Get the names of the Columns
       val headerNames = getHeaderNames(header)
 
-      // Get the number of Columns
+      // Get the number of Columns by recursion
       val ncols = getNCols(header)
       if (col == ncols) {
         Nil
@@ -384,9 +405,9 @@ object FitsLib {
     }
 
     /**
-      * Return the KEYS of the header.
+      * Return the KEYWORDS of the header.
       *
-      * @return (Array[String]), array with the KEYS of the HDU header.
+      * @return (Array[String]), array with the KEYWORDS of the HDU header.
       *
       */
     def getHeaderKeywords(header : Array[String]) : Array[String] = {
@@ -396,14 +417,14 @@ object FitsLib {
       // Loop over KEYWORDS
       for (i <- 0 to header.size - 1) {
         val line = header(i)
-        // Get the key
+        // Get the keyword
         keywords(i) = line.substring(0, MAX_KEYWORD_LENGTH).trim()
       }
       keywords
     }
 
     /**
-      * Return the (KEYS, VALUES) of the header
+      * Return the (KEYWORDS, VALUES) of the header
       *
       * @return (HashMap[String, Int]), map array with (keys, values_as_int).
       *
@@ -413,17 +434,17 @@ object FitsLib {
       // Initialise our map
       val headerMap = new HashMap[String, Int]
 
-      // Get the KEYS of the Header
+      // Get the KEYWORDS of the Header
       val keys = getHeaderKeywords(header)
 
-      // Loop over KEYS
+      // Loop over rows
       for (i <- 0 to header.size - 1) {
 
-        // One line
-        val line = header(i)
+        // One row
+        val row = header(i)
 
         // Split at the comment
-        val v = line.split("/")(0)
+        val v = row.split("/")(0)
 
         // Init
         var v_tmp = ""
@@ -431,6 +452,7 @@ object FitsLib {
         var letter : Char = 'a'
 
         // recursion to get the value. Reverse order!
+        // 29. WTF???
         do {
           letter = v(29 - offset)
           v_tmp = v_tmp + letter.toString
@@ -442,26 +464,37 @@ object FitsLib {
         v_tmp = v_tmp.trim().reverse
         headerMap += (keys(i) -> Try{v_tmp.toInt}.getOrElse(0))
       }
-      // Return the map(KEYS -> VALUES)
+      // Return the map(KEYWORDS -> VALUES)
       headerMap
     }
 
+    /**
+      * Get the names of the header.
+      * We assume that the names are inside quotes 'my_name'.
+      *
+      * @param header : (Array[String])
+      *   The header of the HDU.
+      * @return (HashMap[String, String]), a map of keyword/name.
+      *
+      */
     def getHeaderNames(header : Array[String]) : HashMap[String, String] = {
+
+      // Initialise the map
       val headerMap = new HashMap[String, String]
+
+      // Get the KEYWORDS
       val keys = getHeaderKeywords(header)
       for (i <- 0 to header.size - 1) {
-        val line = header(i)
 
-        val it = line.substring(MAX_KEYWORD_LENGTH, 80).iterator
+        // Take one row and make it an iterator of Char
+        // from the end of the KEYWORD.
+        val row = header(i)
+        val it = row.substring(MAX_KEYWORD_LENGTH, FITS_HEADER_CARD_SIZE).iterator
 
-        // You are supposed to see
-        //  - the name or nothing
-        //  - the value or nothing
-        //  - the comment or nothing
         var name_tmp = ""
-        var val_tmp = ""
         var isName = false
 
+        // Loop over the Chars of the row
         do {
           val nextChar = it.next()
 
@@ -470,57 +503,147 @@ object FitsLib {
             isName = !isName
           }
 
-          // Complete the name
+          // Add what is inside the quotes (left quote included)
           if (isName) {
             name_tmp = name_tmp + nextChar
           }
         } while (it.hasNext)
 
+        // Try to see if there is something inside quotes
+        // Return empty String otherwise.
         val name = Try{name_tmp.substring(1, name_tmp.length).trim()}.getOrElse("")
+
+        // Update the map
         headerMap += (keys(i) -> name)
       }
+
+      // Return the map
       headerMap
     }
 
+    /**
+      * Get the comments of the header.
+      * We assume the comments are written after a backslash (\).
+      *
+      * @param header : (Array[String])
+      *   The header of the HDU.
+      * @return (HashMap[String, String]), a map of keyword/comment.
+      *
+      */
     def getHeaderComments(header : Array[String]) : HashMap[String, String] = {
-      val headerMap = new HashMap[String, String]
-      val keys = getHeaderKeywords(header)
-      for (i <- 0 to header.size - 1) {
-        val line = header(i)
 
-        val comments = Try{line.split("/")(1).trim()}.getOrElse("")
+      // Init
+      val headerMap = new HashMap[String, String]
+
+      // Get the KEYWORDS
+      val keys = getHeaderKeywords(header)
+
+      // Loop over header row
+      for (i <- 0 to header.size - 1) {
+        // One row
+        val row = header(i)
+
+        // comments are written after a backslash (\).
+        // If None, return empty String.
+        val comments = Try{row.split("/")(1).trim()}.getOrElse("")
         headerMap += (keys(i) -> comments)
       }
+
+      // Return the Map.
       headerMap
     }
 
+    /**
+      * Get the number of row of a HDU.
+      * We rely on what's written in the header, meaning
+      * here we do not access the data directly.
+      *
+      * @param header : (Array[String])
+      *   The header of the HDU.
+      * @return (Long), the number of rows as written in KEYWORD=NAXIS2.
+      *
+      */
     def getNRows(header : Array[String]) : Long = {
       val values = getHeaderValues(header)
       values("NAXIS2")
     }
 
+    /**
+      * Get the number of column of a HDU.
+      * We rely on what's written in the header, meaning
+      * here we do not access the data directly.
+      *
+      * @param header : (Array[String])
+      *   The header of the HDU.
+      * @return (Long), the number of rows as written in KEYWORD=TFIELDS.
+      *
+      */
     def getNCols(header : Array[String]) : Long = {
       val values = getHeaderValues(header)
       values("TFIELDS")
     }
 
+    /**
+      * Get the size (bytes) of each row of a HDU.
+      * We rely on what's written in the header, meaning
+      * here we do not access the data directly.
+      *
+      * @param header : (Array[String])
+      *   The header of the HDU.
+      * @return (Long), the number of rows as written in KEYWORD=NAXIS1.
+      *
+      */
     def getSizeRowBytes(header : Array[String]) : Long = {
       val values = getHeaderValues(header)
       values("NAXIS1")
     }
 
+    /**
+      * Get the name of a column with index `colIndex` of a HDU.
+      *
+      * @param header : (Array[String])
+      *   The header of the HDU.
+      * @param colIndex : (Int)
+      *   Index (zero-based) of a column.
+      * @return (String), the name of the column.
+      *
+      */
     def getColumnName(header : Array[String], colIndex : Int) : String = {
+      // Grab the header names as map(keywords/names)
       val names = getHeaderNames(header)
-      // zero-based index
+      // Zero-based index
       names("TTYPE" + (colIndex + 1).toString)
     }
 
+    /**
+      * Get the type of the elements of a column with index `colIndex` of a HDU.
+      *
+      * @param header : (Array[String])
+      *   The header of the HDU.
+      * @param colIndex : (Int)
+      *   Index (zero-based) of a column.
+      * @return (String), the type (FITS convention) of the elements of the column.
+      *
+      */
     def getColumnType(header : Array[String], colIndex : Int) : String = {
+      // Grab the header names as map(keywords/names)
       val names = getHeaderNames(header)
-      // zero-based index
+      // Zero-based index
       names("TFORM" + (colIndex + 1).toString)
     }
 
+    /**
+      * Description of a row in terms of bytes indices.
+      * rowSplitLocations returns an array containing the position of elements
+      * (byte index) in a row. Example if we have a row with [20A, E, E], one
+      * will have rowSplitLocations -> [0, 20, 24, 28] that is a string
+      * on 20 Bytes, followed by 2 floats on 4 bytes each.
+      *
+      * @param col : (Int)
+      *   Column position used for the recursion. Should be left at 0.
+      * @return (List[Int]), the position of elements (byte index) in a row.
+      *
+      */
     def rowSplitLocations(col : Int = 0) : List[Int] = {
       if (col == ncols) {
         Nil
@@ -529,17 +652,33 @@ object FitsLib {
       }
     }
 
+    /**
+      * Companion routine to rowSplitLocations. Returns the size of a primitive
+      * according to its type from the FITS header.
+      *
+      * @param fitstype : (String)
+      *   Element type according to FITS standards (I, J, K, E, D, L, A, etc)
+      * @return (Int), the size (bytes) of the element.
+      * 
+      */
     def getSplitLocation(fitstype : String) : Int = {
       fitstype match {
-        case "1J" => 4
-        case "1E" => 4
-        case "E" => 4
-        case "B" => 4
-        case "L" => 1
-        case "D" => 8
+        case x if fitstype.contains("I") => 2
+        case x if fitstype.contains("J") => 4
+        case x if fitstype.contains("K") => 8
+        case x if fitstype.contains("E") => 4
+        case x if fitstype.contains("D") => 8
+        case x if fitstype.contains("L") => 1
         case x if fitstype.endsWith("A") => {
           // Example 20A means string on 20 bytes
           x.slice(0, x.length - 1).toInt
+        }
+        case _ => {
+          println(s"""
+              Cannot infer size of type $fitstype from the header!
+              See com.sparkfits.FitsLib.getSplitLocation
+              """)
+          0
         }
       }
     }
