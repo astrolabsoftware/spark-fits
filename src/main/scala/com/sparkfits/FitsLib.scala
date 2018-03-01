@@ -81,19 +81,29 @@ object FitsLib {
     // indices (headerStart, dataStart, dataStop) in bytes.
     val blockBoundaries = BlockBoundaries
 
+    val empty_hdu = if (blockBoundaries._2 == blockBoundaries._3) {
+      true
+    } else false
+
     // Get the header and set the cursor to its start.
     val blockHeader = readHeader
     resetCursorAtHeader
 
     // Get informations on element types and number of columns.
-    val rowTypes = getColTypes(blockHeader)
+    val rowTypes = if (empty_hdu) {
+      List[String]()
+    } else getColTypes(blockHeader)
     val ncols = rowTypes.size
 
     // splitLocations is an array containing the location of elements
     // (byte index) in a row. Example if we have a row with [20A, E, E], one
     // will have splitLocations = [0, 20, 24, 28] that is a string on 20 Bytes,
     // followed by 2 floats on 4 bytes each.
-    val splitLocations = (0 :: rowSplitLocations(0)).scan(0)(_ +_).tail
+    val splitLocations = if (empty_hdu) {
+      List[Int]()
+    } else {
+      (0 :: rowSplitLocations(0)).scan(0)(_ +_).tail
+    }
 
     /**
       * Return the indices of the first and last bytes of the HDU:
