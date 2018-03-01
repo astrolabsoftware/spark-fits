@@ -28,12 +28,14 @@ object FitsSchema {
     * Conversion from fits type to DataFrame Schema type.
     * This can be used to set the name of a column and the type of elements
     * in that column. Fits types nomenclature explained here:
-    * http://archive.stsci.edu/fits/users_guide/node47.html#SECTION00563000000000000000
+    * https://fits.gsfc.nasa.gov/standard30/fits_standard30.pdf
     *
     * @param name : (String)
     *   The name of the future column in the DataFrame
     * @param fitstype : (String)
     *   The type of elements from the fits HEADER. See the link provided.
+    * @param isNullable : (Boolean)
+    *   Column is nullable if True (default).
     * @return a `StructField` containing name, type and isNullable informations.
     *
     */
@@ -58,20 +60,25 @@ object FitsSchema {
 
   /**
     * Construct a list of `StructField` to be used to construct a DataFrame Schema.
-    * this routine should be used recursively. By default it includes all columns.
+    * This routine is recursive. By default it includes all columns.
     *
-    * @param data : (BinaryTableHDU)
-    *   The HDU data containing informations about the column name and element types.
+    * @param fB : (FitsBlock)
+    *   The object describing the HDU.
     * @param col : (Int)
-    *   The index of the column.
-    * @param colmax : (Int)
-    *   The total number of columns in the HDU.
+    *   The index of the column used for the recursion. Should be left at 0.
     * @return a `List[StructField]` with informations about name and type for all columns.
     */
-  def ListOfStruct(fB : FitsBlock, col : Int) : List[StructField] = {
+  def ListOfStruct(fB : FitsBlock, col : Int = 0) : List[StructField] = {
+    // Reset the cursor at header
     fB.resetCursorAtHeader
+
+    // Read the header
     val header = fB.readHeader
+
+    // Grab max number of column
     val colmax = fB.getNCols(header)
+
+    // Get the list of StructField recursively.
     if (col == colmax)
       Nil
     else
@@ -81,14 +88,14 @@ object FitsSchema {
   /**
     * Retrieve DataFrame Schema from HDU header.
     *
-    * @param data : (BinaryTableHDU)
-    *   The HDU data containing informations about the column name and element types.
-    * @return Return a `StructType` which contain a list of `StructField` with informations about name and type for all columns.
+    * @param fB : (FitsBlock)
+    *   The object describing the HDU.
+    * @return Return a `StructType` which contain a list of `StructField`
+    *   with informations about name and type for all columns.
     *
     */
   def getSchema(fB : FitsBlock) : StructType = {
-    fB.resetCursorAtHeader
-    val header = fB.readHeader
-    StructType(ListOfStruct(fB, 0))
+    // Construct the schema from the header.
+    StructType(ListOfStruct(fB))
   }
 }
