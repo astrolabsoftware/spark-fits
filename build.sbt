@@ -18,7 +18,7 @@ import Dependencies._
 lazy val root = (project in file(".")).
  settings(
    inThisBuild(List(
-     version      := "0.1.0",
+     version      := "0.2.0",
      mainClass in Compile := Some("com.sparkfits.ReadFits")
    )),
    // Name of the application
@@ -41,7 +41,6 @@ lazy val root = (project in file(".")).
    // assemblyShadeRules in assembly := Seq(ShadeRule.rename("nom.**" -> "new_nom.@1").inAll),
    // Put dependencies of the library
    libraryDependencies ++= Seq(
-     "gov.nasa.gsfc.heasarc" % "nom-tam-fits" % "1.15.2",
      "org.apache.spark" %% "spark-core" % "2.1.0" % "provided",
      "org.apache.spark" %% "spark-sql" % "2.1.0" % "provided",
      scalaTest % Test

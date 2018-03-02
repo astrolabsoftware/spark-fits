@@ -15,20 +15,5 @@
 
 ## SBT Version
 SBT_VERSION=2.11.8
-SBT_VERSION_SPARK=2.11
 
-## Package version
-VERSION=0.2.0
-
-# Package it
-sbt ++${SBT_VERSION} package
-
-# Parameters (put your file)
-fitsfn="src/test/resources/test_file.fits"
-
-# Run it!
-spark-submit \
-  --master local[*] \
-  --class com.sparkfits.ReadFits \
-  target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
-  $fitsfn
+sbt ++${SBT_VERSION} coverage test coverageReport
