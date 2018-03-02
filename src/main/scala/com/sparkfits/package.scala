@@ -43,39 +43,54 @@ package object fits {
    * The interpreter session below shows how to use basic functionalities:
    *
    * {{{
-   * scala> val fn = "src/test/resources/test.fits"
+   * scala> val fn = "src/test/resources/test_file.fits"
    * scala> val df = spark.readfits
    *  .option("datatype", "table")
    *  .option("HDU", 1)
    *  .option("printHDUHeader", true)
    *  .load(fn)
    * +------ HEADER (HDU=1) ------+
-   * XTENSION= BINTABLE             / binary table extension
+   * XTENSION= BINTABLE           / binary table extension
    * BITPIX  =                    8 / array data type
    * NAXIS   =                    2 / number of array dimensions
-   * NAXIS1  =                   32 / length of dimension 1
-   * NAXIS2  =                  100 / length of dimension 2
+   * NAXIS1  =                   34 / length of dimension 1
+   * NAXIS2  =                20000 / length of dimension 2
    * PCOUNT  =                    0 / number of group parameters
    * GCOUNT  =                    1 / number of groups
-   * TFIELDS =                    4 / number of table fields
+   * TFIELDS =                    5 / number of table fields
    * TTYPE1  = target
-   * TFORM1  = 20A
+   * TFORM1  = 10A
    * TTYPE2  = RA
    * TFORM2  = E
    * TTYPE3  = Dec
-   * TFORM3  = E
-   * TTYPE4  = Redshift
-   * TFORM4  = E
+   * TFORM3  = D
+   * TTYPE4  = Index
+   * TFORM4  = K
+   * TTYPE5  = RunId
+   * TFORM5  = J
    * END
    * +----------------------------+
-   * df: org.apache.spark.sql.DataFrame = [target: string, RA: float ... 2 more fields]
+   * df: org.apache.spark.sql.DataFrame = [target: string, RA: float ... 3 more fields]
    *
    * scala> df.printSchema
    * root
    *  |-- target: string (nullable = true)
    *  |-- RA: float (nullable = true)
-   *  |-- Dec: float (nullable = true)
-   *  |-- Redshift: float (nullable = true)
+   *  |-- Dec: double (nullable = true)
+   *  |-- Index: long (nullable = true)
+   *  |-- RunId: integer (nullable = true)
+   *
+   * scala> df.show(5)
+   * +----------+---------+--------------------+-----+-----+
+   * |    target|       RA|                 Dec|Index|RunId|
+   * +----------+---------+--------------------+-----+-----+
+   * |NGC0000000| 3.448297| -0.3387486324784641|    0|    1|
+   * |NGC0000001| 4.493667| -1.4414990980543227|    1|    1|
+   * |NGC0000002| 3.787274|  1.3298379564211742|    2|    1|
+   * |NGC0000003| 3.423602|-0.29457151504987844|    3|    1|
+   * |NGC0000004|2.6619017|  1.3957536426732444|    4|    1|
+   * +----------+---------+--------------------+-----+-----+
+   * only showing top 5 rows
    *
    * }}}
    */

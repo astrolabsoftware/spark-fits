@@ -10,10 +10,16 @@ Spark Fits
 The package
 ================
 
-This library provides tools to manipulate FITS data with `Apache Spark <http://spark.apache.org/>`_.
-We use a "pimp my class" tactic, or in other (more polite!) words, we define
+This library provides two different tools to manipulate FITS data with `Apache Spark <http://spark.apache.org/>`_:
+
+* A Spark connector for FITS file.
+* A Scala library to manipulate FITS file.
+
+From the user point of view, we use a "pimp my class" tactic, or in other words, we define
 an implicit on the ``SparkSession`` to allow interactions with the FITS file format.
 This is rather similar but not strictly equivalent to what was done previously for CSV.
+In addition we developed the necessary tools to interpret the FITS file format
+in HDFS by extending FileInputFormat and RecordReader Hadoop classes.
 
 Requirements
 ================
@@ -25,11 +31,30 @@ version, feel free to contact us.
 Features
 ================
 
-* Read fits table and organize HDU data into DataFrames.
-* Automatically infer DataFrame schema from HDU header. Alternatively, users can specify the schema.
-* Automatically distribute the data over machines. Alternatively, users can specify the block distribution.
+* Read fits table and organize the HDU data into DataFrames.
+* Automatically distribute the data of a FITS HDU over machines.
+* Automatically infer DataFrame schema from the HDU header. Alternatively, users can specify the schema.
 
-Quick example : Scala API
+Provided Examples
+================
+
+We provide two shell scripts to show the use of the library:
+
+**Local use**
+
+::
+
+  ./run.sh
+
+**Spark standalone**
+
+::
+
+  ./run_cluster.sh
+
+Just make sure that you set up correctly the paths and the different variables.
+
+Scala API
 ================
 
 **Linking**
@@ -52,17 +77,23 @@ You can link against this library in your program at the following coordinates: 
       .builder()
       .getOrCreate()
 
-    // Read as a DataFrame the first HDU of a table fits.
+    // Read as a DataFrame a HDU of a table fits.
     val df = spark.readfits
-      .option("datatype", "table")            // [mandatory] We support only table for the moment.
-      .option("HDU", <Int>)                   // [mandatory] Which HDU you want to read.
-      .option("nBlock", <Long>)               // [optional]  If you want to define yourself the data split.
-      .option("printHDUHeader", <Boolean>)    // [optional]  If you want to print the HEADER on the screen.
-      .schema(<StructType>)                   // [optional]  If you want to bypass the header.
-      .load("src/test/resources/test.fits")   // [mandatory] Load data as DataFrame.
+      .option("datatype", "table")               // [mandatory] We support only table for the moment.
+      .option("HDU", <Int>)                      // [mandatory] Which HDU you want to read.
+      .option("recordLength", <Int>)             // [optional]  If you want to define yourself the length of a record.
+      .option("printHDUHeader", <Boolean>)       // [optional]  If you want to print the HEADER on the screen.
+      .schema(<StructType>)                      // [optional]  If you want to bypass the header.
+      .load("src/test/resources/test_file.fits") // [mandatory] Load data as DataFrame.
   }
 
-Note that the schema is directly inferred from the HEADER of the hdu.
+The `recordLength` option controls how the data is split and read inside each HDFS block (or more
+precisely inside each InputSplit as those are not the same) by individual mappers for processing.
+By default it is set to 128 KB. Careful for large value, you might suffer from a long garbage collector time.
+The maximum size allowed for a single record to be processed is 2**31 - 1 (Int max value).
+But I doubt you need to go as high...
+
+Note that the schema is directly inferred from the HEADER of the HDU.
 In case the HEADER is not present or corrupted, you can also manually specify it:
 
 .. code:: scala
@@ -74,8 +105,9 @@ In case the HEADER is not present or corrupted, you can also manually specify it
     List(
       StructField("toto", StringType, true),
       StructField("tutu", FloatType, true),
-      StructField("tata", FloatType, true),
-      StructField("titi", FloatType, true)
+      StructField("tata", DoubleType, true),
+      StructField("titi", LongType, true),
+      StructField("tete", IntegerType, true)
     )
   )
 
@@ -114,7 +146,8 @@ Alternatively you can build or download the jar, and add it when launching the s
   // Available!
   $SPARK_HOME/bin/spark-shell --jars /path/to/jar/spark-fits.jar
 
-Then just try
+To build the JAR, just run `sbt ++{SBT_VERSION} package` from the root
+of the package (see run_*.sh scripts). Then in the spark-shell
 
 .. code :: scala
 
@@ -122,70 +155,74 @@ Then just try
   scala> val df = spark.readfits
     .option("datatype", "table")
     .option("HDU", 1)
+    .option("recordLength", 128 * 1024) // 128 KB per record
     .option("printHDUHeader", true)
-    .load("src/test/resources/test.fits")
+    .load("src/test/resources/test_file.fits")
   +------ HEADER (HDU=1) ------+
-  XTENSION= BINTABLE             / binary table extension
+  XTENSION= 'BINTABLE'           / binary table extension
   BITPIX  =                    8 / array data type
   NAXIS   =                    2 / number of array dimensions
-  NAXIS1  =                   32 / length of dimension 1
-  NAXIS2  =                  100 / length of dimension 2
+  NAXIS1  =                   34 / length of dimension 1
+  NAXIS2  =                20000 / length of dimension 2
   PCOUNT  =                    0 / number of group parameters
   GCOUNT  =                    1 / number of groups
-  TFIELDS =                    4 / number of table fields
-  TTYPE1  = target
-  TFORM1  = 20A
-  TTYPE2  = RA
-  TFORM2  = E
-  TTYPE3  = Dec
-  TFORM3  = E
-  TTYPE4  = Redshift
-  TFORM4  = E
+  TFIELDS =                    5 / number of table fields
+  TTYPE1  = 'target  '
+  TFORM1  = '10A     '
+  TTYPE2  = 'RA      '
+  TFORM2  = 'E       '
+  TTYPE3  = 'Dec     '
+  TFORM3  = 'D       '
+  TTYPE4  = 'Index   '
+  TFORM4  = 'K       '
+  TTYPE5  = 'RunId   '
+  TFORM5  = 'J       '
   END
   +----------------------------+
-  df: org.apache.spark.sql.DataFrame = [target: string, RA: float ... 2 more fields]
+  df: org.apache.spark.sql.DataFrame = [target: string, RA: float ... 3 more fields]
 
   scala> df.printSchema
   root
-    |-- target: string (nullable = true)
-    |-- RA: float (nullable = true)
-    |-- Dec: float (nullable = true)
-    |-- Redshift: float (nullable = true)
+   |-- target: string (nullable = true)
+   |-- RA: float (nullable = true)
+   |-- Dec: double (nullable = true)
+   |-- Index: long (nullable = true)
+   |-- RunId: integer (nullable = true)
 
   scala> df.show(5)
-  +-------+---------+----------+----------+
-  | target|       RA|       Dec|  Redshift|
-  +-------+---------+----------+----------+
-  |NGC0000| 3.448297| 0.5586271| 1.5589794|
-  |NGC0001| 4.493667|-0.7225413| 3.4817173|
-  |NGC0002| 3.787274| 0.7388838| 1.8887593|
-  |NGC0003| 3.423602| 1.4520081|0.89801836|
-  |NGC0004|2.6619017|-0.7893153|0.12339364|
-  +-------+---------+----------+----------+
+  +----------+---------+--------------------+-----+-----+
+  |    target|       RA|                 Dec|Index|RunId|
+  +----------+---------+--------------------+-----+-----+
+  |NGC0000000| 3.448297| -0.3387486324784641|    0|    1|
+  |NGC0000001| 4.493667| -1.4414990980543227|    1|    1|
+  |NGC0000002| 3.787274|  1.3298379564211742|    2|    1|
+  |NGC0000003| 3.423602|-0.29457151504987844|    3|    1|
+  |NGC0000004|2.6619017|  1.3957536426732444|    4|    1|
+  +----------+---------+--------------------+-----+-----+
   only showing top 5 rows
 
 Building From Source
 ================
 
-This library is built with SBT, and needs the `nom.tam.fits <https://github.com/nom-tam-fits/nom-tam-fits>`_ library.
+This library is built with SBT (see the build.sbt script provided).
 To build a JAR file simply run
 
 ::
 
-  sbt ++${SCALA_VERSION} assembly
+  sbt ++${SCALA_VERSION} package
 
 from the project root. The build configuration includes support for Scala 2.10.6 and 2.11.X.
 
 Running the test suite
 ================
 
-The test suite is automatically ran when you build the library (``sbt ++${SCALA_VERSION} assembly``).
-Alternatively, you can run it independently using
+To launch the test suite, just run:
 
 ::
 
   sbt ++${SCALA_VERSION} coverage test coverageReport
 
+We also provide a script (test.sh) that you can run.
 You should get the result on the screen, plus details of the coverage at
 ``target/scala_${SCALA_VERSION}/scoverage-report/index.html``.
 
@@ -196,7 +233,7 @@ Use SBT to build the doc:
 
 ::
 
-  sbt doc
+  sbt ++{SCALA_VERSION} doc
   open target/scala_${SCALA_VERSION}/api/index.html
 
 
@@ -204,7 +241,6 @@ TODO list
 ================
 
 * Make the docker file
-* Build against scala 2.10? Test other Spark version?
+* Define custom Hadoop InputFile.
+* Test other Spark version?
 * Publish the doc.
-* Add possibility for the user to provide schema. Particularly useful if the HEADER of the FITS is not there.
-* ??
