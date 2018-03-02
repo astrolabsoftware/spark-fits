@@ -46,6 +46,9 @@ object ReadFits {
       df.show()
       df.printSchema()
 
+      val count = df.count()
+      println("Total rows: " + count.toString)
+
       // val c = df.select(col("Index")).count().toInt
       // val c_d = df.select(col("Index")).distinct.count().toInt
       // val s = df.select(col("Index")).rdd.map(_(0).asInstanceOf[Long]).reduce(_+_)
