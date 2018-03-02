@@ -57,7 +57,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // END TODO
 
   // Add more and put a loop for several tests!
-  val fn = "src/test/resources/test.fits"
+  val fn = "src/test/resources/test_file.fits"
 
   // Test if the user provides the data type in the HDU
   test("dataType test: is there table or image in options?") {
@@ -98,10 +98,10 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Test if the user provides the data type in the HDU
   test("Table test: Are you really accessing a Table?") {
     val results = spark.readfits
-    val exception = intercept[ClassCastException] {
+    val exception = intercept[AssertionError] {
       results.option("datatype", "table").option("HDU", 0).load(fn)
     }
-    assert(exception.getMessage.contains("BinaryTableHDU"))
+    assert(exception.getMessage.contains("BINTABLE"))
   }
 
   // Test if one accesses column as expected for HDU 1
@@ -110,7 +110,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .option("datatype", "table")
       .option("HDU", 1)
       .load(fn)
-    assert(results.select("RA").count() == 100)
+    assert(results.select("RA").count() == 20000)
   }
 
   // Test if one accesses column as expected for HDU 1
@@ -119,7 +119,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .option("datatype", "table")
       .option("HDU", 2)
       .load(fn)
-    assert(results.select("Index").count() == 100)
+    assert(results.select("Index").count() == 20000)
   }
 
   // Test if type cast is done correctly
@@ -133,13 +133,23 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   }
 
   // Test if type cast is done correctly
+  test("Type test: Do you see a Long?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .load(fn)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("Index").first()(0).isInstanceOf[Long])
+  }
+
+  // Test if type cast is done correctly
   test("Type test: Do you see a Int?") {
     val results = spark.readfits
       .option("datatype", "table")
-      .option("HDU", 2)
+      .option("HDU", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
-    assert(results.select("Index").first()(0).isInstanceOf[Int])
+    assert(results.select("RunId").first()(0).isInstanceOf[Int])
   }
 
   // Test if type cast is done correctly
@@ -150,6 +160,16 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("RA").first()(0).isInstanceOf[Float])
+  }
+
+  // Test if type cast is done correctly
+  test("Type test: Do you see a Double?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .load(fn)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("Dec").first()(0).isInstanceOf[Double])
   }
 
   // Test if type cast is done correctly

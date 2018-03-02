@@ -17,7 +17,7 @@ package com.sparkfits
 
 import org.apache.spark.sql.types._
 
-import nom.tam.fits.BinaryTableHDU
+import com.sparkfits.FitsLib.FitsBlock
 
 /**
   * Object to handle the conversion from a HDU header to a DataFrame Schema.
@@ -28,55 +28,74 @@ object FitsSchema {
     * Conversion from fits type to DataFrame Schema type.
     * This can be used to set the name of a column and the type of elements
     * in that column. Fits types nomenclature explained here:
-    * http://archive.stsci.edu/fits/users_guide/node47.html#SECTION00563000000000000000
+    * https://fits.gsfc.nasa.gov/standard30/fits_standard30.pdf
     *
     * @param name : (String)
     *   The name of the future column in the DataFrame
     * @param fitstype : (String)
     *   The type of elements from the fits HEADER. See the link provided.
+    * @param isNullable : (Boolean)
+    *   Column is nullable if True (default).
     * @return a `StructField` containing name, type and isNullable informations.
     *
     */
   def ReadMyType(name : String, fitstype : String, isNullable : Boolean = true): StructField = {
     fitstype match {
-      case "1J" => StructField(name, IntegerType, isNullable)
-      case "1E" => StructField(name, FloatType, isNullable)
-      case "E" => StructField(name, FloatType, isNullable)
-      case "L" => StructField(name, BooleanType, isNullable)
-      case "D" => StructField(name, DoubleType, isNullable)
-      case _ => StructField(name, StringType, isNullable)
+      case x if fitstype.contains("I") => StructField(name, ShortType, isNullable)
+      case x if fitstype.contains("J") => StructField(name, IntegerType, isNullable)
+      case x if fitstype.contains("K") => StructField(name, LongType, isNullable)
+      case x if fitstype.contains("E") => StructField(name, FloatType, isNullable)
+      case x if fitstype.contains("D") => StructField(name, DoubleType, isNullable)
+      case x if fitstype.contains("L") => StructField(name, BooleanType, isNullable)
+      case x if fitstype.contains("A") => StructField(name, StringType, isNullable)
+      case _ => {
+        println(s"""
+            Cannot infer type $fitstype from the header!
+            See com.sparkfits.FitsSchema.scala
+            """)
+        StructField(name, StringType, isNullable)
+      }
     }
   }
 
   /**
     * Construct a list of `StructField` to be used to construct a DataFrame Schema.
-    * this routine should be used recursively. By default it includes all columns.
+    * This routine is recursive. By default it includes all columns.
     *
-    * @param data : (BinaryTableHDU)
-    *   The HDU data containing informations about the column name and element types.
+    * @param fB : (FitsBlock)
+    *   The object describing the HDU.
     * @param col : (Int)
-    *   The index of the column.
-    * @param colmax : (Int)
-    *   The total number of columns in the HDU.
+    *   The index of the column used for the recursion. Should be left at 0.
     * @return a `List[StructField]` with informations about name and type for all columns.
     */
-  def ListOfStruct(data : BinaryTableHDU, col : Int, colmax : Int) : List[StructField] = {
+  def ListOfStruct(fB : FitsBlock, col : Int = 0) : List[StructField] = {
+    // Reset the cursor at header
+    fB.resetCursorAtHeader
+
+    // Read the header
+    val header = fB.readHeader
+
+    // Grab max number of column
+    val colmax = fB.getNCols(header)
+
+    // Get the list of StructField recursively.
     if (col == colmax)
       Nil
     else
-      ReadMyType(data.getColumnName(col), data.getColumnFormat(col)) :: ListOfStruct(data, col + 1, colmax)
+      ReadMyType(fB.getColumnName(header, col), fB.getColumnType(header, col)) :: ListOfStruct(fB, col + 1)
   }
 
   /**
     * Retrieve DataFrame Schema from HDU header.
     *
-    * @param data : (BinaryTableHDU)
-    *   The HDU data containing informations about the column name and element types.
-    * @return Return a `StructType` which contain a list of `StructField` with informations about name and type for all columns.
+    * @param fB : (FitsBlock)
+    *   The object describing the HDU.
+    * @return Return a `StructType` which contain a list of `StructField`
+    *   with informations about name and type for all columns.
     *
     */
-  def getSchema(data : BinaryTableHDU) : StructType = {
-    val ncols = data.getNCols
-    StructType(ListOfStruct(data, 0, ncols))
+  def getSchema(fB : FitsBlock) : StructType = {
+    // Construct the schema from the header.
+    StructType(ListOfStruct(fB))
   }
 }

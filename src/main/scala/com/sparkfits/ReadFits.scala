@@ -16,6 +16,7 @@
 package com.sparkfits
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
@@ -33,16 +34,26 @@ object ReadFits {
 
   def main(args : Array[String]) = {
 
+    // Loop over the two HDU of the test file
     for (hdu <- 1 to 2) {
       val df = spark.readfits
-        .option("datatype", "table")
-        .option("HDU", hdu)
-        .option("printHDUHeader", true)
-        .option("nBlock", 100)
-        .load(args(0).toString)
+        .option("datatype", "table")        // Binary table
+        .option("HDU", hdu)                 // Index of the HDU
+        .option("printHDUHeader", true)     // pretty print
+        .option("recordLength", 128 * 1024) // 128 KB per record
+        .load(args(0).toString)             // File to load
 
       df.show()
       df.printSchema()
+
+      // val c = df.select(col("Index")).count().toInt
+      // val c_d = df.select(col("Index")).distinct.count().toInt
+      // val s = df.select(col("Index")).rdd.map(_(0).asInstanceOf[Long]).reduce(_+_)
+
+      // println("Total count: " + c.toString)
+      // println("Unique count: " + c_d.toString)
+      // println("Total sum: " + s.toString)
+
     }
   }
 }
