@@ -159,7 +159,7 @@ of the package (see run_*.sh scripts). Then in the spark-shell
     .option("printHDUHeader", true)
     .load("src/test/resources/test_file.fits")
   +------ HEADER (HDU=1) ------+
-  XTENSION= BINTABLE           / binary table extension
+  XTENSION= BINTABLE             / binary table extension
   BITPIX  =                    8 / array data type
   NAXIS   =                    2 / number of array dimensions
   NAXIS1  =                   34 / length of dimension 1
