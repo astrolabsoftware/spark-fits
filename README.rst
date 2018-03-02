@@ -167,16 +167,16 @@ of the package (see run_*.sh scripts). Then in the spark-shell
   PCOUNT  =                    0 / number of group parameters
   GCOUNT  =                    1 / number of groups
   TFIELDS =                    5 / number of table fields
-  TTYPE1  = 'target  '
-  TFORM1  = '10A     '
-  TTYPE2  = 'RA      '
-  TFORM2  = 'E       '
-  TTYPE3  = 'Dec     '
-  TFORM3  = 'D       '
-  TTYPE4  = 'Index   '
-  TFORM4  = 'K       '
-  TTYPE5  = 'RunId   '
-  TFORM5  = 'J       '
+  TTYPE1  = target  
+  TFORM1  = 10A     
+  TTYPE2  = RA      
+  TFORM2  = E       
+  TTYPE3  = Dec     
+  TFORM3  = D
+  TTYPE4  = Index
+  TFORM4  = K
+  TTYPE5  = RunId
+  TFORM5  = J
   END
   +----------------------------+
   df: org.apache.spark.sql.DataFrame = [target: string, RA: float ... 3 more fields]
