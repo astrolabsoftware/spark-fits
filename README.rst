@@ -81,7 +81,7 @@ You can link against this library in your program at the following coordinates: 
     val df = spark.readfits
       .option("datatype", "table")               // [mandatory] We support only table for the moment.
       .option("HDU", <Int>)                      // [mandatory] Which HDU you want to read.
-      .option("recordLength", <Long>)            // [optional]  If you want to define yourself the length of a record.
+      .option("recordLength", <Int>)             // [optional]  If you want to define yourself the length of a record.
       .option("printHDUHeader", <Boolean>)       // [optional]  If you want to print the HEADER on the screen.
       .schema(<StructType>)                      // [optional]  If you want to bypass the header.
       .load("src/test/resources/test_file.fits") // [mandatory] Load data as DataFrame.
@@ -90,6 +90,8 @@ You can link against this library in your program at the following coordinates: 
 The `recordLength` option controls how the data is split and read inside each HDFS block (or more
 precisely inside each InputSplit as those are not the same) by individual mappers for processing.
 By default it is set to 128 KB. Careful for large value, you might suffer from a long garbage collector time.
+The maximum size allowed for a single record to be processed is 2**31 - 1 (Int max value).
+But I doubt you need to go as high...
 
 Note that the schema is directly inferred from the HEADER of the HDU.
 In case the HEADER is not present or corrupted, you can also manually specify it:
