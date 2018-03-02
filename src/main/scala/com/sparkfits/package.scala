@@ -239,22 +239,58 @@ package object fits {
       // Open the file
       val path = new org.apache.hadoop.fs.Path(fn)
       val fs = path.getFileSystem(conf)
-      val fB = new FitsBlock(path, conf, conf.get("HDU").toInt)
+      val indexHDU = conf.get("HDU").toInt
+      val fB = new FitsBlock(path, conf, indexHDU)
+      val header = fB.readHeader(fB.blockBoundaries._1)
 
       // Check the header if needed
       if (extraOptions.contains("printHDUHeader")) {
         if (extraOptions("printHDUHeader").toBoolean) {
-          val header = fB.readHeader(fB.BlockBoundaries._1)
-          val indexHDU = conf.get("HDU").toInt
           println(s"+------ HEADER (HDU=$indexHDU) ------+")
           header.foreach(println)
           println("+----------------------------+")
         }
       }
 
+      val keys = fB.getHeaderKeywords(header)
+      val keysHasXtension = keys.contains("XTENSION")
+      keysHasXtension match {
+        case true => keysHasXtension
+        case false => throw new AssertionError(s"""
+          Are you really trying to read a BINTABLE?
+          Your header has no keywords called XTENSION.
+          Check that the HDU number you want to
+          access is correct (current = $indexHDU).
+          """)
+      }
+
+      val headerStart = header(0).contains("BINTABLE")
+      val headerStartElement = header(0)
+      headerStart match {
+        case true => headerStart
+        case false => throw new AssertionError(s"""
+          Are you really trying to read a BINTABLE? Your header says that
+          the XTENSION is $headerStartElement
+          """)
+      }
+
+      val headerEND = header.reverse(0).contains("END")
+      headerEND match {
+        case true => headerEND
+        case false => throw new AssertionError("""
+          There is a problem with your HEADER. It should end with END.
+          Is it a standard header of size 2880 bytes? You should check it
+          using the option spark.readfits.option("printHDUHeader", true).
+          """)
+      }
+
       // Get the schema. By default it is built from the header, but the user
       // can also specify it manually.
       val schema = userSpecifiedSchema.getOrElse(getSchema(fB))
+
+      // We do not need the data on the driver at this point.
+      // The executors will re-open it later on.
+      fB.data.close()
 
       // Distribute the table data
       val rdd = spark.sparkContext.newAPIHadoopFile(

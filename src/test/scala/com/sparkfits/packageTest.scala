@@ -167,4 +167,17 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
     assert(count == count_unique)
   }
+
+  test("Header printing test") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .option("printHDUHeader", true)
+      .option("recordLength", 16 * 1024)
+
+    assert(results.extraOptions.contains("printHDUHeader"))
+
+    // Finally print the header and exit.
+    assert(results.load(fn).isInstanceOf[DataFrame])
+  }
 }
