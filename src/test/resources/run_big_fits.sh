@@ -13,22 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## SBT Version
-SBT_VERSION=2.11.8
-SBT_VERSION_SPARK=2.11
+for i in {27..31}; do
+  num=$((2**i))
+  echo "Process" $num "points"
 
-## Package version
-VERSION=0.2.0
+  ## Create the FITS file
+  python create_big_fits.py -nrow ${num} -filename fits_${num}.fits
 
-# Package it
-sbt ++${SBT_VERSION} package
+  ## put the FITS file to HDFS
+  hdfs dfs -put fits_${num}.fits
 
-# Parameters (put your file)
-fitsfn="file:///$PWD/src/test/resources/test_file.fits"
-
-# Run it!
-spark-submit \
-  --master local[*] \
-  --class com.sparkfits.ReadFits \
-  target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
-  $fitsfn
+  ## Remove the file from the local FS
+  rm fits_${num}.fits
+done
