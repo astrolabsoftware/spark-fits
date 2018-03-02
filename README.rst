@@ -242,5 +242,7 @@ TODO list
 
 * Make the docker file
 * Define custom Hadoop InputFile.
+* Allow reading several FITS file in once when building a DF.
+* Allow image HDU manipulation.
 * Test other Spark version?
 * Publish the doc.
