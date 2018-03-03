@@ -84,7 +84,7 @@ You can link against this library in your program at the following coordinates: 
       .option("recordLength", <Int>)        // [optional]  If you want to define yourself the length of a record.
       .option("printHDUHeader", <Boolean>)  // [optional]  If you want to print the HEADER on the screen.
       .schema(<StructType>)                 // [optional]  If you want to bypass the header.
-      .load(path: <String>)                 // [mandatory] Load data as DataFrame.
+      .load(<String>)                       // [mandatory] Load data as DataFrame.
   }
 
 Note that the file can be a file in a local system (`path="file://path/myfile.fits"`) or
