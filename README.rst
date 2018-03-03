@@ -79,19 +79,23 @@ You can link against this library in your program at the following coordinates: 
 
     // Read as a DataFrame a HDU of a table fits.
     val df = spark.readfits
-      .option("datatype", "table")               // [mandatory] We support only table for the moment.
-      .option("HDU", <Int>)                      // [mandatory] Which HDU you want to read.
-      .option("recordLength", <Int>)             // [optional]  If you want to define yourself the length of a record.
-      .option("printHDUHeader", <Boolean>)       // [optional]  If you want to print the HEADER on the screen.
-      .schema(<StructType>)                      // [optional]  If you want to bypass the header.
-      .load("src/test/resources/test_file.fits") // [mandatory] Load data as DataFrame.
+      .option("datatype", "table")          // [mandatory] We support only table for the moment.
+      .option("HDU", <Int>)                 // [mandatory] Which HDU you want to read.
+      .option("recordLength", <Int>)        // [optional]  If you want to define yourself the length of a record.
+      .option("printHDUHeader", <Boolean>)  // [optional]  If you want to print the HEADER on the screen.
+      .schema(<StructType>)                 // [optional]  If you want to bypass the header.
+      .load(path: <String>)                 // [mandatory] Load data as DataFrame.
   }
+
+Note that the file can be a file in a local system (`path="file://path/myfile.fits"`) or
+a file in HDFS (`path="hdfs://<IP>:<PORT>//path/myfile.fits"`). There is no support
+for reading multiple FITS files in once for the moment (but `WIP <https://github.com/JulienPeloton/spark-fits/issues/5>`_).
 
 The `recordLength` option controls how the data is split and read inside each HDFS block (or more
 precisely inside each InputSplit as those are not the same) by individual mappers for processing.
 By default it is set to 128 KB. Careful for large value, you might suffer from a long garbage collector time.
 The maximum size allowed for a single record to be processed is 2**31 - 1 (Int max value).
-But I doubt you need to go as high...
+But I doubt you ever need to go as high...
 
 Note that the schema is directly inferred from the HEADER of the HDU.
 In case the HEADER is not present or corrupted, you can also manually specify it:
@@ -157,7 +161,7 @@ of the package (see run_*.sh scripts). Then in the spark-shell
     .option("HDU", 1)
     .option("recordLength", 128 * 1024) // 128 KB per record
     .option("printHDUHeader", true)
-    .load("src/test/resources/test_file.fits")
+    .load("file:///path/to/spark-fits/src/test/resources/test_file.fits")
   +------ HEADER (HDU=1) ------+
   XTENSION= BINTABLE             / binary table extension
   BITPIX  =                    8 / array data type
