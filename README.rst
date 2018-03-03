@@ -87,12 +87,12 @@ You can link against this library in your program at the following coordinates: 
       .load(<String>)                       // [mandatory] Load data as DataFrame.
   }
 
-Note that the file can be a file in a local system (`path="file://path/myfile.fits"`) or
-a file in HDFS (`path="hdfs://<IP>:<PORT>//path/myfile.fits"`). There is no support
+Note that the file can be a file in a local system (``path="file://path/myfile.fits"``) or
+a file in HDFS (``path="hdfs://<IP>:<PORT>//path/myfile.fits"``). There is no support
 for reading multiple FITS files in once for the moment (but `WIP <https://github.com/JulienPeloton/spark-fits/issues/5>`_).
 
-The `recordLength` option controls how the data is split and read inside each HDFS block (or more
-precisely inside each InputSplit as those are not the same) by individual mappers for processing.
+The ``recordLength`` option controls how the data is split and read inside each HDFS block (or more
+precisely inside each InputSplit as they are not the same) by individual mappers for processing.
 By default it is set to 128 KB. Careful for large value, you might suffer from a long garbage collector time.
 The maximum size allowed for a single record to be processed is 2**31 - 1 (Int max value).
 But I doubt you ever need to go as high...
@@ -133,7 +133,7 @@ In case the HEADER is not present or corrupted, you can also manually specify it
 Using with Spark shell
 ================
 
-This package can be added to Spark using the `--packages` command line option.
+This package can be added to Spark using the ``--packages`` command line option.
 For example, to include it when starting the spark shell:
 
 **Spark compiled with Scala 2.11**
@@ -150,8 +150,8 @@ Alternatively you can build or download the jar, and add it when launching the s
   // Available!
   $SPARK_HOME/bin/spark-shell --jars /path/to/jar/spark-fits.jar
 
-To build the JAR, just run `sbt ++{SBT_VERSION} package` from the root
-of the package (see run_*.sh scripts). Then in the spark-shell
+To build the JAR, just run ``sbt ++{SBT_VERSION} package`` from the root
+of the package (see ``run_*.sh`` scripts). Then in the spark-shell
 
 .. code :: scala
 
@@ -208,7 +208,7 @@ of the package (see run_*.sh scripts). Then in the spark-shell
 Building From Source
 ================
 
-This library is built with SBT (see the build.sbt script provided).
+This library is built with SBT (see the ``build.sbt`` script provided).
 To build a JAR file simply run
 
 ::
