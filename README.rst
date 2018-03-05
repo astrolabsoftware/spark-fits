@@ -82,14 +82,17 @@ You can link against this library in your program at the following coordinates: 
       .option("datatype", "table")          // [mandatory] We support only table for the moment.
       .option("HDU", <Int>)                 // [mandatory] Which HDU you want to read.
       .option("recordLength", <Int>)        // [optional]  If you want to define yourself the length of a record.
-      .option("printHDUHeader", <Boolean>)  // [optional]  If you want to print the HEADER on the screen.
+      .option("verbose", <Boolean>)         // [optional]  If you want to print debugging messages on screen.
       .schema(<StructType>)                 // [optional]  If you want to bypass the header.
-      .load(<String>)                       // [mandatory] Load data as DataFrame.
+      .load(<String>)                       // [mandatory] Path to file or directory. Load data as DataFrame.
   }
 
 Note that the file can be a file in a local system (``path="file://path/myfile.fits"``) or
-a file in HDFS (``path="hdfs://<IP>:<PORT>//path/myfile.fits"``). There is no support
-for reading multiple FITS files in once for the moment (but `WIP <https://github.com/JulienPeloton/spark-fits/issues/5>`_).
+a file in HDFS (``path="hdfs://<IP>:<PORT>//path/myfile.fits"``).
+You can also specify a directory containing several FITS files
+(``path="hdfs://<IP>:<PORT>//path_to_dir"``) with the same HDU structure.
+The connector will load the data from the same HDU from all the files in one single
+DataFrame. This is particularly useful to manipulate many small files written the same way as once.
 
 The ``recordLength`` option controls how the data is split and read inside each HDFS block (or more
 precisely inside each InputSplit as they are not the same) by individual mappers for processing.
@@ -160,7 +163,7 @@ of the package (see ``run_*.sh`` scripts). Then in the spark-shell
     .option("datatype", "table")
     .option("HDU", 1)
     .option("recordLength", 128 * 1024) // 128 KB per record
-    .option("printHDUHeader", true)
+    .option("verbose", true)
     .load("file:///path/to/spark-fits/src/test/resources/test_file.fits")
   +------ HEADER (HDU=1) ------+
   XTENSION= BINTABLE             / binary table extension
@@ -246,7 +249,6 @@ TODO list
 
 * Make the docker file
 * Define custom Hadoop InputFile.
-* Allow reading several FITS file in once when building a DF.
 * Allow image HDU manipulation.
 * Test other Spark version?
 * Publish the doc.

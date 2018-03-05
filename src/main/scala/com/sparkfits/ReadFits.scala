@@ -39,7 +39,7 @@ object ReadFits {
       val df = spark.readfits
         .option("datatype", "table")        // Binary table
         .option("HDU", hdu)                 // Index of the HDU
-        .option("printHDUHeader", true)     // pretty print
+        .option("verbose", true)            // pretty print
         .option("recordLength", 128 * 1024) // 128 KB per record
         .load(args(0).toString)             // File to load
 
@@ -48,15 +48,6 @@ object ReadFits {
 
       val count = df.count()
       println("Total rows: " + count.toString)
-
-      // val c = df.select(col("Index")).count().toInt
-      // val c_d = df.select(col("Index")).distinct.count().toInt
-      // val s = df.select(col("Index")).rdd.map(_(0).asInstanceOf[Long]).reduce(_+_)
-
-      // println("Total count: " + c.toString)
-      // println("Unique count: " + c_d.toString)
-      // println("Total sum: " + s.toString)
-
     }
   }
 }

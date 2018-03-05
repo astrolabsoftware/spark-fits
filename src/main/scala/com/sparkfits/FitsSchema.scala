@@ -74,6 +74,7 @@ object FitsSchema {
 
     // Read the header
     val header = fB.readHeader
+    checkBintableHeader(header)
 
     // Grab max number of column
     val colmax = fB.getNCols(header)
@@ -97,5 +98,49 @@ object FitsSchema {
   def getSchema(fB : FitsBlock) : StructType = {
     // Construct the schema from the header.
     StructType(ListOfStruct(fB))
+  }
+
+  /**
+    * A few checks on the header for bintable.
+    * Careful, it will throw errors for image!
+    *
+    * @param header : (Array[String])
+    *   The header of the HDU.
+    */
+  def checkBintableHeader(header : Array[String]) : Unit = {
+
+    // Check that we have an extension
+    val keysHasXtension = header(0).contains("XTENSION")
+    keysHasXtension match {
+      case true => keysHasXtension
+      case false => throw new AssertionError("""
+        Are you really trying to read a BINTABLE?
+        Your header has no keywords called XTENSION.
+        Check that the HDU number you want to
+        access is correct: spark.readfits.option("HDU", <Int>).
+        """)
+    }
+
+    // Check that we read a bintable
+    val headerStart = header(0).contains("BINTABLE")
+    val headerStartElement = header(0)
+    headerStart match {
+      case true => headerStart
+      case false => throw new AssertionError(s"""
+        Are you really trying to read a BINTABLE? Your header says that
+        the XTENSION is $headerStartElement
+        """)
+    }
+
+    // Check that header end.
+    val headerEND = header.reverse(0).contains("END")
+    headerEND match {
+      case true => headerEND
+      case false => throw new AssertionError("""
+        There is a problem with your HEADER. It should end with END.
+        Is it a standard header of size 2880 bytes? You should check it
+        using the option spark.readfits.option("verbose", true).
+        """)
+    }
   }
 }
