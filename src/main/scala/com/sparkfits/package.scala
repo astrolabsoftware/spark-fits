@@ -17,10 +17,14 @@ package com.sparkfits
 
 // Low level import
 import scala.util.{Try, Success, Failure}
+import java.io.IOError
 
 // Hadoop import
-import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
+import org.apache.hadoop.fs.RemoteIterator
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.LocatedFileStatus
 
 // Spark import
 import org.apache.spark.sql.DataFrame
@@ -106,6 +110,9 @@ package object fits {
     // By default, the schema is inferred from the HDU header,
     // but the user can also manually specify the schema.
     private[sparkfits] var userSpecifiedSchema: Option[StructType] = None
+
+    // Level of verbosity
+    var verbosity : Boolean = false
 
     /**
       * Replace the current syntax in spark 2.X
@@ -196,15 +203,95 @@ package object fits {
       FitsContext.this
     }
 
-    /** Load a BinaryTableHDU data contained in one HDU as a DataFrame.
+    /**
+      * Load recursively all FITS file inside a directory.
+      *
+      * @param it : (RemoteIterator[LocatedFileStatus])
+      *   Iterator from a Hadoop Path containing informations about files.
+      * @param extensions : (List[String)
+      *   List of accepted extensions. Currently only .fits is available.
+      *   Default is List("*.fits").
+      * @return List of files as a list of String.
+      *
+      */
+    def getListOfFiles(it: RemoteIterator[LocatedFileStatus],
+        extensions: List[String] = List(".fits")): List[String] = {
+      if (!it.hasNext) {
+        Nil
+      } else {
+        it.next.getPath.toString :: getListOfFiles(it, extensions)
+      }
+    }
+
+    /**
+      * Check that the schemas of different FITS files to be added are
+      * the same. Throw an AssertionError if not.
+      *
+      * @param listOfFitsFiles : (List[String])
+      *   List of files as a list of String.
+      *
+      */
+    def checkSchema(listOfFitsFiles : List[String]) : Unit = {
+      // Wanted HDU
+      val indexHDU = conf.get("HDU").toInt
+
+      // Initialise
+      val path_init = new Path(listOfFitsFiles(0))
+
+      val fB_init = new FitsBlock(path_init, conf, indexHDU)
+      val schema_init = getSchema(fB_init)
+      fB_init.data.close()
+
+      for (file <- listOfFitsFiles.slice(1, listOfFitsFiles.size)) {
+        var path = new Path(file)
+        val fB = new FitsBlock(path, conf, indexHDU)
+        val schema = getSchema(fB)
+        val isOk = schema_init == schema
+        isOk match {
+          case true => isOk
+          case false => {
+            println(listOfFitsFiles(0))
+            println("----> ",  schema_init)
+            println(file)
+            println("----> ",  schema)
+            throw new AssertionError("""
+            You are trying to add HDU data with different structures!
+            Check that the number of columns, names of columns and element
+            types are the same. re-run with .option("verbose", true) to
+            list the files.
+          """)
+          }
+        }
+        fB.data.close()
+      }
+    }
+
+    /**
+      * Create a DataFrame from the data of one HDU.
+      * The input can be either the path to one FITS file (path + filename),
+      * or the path to a directory containing FITS files. In the latter,
+      * the code will load all FITS files listed inside this directory
+      * and make the union of the HDU data. Needless to say that the FITS
+      * files must have the same structure, otherwise the union will be impossible.
+      * The format of the input must be a String with Hadoop format
+      *   - (local) file://path/to/data
+      *   - (HDFS)  hdfs://<IP>:<PORT>//path/to/data
+      *
       * The schema of the DataFrame is directly inferred from the
       * header of the fits HDU.
       *
       * @param fn : (String)
-      *  Path + filename of the fits file to be read
-      * @return : DataFrame
+      *   Filename of the fits file to be read, or a directory containing FITS files
+      *   with the same HDU structure.
+      * @param silent : (Boolean)
+      *   If false, print out debugging messages. Default is true.
+      * @return (DataFrame) always one single DataFrame made from the HDU of
+      * one FITS file, or from the same kind of HDU from several FITS file.
       */
     def load(fn : String) : DataFrame = {
+
+      // Level of verbosity. Default is false
+      verbosity = Try{extraOptions("verbose")}.getOrElse("false").toBoolean
 
       // Check that you can read the data!
       val dataType = Try {
@@ -251,57 +338,106 @@ package object fits {
         case Failure(_) => println("Unknown Exception")
       }
 
-      // Open the file
-      val path = new org.apache.hadoop.fs.Path(fn)
+      // Make it a Hadoop readable
+      val conf = new Configuration()
+      val path = new Path(fn)
       val fs = path.getFileSystem(conf)
+
+      // Check whether we want to load a single FITS file or several
+      val isDir = fs.isDirectory(path)
+      val isFile = fs.isFile(path)
+
+      // List all the files
+      val listOfFitsFiles : List[String] = if (isDir) {
+        val it = fs.listFiles(path, true)
+        getListOfFiles(it).filter{file => file.endsWith(".fits")}
+      } else if (isFile){
+        List(fn)
+      } else {
+        List[String]()
+      }
+
+      // Check that we have at least one file
+      listOfFitsFiles.size match {
+        case x if x > 0 => if (verbosity) {
+          println("Found " + listOfFitsFiles.size.toString + " files:")
+          listOfFitsFiles.foreach(println)
+        }
+        case x if x <= 0 => throw new NullPointerException(s"""
+            0 files detected! Is $fn a directory containing
+            FITS files or a FITS file?
+            """)
+      }
+
+      // Check that all the files have the same Schema
+      // in order to perform the union
+      checkSchema(listOfFitsFiles)
+
+      // Load one or all the FITS files found
+      load(listOfFitsFiles)
+    }
+
+    /**
+      * Load the HDU data from several FITS file into a single DataFrame.
+      * The structure of the HDU must be the same, that is contain the
+      * same number of columns with the same name and element types.
+      * The schema of the DataFrame is directly inferred from the
+      * header of the fits HDU.
+      *
+      * @param fns : (List[String])
+      *   List of filenames with the same structure.
+      * @param silent : (Boolean)
+      *   If false, print out debugging messages. Default is true.
+      * @return (DataFrame) always one single DataFrame made from the HDU of
+      * one FITS file, or from the same kind of HDU from several FITS file.
+      *
+      */
+    def load(fns : List[String]) : DataFrame = {
+
+      // Number of files
+      val nFiles = fns.size
+
+      // Initialise
+      var df = loadOne(fns(0))
+
+      // Union if more than one file
+      for ((file, index) <- fns.slice(1, nFiles).zipWithIndex) {
+        df = df.union(loadOne(file))
+      }
+      df
+    }
+
+    /** Load a BinaryTableHDU data contained in one HDU as a DataFrame.
+      * The schema of the DataFrame is directly inferred from the
+      * header of the fits HDU.
+      *
+      * @param fn : (String)
+      *   Path + filename of the fits file to be read.
+      * @param silent : (Boolean)
+      *   If false, print out debugging messages. Default is true.
+      * @return : DataFrame made from one single HDU.
+      */
+    def loadOne(fn : String) : DataFrame = {
+
+      // Open the file
+      val path = new Path(fn)
       val indexHDU = conf.get("HDU").toInt
       val fB = new FitsBlock(path, conf, indexHDU)
       val header = fB.readHeader(fB.blockBoundaries._1)
 
       // Check the header if needed
-      if (extraOptions.contains("printHDUHeader")) {
-        if (extraOptions("printHDUHeader").toBoolean) {
-          println(s"+------ HEADER (HDU=$indexHDU) ------+")
-          header.foreach(println)
-          println("+----------------------------+")
-        }
-      }
-
-      val keys = fB.getHeaderKeywords(header)
-      val keysHasXtension = keys.contains("XTENSION")
-      keysHasXtension match {
-        case true => keysHasXtension
-        case false => throw new AssertionError(s"""
-          Are you really trying to read a BINTABLE?
-          Your header has no keywords called XTENSION.
-          Check that the HDU number you want to
-          access is correct (current = $indexHDU).
-          """)
-      }
-
-      val headerStart = header(0).contains("BINTABLE")
-      val headerStartElement = header(0)
-      headerStart match {
-        case true => headerStart
-        case false => throw new AssertionError(s"""
-          Are you really trying to read a BINTABLE? Your header says that
-          the XTENSION is $headerStartElement
-          """)
-      }
-
-      val headerEND = header.reverse(0).contains("END")
-      headerEND match {
-        case true => headerEND
-        case false => throw new AssertionError("""
-          There is a problem with your HEADER. It should end with END.
-          Is it a standard header of size 2880 bytes? You should check it
-          using the option spark.readfits.option("printHDUHeader", true).
-          """)
+      if (verbosity) {
+        println(s"+------ HEADER (HDU=$indexHDU) ------+")
+        header.foreach(println)
+        println("+----------------------------+")
       }
 
       // Get the schema. By default it is built from the header, but the user
       // can also specify it manually.
       val schema = userSpecifiedSchema.getOrElse(getSchema(fB))
+      if (verbosity) {
+        println("Schema is : ", schema)
+      }
 
       // We do not need the data on the driver at this point.
       // The executors will re-open it later on.

@@ -172,12 +172,38 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     val results = spark.readfits
       .option("datatype", "table")
       .option("HDU", 1)
-      .option("printHDUHeader", true)
+      .option("verbose", true)
       .option("recordLength", 16 * 1024)
 
-    assert(results.extraOptions.contains("printHDUHeader"))
+    assert(results.extraOptions.contains("verbose"))
 
     // Finally print the header and exit.
     assert(results.load(fn).isInstanceOf[DataFrame])
+  }
+
+  test("Multi files test: Can you read several FITS file?") {
+    val fn = "src/test/resources/dir"
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .option("verbose", true)
+      .option("recordLength", 16 * 1024)
+
+    assert(results.load(fn).isInstanceOf[DataFrame])
+  }
+
+  test("Multi files test: Can you detect an error in reading different FITS file?") {
+    val fn = "src/test/resources/dirNotOk"
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .option("verbose", true)
+      .option("recordLength", 16 * 1024)
+
+      val exception = intercept[AssertionError] {
+        results.load(fn)
+      }
+
+    assert(exception.getMessage.contains("different structures"))
   }
 }
