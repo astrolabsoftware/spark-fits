@@ -24,7 +24,9 @@ VERSION=0.2.0
 sbt ++${SBT_VERSION} package
 
 # Parameters (put your file)
-fitsfn="file:///$PWD/src/test/resources/test_file.fits"
+fitsfn="file://$PWD/src/test/resources/test_file.fits"
+# fitsfn="file://$PWD/src/test/resources/dir"
+# fitsfn="file://$PWD/src/test/resources/dirNotOk"
 
 # Run it!
 spark-submit \

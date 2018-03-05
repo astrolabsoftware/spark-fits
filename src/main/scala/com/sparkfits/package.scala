@@ -360,7 +360,7 @@ package object fits {
       // Check that we have at least one file
       listOfFitsFiles.size match {
         case x if x > 0 => if (verbosity) {
-          println("Found " + listOfFitsFiles.size.toString + " files:")
+          println("Found " + listOfFitsFiles.size.toString + " file(s):")
           listOfFitsFiles.foreach(println)
         }
         case x if x <= 0 => throw new NullPointerException(s"""

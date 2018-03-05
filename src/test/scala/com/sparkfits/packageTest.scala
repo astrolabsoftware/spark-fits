@@ -206,4 +206,19 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
     assert(exception.getMessage.contains("different structures"))
   }
+
+  test("No file test: Can you detect an error if there is no input FITS file found?") {
+    val fn = "src/test/resources/dirfjsdhf"
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .option("verbose", true)
+      .option("recordLength", 16 * 1024)
+
+      val exception = intercept[NullPointerException] {
+        results.load(fn)
+      }
+
+    assert(exception.getMessage.contains("0 files detected"))
+  }
 }
