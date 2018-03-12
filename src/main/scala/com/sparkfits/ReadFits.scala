@@ -40,7 +40,7 @@ object ReadFits {
         .option("datatype", "table")        // Binary table
         .option("HDU", hdu)                 // Index of the HDU
         .option("verbose", true)            // pretty print
-        .option("recordLength", 128 * 1024) // 128 KB per record
+        .option("recordLength", 1 * 1024)   // 1 KB per record
         .load(args(0).toString)             // File to load
 
       df.show()

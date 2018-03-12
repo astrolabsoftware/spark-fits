@@ -138,7 +138,7 @@ object FitsLib {
         // Size of the data block in Bytes.
         // Skip Data if None (typically HDU=0)
         val datalen = Try {
-          getNRows(localHeader) * getSizeRowBytes(localHeader)
+          getNRows(localHeader) * getSizeRowBytes(localHeader).toLong
         }.getOrElse(0L)
 
         // Where the actual data stopped
@@ -198,7 +198,7 @@ object FitsLib {
         // Size of the data block in Bytes.
         // Skip Data if None (typically HDU=0)
         val datalen = Try {
-          getNRows(localHeader) * getSizeRowBytes(localHeader)
+          getNRows(localHeader) * getSizeRowBytes(localHeader).toLong
         }.getOrElse(0L)
 
         // Store the final offset
@@ -600,10 +600,10 @@ object FitsLib {
       *
       * @param header : (Array[String])
       *   The header of the HDU.
-      * @return (Long), the number of rows as written in KEYWORD=NAXIS1.
+      * @return (Int), the size (bytes) of one row as written in KEYWORD=NAXIS1.
       *
       */
-    def getSizeRowBytes(header : Array[String]) : Long = {
+    def getSizeRowBytes(header : Array[String]) : Int = {
       val values = getHeaderValues(header)
       values("NAXIS1")
     }

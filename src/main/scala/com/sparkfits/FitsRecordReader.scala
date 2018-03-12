@@ -69,6 +69,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
   private var fB: FitsBlock = null
   private var header: Array[String] = null
   private var nrowsLong : Long = 0L
+  private var rowSizeInt : Int = 0
   private var rowSizeLong : Long = 0L
   private var startstop : (Long, Long, Long, Long) = (0L, 0L, 0L, 0L)
 
@@ -78,6 +79,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
 
   // Intermediate variable to store binary data
   private var recordValueBytes: Array[Byte] = null
+  // private var recordValueBytes: ByteBuffer = null
 
   /**
     * Close the file after reading it.
@@ -165,8 +167,8 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
 
     // Get the number of rows and the size (B) of one row.
     nrowsLong = fB.getNRows(header)
-    rowSizeLong = fB.getSizeRowBytes(header)
-
+    rowSizeInt = fB.getSizeRowBytes(header)
+    rowSizeLong = rowSizeInt.toLong
 
     // A priori, there is no reason for a random split of the FITS file to start
     // at the beginning of a row. Therefore we do the following:
@@ -223,7 +225,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     // Get the record length in Bytes (get integer!). First look if the user
     // specify a size for the recordLength. If not, set it to 128 Ko.
     val recordLengthFromUser = Try{conf.get("recordLength").toInt}
-      .getOrElse((128 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt)
+      .getOrElse((1 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt)
 
     // Seek for a round number of lines for the record
     recordLength = (recordLengthFromUser / rowSizeLong.toInt) * rowSizeLong.toInt
@@ -324,17 +326,37 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
       // Read a record of length `0 to recordLength - 1`
       fB.data.readFully(recordValueBytes, 0, recordLength)
 
-      // Group by row
-      val it = recordValueBytes.grouped(rowSizeLong.toInt)
-
       // Convert each row
-      val tmp = for {
-        i <- 0 to recordLength / rowSizeLong.toInt - 1
-      } yield (fB.readLineFromBuffer(it.next()))
 
-      // Back to List
-      // recordValue = tmp.map(x=>Row.fromSeq(x)).toList
-      recordValue = tmp.toList
+      // 1 task: 32 MB @ 2s
+      // val tmp = for {
+      //   i <- 0 to recordLength / rowSizeLong.toInt - 1
+      // } yield (fB.readLineFromBuffer(
+      //     recordValueBytes.slice(
+      //       rowSizeInt*i, rowSizeInt*(i+1))))
+      // recordValue = tmp.toList
+
+      // 1 task: 32 MB @ 5s
+      // val tmp = recordValueBytes.grouped(rowSizeLong.toInt)
+      //   .map(x => fB.readLineFromBuffer(x))
+      // recordValue = tmp.toList
+
+      // 1 task: 32 MB @ 1-2s
+      recordValue = List[List[Any]](fB.readLineFromBuffer(
+        recordValueBytes.slice(0, rowSizeLong.toInt)))
+      for (i <- 1 to recordLength / rowSizeInt - 1) {
+        recordValue = fB.readLineFromBuffer(
+          recordValueBytes.slice(rowSizeInt*i, rowSizeInt*(i+1))) :: recordValue
+      }
+
+      // 1 task: 32 MB @ 2s
+      // val tmp = new Array[List[Any]](recordLength / rowSizeInt)
+      // for (i <- 0 to recordLength / rowSizeInt - 1) {
+      //   tmp(i) = fB.readLineFromBuffer(recordValueBytes.slice(rowSizeInt*i, rowSizeInt*(i+1)))
+      // }
+      // recordValue = tmp.toList
+
+      // recordValue = tmp.map(x => Row.fromSeq(x)).toList
 
       // update our current position
       currentPosition = currentPosition + recordLength
