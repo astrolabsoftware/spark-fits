@@ -1,5 +1,5 @@
 ================
-Spark Fits
+Spark FITS
 ================
 
 .. image:: https://travis-ci.org/JulienPeloton/spark-fits.svg?branch=master
