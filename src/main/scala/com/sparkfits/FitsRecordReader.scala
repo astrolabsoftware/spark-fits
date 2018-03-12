@@ -78,6 +78,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
 
   // Intermediate variable to store binary data
   private var recordValueBytes: Array[Byte] = null
+  // private var recordValueBytes: ByteBuffer = null
 
   /**
     * Close the file after reading it.
@@ -324,13 +325,10 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
       // Read a record of length `0 to recordLength - 1`
       fB.data.readFully(recordValueBytes, 0, recordLength)
 
-      // Group by row
-      val it = recordValueBytes.grouped(rowSizeLong.toInt)
-
       // Convert each row
       val tmp = for {
         i <- 0 to recordLength / rowSizeLong.toInt - 1
-      } yield (fB.readLineFromBuffer(it.next()))
+      } yield (fB.readLineFromBuffer(recordValueBytes.slice(rowSizeLong.toInt*i, rowSizeLong.toInt*(i+1))))
 
       // Back to List
       // recordValue = tmp.map(x=>Row.fromSeq(x)).toList
