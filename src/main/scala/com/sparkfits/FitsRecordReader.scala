@@ -224,7 +224,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
     // Get the record length in Bytes (get integer!). First look if the user
     // specify a size for the recordLength. If not, set it to 128 Ko.
     val recordLengthFromUser = Try{conf.get("recordLength").toInt}
-      .getOrElse((128 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt)
+      .getOrElse((1 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt)
 
     // Seek for a round number of lines for the record
     recordLength = (recordLengthFromUser / rowSizeLong.toInt) * rowSizeLong.toInt
