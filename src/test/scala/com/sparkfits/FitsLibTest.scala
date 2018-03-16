@@ -91,10 +91,18 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
   }
 
   // Check the header
-  test("FitsLib test: Can you read the header?") {
+  test("FitsLib test: Can you read a short header?") {
     val fB1 = new FitsBlock(file, conf, 1)
     val header = fB1.blockHeader
     assert(header.size <= 36)
+  }
+
+  // Check the header
+  test("FitsLib test: Can you read a long header (> 2880 bytes)?") {
+    val lFile = new Path("src/test/resources/test_longheader_file.fits")
+    val fB1 = new FitsBlock(lFile, conf, 1)
+    val header = fB1.blockHeader
+    assert(header.size == 89)
   }
 
   // Check the header
