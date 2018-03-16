@@ -73,7 +73,7 @@ object FitsSchema {
     fB.resetCursorAtHeader
 
     // Read the header
-    val header = fB.readHeader
+    val header = fB.blockHeader
     checkBintableHeader(header)
 
     // Grab max number of column

@@ -423,12 +423,15 @@ package object fits {
       val path = new Path(fn)
       val indexHDU = conf.get("HDU").toInt
       val fB = new FitsBlock(path, conf, indexHDU)
-      val header = fB.readHeader(fB.blockBoundaries._1)
+
+      // Register header and block boundaries in the Hadoop configuration
+      fB.registerHeader()
+      fB.registerBlockBoundaries()
 
       // Check the header if needed
       if (verbosity) {
         println(s"+------ HEADER (HDU=$indexHDU) ------+")
-        header.foreach(println)
+        fB.blockHeader.foreach(println)
         println("+----------------------------+")
       }
 
