@@ -16,4 +16,6 @@
 ## SBT Version
 SBT_VERSION=2.11.8
 
+# Clean and launch the test suite
+sbt ++${SBT_VERSION} clean
 sbt ++${SBT_VERSION} coverage test coverageReport

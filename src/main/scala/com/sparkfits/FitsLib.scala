@@ -37,8 +37,8 @@ object FitsLib {
 
   // Define some FITS standards.
 
-  // Standard size of a header (bytes)
-  val HEADER_SIZE_BYTES = 2880
+  // Standard size of a block (bytes)
+  val FITSBLOCK_SIZE_BYTES = 2880
 
   // Size of one row in header (bytes)
   val FITS_HEADER_CARD_SIZE = 80
@@ -69,7 +69,7 @@ object FitsLib {
 
     // Check that the HDU asked is below the max HDU index.
     // Check only header no registered yet
-    val numberOfHdus = if (conf.get("header") == null) {
+    val numberOfHdus = if (conf.get(hdfsPath+"_header") == null) {
       getNHDU
     } else hduIndex + 1
 
@@ -83,7 +83,7 @@ object FitsLib {
 
     // Compute the bound and initialise the cursor
     // indices (headerStart, dataStart, dataStop) in bytes.
-    val blockBoundaries = if (conf.get("blockboundaries") != null) {
+    val blockBoundaries = if (conf.get(hdfsPath+"_blockboundaries") != null) {
       retrieveBlockBoundaries()
     } else BlockBoundaries
 
@@ -92,7 +92,7 @@ object FitsLib {
     } else false
 
     // Get the header and set the cursor to its start.
-    val blockHeader = if (conf.get("header") != null) {
+    val blockHeader = if (conf.get(hdfsPath+"header") != null) {
       retrieveHeader()
     } else readHeader
     resetCursorAtHeader
@@ -155,10 +155,10 @@ object FitsLib {
         // Store the final offset
         // FITS is made of blocks of size 2880 bytes, so we might need to
         // pad to jump from the end of the data to the next header.
-        block_stop = if ((data.getPos + datalen) % HEADER_SIZE_BYTES == 0) {
+        block_stop = if ((data.getPos + datalen) % FITSBLOCK_SIZE_BYTES == 0) {
           data_stop
         } else {
-          data_stop + HEADER_SIZE_BYTES -  (data_stop) % HEADER_SIZE_BYTES
+          data_stop + FITSBLOCK_SIZE_BYTES -  (data_stop) % FITSBLOCK_SIZE_BYTES
         }
 
         // Move to the another HDU if needed
@@ -212,10 +212,10 @@ object FitsLib {
         // Store the final offset
         // FITS is made of blocks of size 2880 bytes, so we might need to
         // pad to jump from the end of the data to the next header.
-        data_stop = if ((data.getPos + datalen) % HEADER_SIZE_BYTES == 0) {
+        data_stop = if ((data.getPos + datalen) % FITSBLOCK_SIZE_BYTES == 0) {
           data.getPos + datalen
         } else {
-          data.getPos + datalen + HEADER_SIZE_BYTES -  (data.getPos + datalen) % HEADER_SIZE_BYTES
+          data.getPos + datalen + FITSBLOCK_SIZE_BYTES -  (data.getPos + datalen) % FITSBLOCK_SIZE_BYTES
         }
 
         // Move to the another HDU if needed
@@ -285,35 +285,39 @@ object FitsLib {
       // Initialise a line of the header
       var buffer = new Array[Byte](FITS_HEADER_CARD_SIZE)
 
-      var len = 0
-      var stop = 0
-      var pos = 0
-      var stopline = 0
-      var header = new Array[String](HEADER_SIZE_BYTES / FITS_HEADER_CARD_SIZE)
+      val header = buildHeader(buffer).toArray
+      val newOffset = if (data.getPos % FITSBLOCK_SIZE_BYTES == 0) {
+        data.getPos
+      } else {
+        data.getPos + FITSBLOCK_SIZE_BYTES -  data.getPos % FITSBLOCK_SIZE_BYTES
+      }
 
-      // Loop until the end of the header.
-      // TODO: what if the header has an non-standard size?
-      do {
-        len = data.read(buffer, 0, FITS_HEADER_CARD_SIZE)
-        if (len == 0) {
-          throw new EOFException("nothing to read left")
+      // Place the cursor at the end of the last header block
+      // that is at the beginning of the first data block
+      data.seek(newOffset)
+
+      header
+    }
+
+    def buildHeader(buffer: Array[Byte], prevline: String="") : List[String] = {
+      if (prevline.trim() == "END") {
+        Nil
+      } else {
+        // Read a line of the header
+        val len = data.read(buffer, 0, FITS_HEADER_CARD_SIZE)
+
+        // EOF
+        val isEmpty = (len <= 0)
+        isEmpty match {
+          case true => throw new EOFException("nothing to read left")
+          case false => isEmpty
         }
-        stop += len
 
-        // Bytes to Strings
-        header(pos) = new String(buffer, StandardCharsets.UTF_8)
+        // Decode the line of the header
+        val line = new String(buffer, StandardCharsets.UTF_8)
 
-        // Remove blanck lines at the end
-        stopline = if (header(pos).trim() != "") {
-          stopline + 1
-        } else stopline
-
-        // Increment the line
-        pos += 1
-      } while (stop < HEADER_SIZE_BYTES)
-
-      // Return the header
-      header.slice(0, stopline)
+        line :: buildHeader(buffer, line)
+      }
     }
 
     /**
@@ -328,7 +332,7 @@ object FitsLib {
       *
       */
     def registerHeader(sep : String=";;") {
-      conf.set("header", blockHeader.mkString(sep))
+      conf.set(hdfsPath+"header", blockHeader.mkString(sep))
     }
 
     /**
@@ -346,7 +350,7 @@ object FitsLib {
       // Register the Tuple4 as a String.. Ugly
       val str = blockBoundaries.productIterator.toArray.mkString(sep)
 
-      conf.set("blockboundaries", str)
+      conf.set(hdfsPath+"blockboundaries", str)
     }
 
     /**
@@ -360,7 +364,7 @@ object FitsLib {
       */
     def retrieveHeader(sep : String=";;"): Array[String] = {
 
-      conf.get("header").split(sep)
+      conf.get(hdfsPath+"header").split(sep)
     }
 
     /**
@@ -374,7 +378,7 @@ object FitsLib {
       */
     def retrieveBlockBoundaries(sep : String=";;"): (Long, Long, Long, Long) = {
       // Retrieve the boundaries as a String, split it, and cast to Long
-      val arr = conf.get("blockboundaries").split(sep).map(x => x.toLong)
+      val arr = conf.get(hdfsPath+"blockboundaries").split(sep).map(x => x.toLong)
 
       // Return it as a tuple4 of Long... Ugly... Need to change that!
       (arr(0), arr(1), arr(2), arr(3))

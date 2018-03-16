@@ -339,7 +339,7 @@ package object fits {
       }
 
       // Make it a Hadoop readable
-      val conf = new Configuration()
+      // val conf = new Configuration()
       val path = new Path(fn)
       val fs = path.getFileSystem(conf)
 
