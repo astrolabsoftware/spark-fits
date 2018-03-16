@@ -93,14 +93,14 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
   // Check the header
   test("FitsLib test: Can you read the header?") {
     val fB1 = new FitsBlock(file, conf, 1)
-    val header = fB1.readHeader
+    val header = fB1.blockHeader
     assert(header.size <= 36)
   }
 
   // Check the header
   test("FitsLib test: The header stops by END?") {
     val fB1 = new FitsBlock(file, conf, 1)
-    val header = fB1.readHeader
+    val header = fB1.blockHeader
     assert(header.reverse(0).contains("END"))
   }
 
@@ -109,11 +109,12 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val fB1 = new FitsBlock(file, conf, 1)
 
     // Read the header and set the cursor at the beginning of the data block
-    val header = fB1.readHeader
+    val header = fB1.blockHeader
 
     // Define a row and read data from the file
     val bufferSize = fB1.getSizeRowBytes(header).toInt
     val buffer = new Array[Byte](bufferSize)
+    fB1.resetCursorAtData
     fB1.data.readFully(buffer, 0, bufferSize)
 
     // Convert from binary to primitive
@@ -127,7 +128,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val fB1 = new FitsBlock(file, conf, 1)
 
     // Read the header and set the cursor at the beginning of the data block
-    val header = fB1.readHeader
+    val header = fB1.blockHeader
+    fB1.resetCursorAtData
 
     val splitLocations = fB1.splitLocations
     val ncols = splitLocations.size - 1
@@ -162,7 +164,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val fB1 = new FitsBlock(file, conf, 1)
 
     // Read the header
-    val header = fB1.readHeader
+    val header = fB1.blockHeader
 
     // Grab the column type (FITS standard)
     val coltypes = fB1.getColTypes(header)
@@ -177,7 +179,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val fB1 = new FitsBlock(file, conf, 1)
 
     // Read the header
-    val header = fB1.readHeader
+    val header = fB1.blockHeader
 
     // Grab the keywords
     val keys = fB1.getHeaderKeywords(header)
@@ -190,7 +192,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val fB1 = new FitsBlock(file, conf, 1)
 
     // Read the header
-    val header = fB1.readHeader
+    val header = fB1.blockHeader
 
     // Grab the values as map(keywords/values)
     val values = fB1.getHeaderValues(header)
@@ -205,7 +207,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val fB1 = new FitsBlock(file, conf, 1)
 
     // Read the header
-    val header = fB1.readHeader
+    val header = fB1.blockHeader
 
     // Grab the names as map(keywords/names)
     val names = fB1.getHeaderNames(header)
@@ -220,7 +222,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val fB1 = new FitsBlock(file, conf, 1)
 
     // Read the header
-    val header = fB1.readHeader
+    val header = fB1.blockHeader
 
     // Grab the names as map(keywords/names)
     val comments = fB1.getHeaderComments(header)
@@ -237,8 +239,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val fB2 = new FitsBlock(file, conf, 2)
 
     // Read the header
-    val header1 = fB1.readHeader
-    val header2 = fB2.readHeader
+    val header1 = fB1.blockHeader
+    val header2 = fB2.blockHeader
 
     // Grab the number of rows
     val nrows1 = fB1.getNRows(header1)
@@ -253,8 +255,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val fB2 = new FitsBlock(file, conf, 2)
 
     // Read the header
-    val header1 = fB1.readHeader
-    val header2 = fB2.readHeader
+    val header1 = fB1.blockHeader
+    val header2 = fB2.blockHeader
 
     // Grab the number of rows
     val ncols1 = fB1.getNCols(header1)
@@ -269,8 +271,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val fB2 = new FitsBlock(file, conf, 2)
 
     // Read the header
-    val header1 = fB1.readHeader
-    val header2 = fB2.readHeader
+    val header1 = fB1.blockHeader
+    val header2 = fB2.blockHeader
 
     // Grab the number of rows
     val rowSize1 = fB1.getSizeRowBytes(header1)
