@@ -160,10 +160,10 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
 
     // Define the bytes indices of our block
     // hdu_start=header_start, data_start, data_stop, hdu_stop
-    startstop = fB.BlockBoundaries
+    startstop = fB.blockBoundaries
 
     // Get the header
-    header = fB.readHeader
+    header = fB.blockHeader
 
     // Get the number of rows and the size (B) of one row.
     nrowsLong = fB.getNRows(header)

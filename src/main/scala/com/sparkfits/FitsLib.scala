@@ -68,25 +68,29 @@ object FitsLib {
     val data = fs.open(hdfsPath)
 
     // Check that the HDU asked is below the max HDU index.
-    val numberOfHdus = getNHDU
-    val isHDUBelowMax = hduIndex < numberOfHdus
-    isHDUBelowMax match {
-      case true => isHDUBelowMax
-      case false => throw new AssertionError(s"""
-        HDU number $hduIndex does not exist!
-        """)
-    }
+    // val numberOfHdus = getNHDU
+    // val isHDUBelowMax = hduIndex < numberOfHdus
+    // isHDUBelowMax match {
+    //   case true => isHDUBelowMax
+    //   case false => throw new AssertionError(s"""
+    //     HDU number $hduIndex does not exist!
+    //     """)
+    // }
 
     // Compute the bound and initialise the cursor
     // indices (headerStart, dataStart, dataStop) in bytes.
-    val blockBoundaries = BlockBoundaries
+    val blockBoundaries = if (conf.get("blockboundaries") != null) {
+      retrieveBlockBoundaries()
+    } else BlockBoundaries
 
     val empty_hdu = if (blockBoundaries._2 == blockBoundaries._3) {
       true
     } else false
 
     // Get the header and set the cursor to its start.
-    val blockHeader = readHeader
+    val blockHeader = if (conf.get("header") != null) {
+      retrieveHeader()
+    } else readHeader
     resetCursorAtHeader
 
     // Get informations on element types and number of columns.
@@ -306,6 +310,70 @@ object FitsLib {
 
       // Return the header
       header.slice(0, stopline)
+    }
+
+    /**
+      * Register the header in the Hadoop configuration.
+      * By doing this, we broadcast the header to the executors.
+      * The header is sent as a long String, and can be read properly
+      * afterwards using retrieveHeader. Make sure you use the same
+      * separators.
+      *
+      * @param sep : (String)
+      *   Line separator used to form the String. Default is ;;
+      *
+      */
+    def registerHeader(sep : String=";;") {
+      conf.set("header", blockHeader.mkString(sep))
+    }
+
+    /**
+      * Register the boundaries of the HDU in the Hadoop configuration.
+      * By doing this, we broadcast the values to the executors.
+      * It is sent as a long String, and can be read properly
+      * afterwards using retrieveBlockBoundaries. Make sure you use the same
+      * separators.
+      *
+      * @param sep : (String)
+      *   Line separator used to form the String. Default is ;;
+      *
+      */
+    def registerBlockBoundaries(sep : String=";;") {
+      // Register the Tuple4 as a String.. Ugly
+      val str = blockBoundaries.productIterator.toArray.mkString(sep)
+
+      conf.set("blockboundaries", str)
+    }
+
+    /**
+      * Retrieve the header from the Hadoop configuration.
+      * Make sure you use the same separators as in registerHeader.
+      *
+      * @param sep : (String)
+      *   Line separator used to split the String. Default is ;;
+      * @return the header as Array[String]. See readHeader.
+      *
+      */
+    def retrieveHeader(sep : String=";;"): Array[String] = {
+
+      conf.get("header").split(sep)
+    }
+
+    /**
+      * Retrieve the blockboundaries from the Hadoop configuration.
+      * Make sure you use the same separators as in registerBlockBoundaries.
+      *
+      * @param sep : (String)
+      *   Line separator used to split the String. Default is ;;
+      * @return the block boundaries as Tuple4 of Long. See BlockBoundaries.
+      *
+      */
+    def retrieveBlockBoundaries(sep : String=";;"): (Long, Long, Long, Long) = {
+      // Retrieve the boundaries as a String, split it, and cast to Long
+      val arr = conf.get("blockboundaries").split(sep).map(x => x.toLong)
+
+      // Return it as a tuple4 of Long... Ugly... Need to change that!
+      (arr(0), arr(1), arr(2), arr(3))
     }
 
     /**
