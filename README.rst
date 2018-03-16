@@ -244,6 +244,15 @@ Use SBT to build the doc:
   open target/scala_${SCALA_VERSION}/api/index.html
 
 
+Header limitations
+================
+
+The header tested so far are very simple, and not so exotic.
+Over the time, we plan to add many new features based on complex examples
+(see `here <https://github.com/JulienPeloton/spark-fits/tree/master/src/test/resources/toTest>`_).
+If you use Spark FITS, and encounter errors while reading a header,
+tell us (issues or PR) so that we fix the problem asap!
+
 TODO list
 ================
 
