@@ -96,7 +96,7 @@ DataFrame. This is particularly useful to manipulate many small files written th
 
 The ``recordLength`` option controls how the data is split and read inside each HDFS block (or more
 precisely inside each InputSplit as they are not the same) by individual mappers for processing.
-By default it is set to 128 KB. Careful for large value, you might suffer from a long garbage collector time.
+By default it is set to 1 KB. Careful for large value, you might suffer from a long garbage collector time.
 The maximum size allowed for a single record to be processed is 2**31 - 1 (Int max value).
 But I doubt you ever need to go as high...
 
