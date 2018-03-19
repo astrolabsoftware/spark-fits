@@ -162,7 +162,6 @@ of the package (see ``run_*.sh`` scripts). Then in the spark-shell
   scala> val df = spark.readfits
     .option("datatype", "table")
     .option("HDU", 1)
-    .option("recordLength", 128 * 1024) // 128 KB per record
     .option("verbose", true)
     .load("file:///path/to/spark-fits/src/test/resources/test_file.fits")
   +------ HEADER (HDU=1) ------+
