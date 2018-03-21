@@ -21,6 +21,7 @@ import java.nio.ByteBuffer
 
 // Scala dependencies
 import scala.util.{Try, Success, Failure}
+import scala.collection.mutable
 
 // Hadoop dependencies
 import org.apache.hadoop.io.LongWritable
@@ -329,12 +330,12 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
       // Convert each row
 
       // 1 task: 32 MB @ 2s
-      // val tmp = for {
-      //   i <- 0 to recordLength / rowSizeLong.toInt - 1
-      // } yield (fB.readLineFromBuffer(
-      //     recordValueBytes.slice(
-      //       rowSizeInt*i, rowSizeInt*(i+1))))
-      // recordValue = tmp.toList
+      val tmp = for {
+        i <- 0 to recordLength / rowSizeLong.toInt - 1
+      } yield (fB.readLineFromBuffer(
+          recordValueBytes.slice(
+            rowSizeInt*i, rowSizeInt*(i+1))))
+      recordValue = tmp.toList
 
       // 1 task: 32 MB @ 5s
       // val tmp = recordValueBytes.grouped(rowSizeLong.toInt)
@@ -342,19 +343,25 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
       // recordValue = tmp.toList
 
       // 1 task: 32 MB @ 1-2s
-      recordValue = List[List[Any]](fB.readLineFromBuffer(
-        recordValueBytes.slice(0, rowSizeLong.toInt)))
-      for (i <- 1 to recordLength / rowSizeInt - 1) {
-        recordValue = fB.readLineFromBuffer(
-          recordValueBytes.slice(rowSizeInt*i, rowSizeInt*(i+1))) :: recordValue
-      }
+      // recordValue = List[List[Any]](fB.readLineFromBuffer(
+      //   recordValueBytes.slice(0, rowSizeLong.toInt)))
+      // for (i <- 1 to recordLength / rowSizeInt - 1) {
+      //   recordValue = fB.readLineFromBuffer(
+      //     recordValueBytes.slice(rowSizeInt*i, rowSizeInt*(i+1))) :: recordValue
+      // }
 
       // 1 task: 32 MB @ 2s
-      // val tmp = new Array[List[Any]](recordLength / rowSizeInt)
+      // val recordValue = new Array[List[Any]](recordLength / rowSizeInt)
       // for (i <- 0 to recordLength / rowSizeInt - 1) {
-      //   tmp(i) = fB.readLineFromBuffer(recordValueBytes.slice(rowSizeInt*i, rowSizeInt*(i+1)))
+      //   recordValue(i) = fB.readLineFromBuffer(recordValueBytes.slice(rowSizeInt*i, rowSizeInt*(i+1)))
       // }
       // recordValue = tmp.toList
+
+      // val l1 = mutable.MutableList.empty[List[Any]]
+      // for (i <- 0 to recordLength / rowSizeInt - 1) {
+      //   l1 += fB.readLineFromBuffer(recordValueBytes.slice(rowSizeInt*i, rowSizeInt*(i+1)))
+      // }
+      // recordValue = l1.toList
 
       // recordValue = tmp.map(x => Row.fromSeq(x)).toList
 
