@@ -343,6 +343,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
       // recordValue = tmp.toList
 
       // 1 task: 32 MB @ 1-2s
+      // /!\ Prepend!!! Must reverse the list (TODO)
       // recordValue = List[List[Any]](fB.readLineFromBuffer(
       //   recordValueBytes.slice(0, rowSizeLong.toInt)))
       // for (i <- 1 to recordLength / rowSizeInt - 1) {
