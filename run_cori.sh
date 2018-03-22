@@ -19,7 +19,7 @@ VERSION=0.2.0
 sbt ++${SBT_VERSION} package
 
 # Parameters (put your file)
-fitsfn="/global/cscratch1/sd/plaszczy/colore"
+fitsfn="/global/cscratch1/sd/<user>/<path>"
 
 # Run it!
 start-all.sh
@@ -30,4 +30,3 @@ spark-submit \
   target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
   $fitsfn
 stop-all.sh
-

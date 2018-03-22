@@ -207,6 +207,18 @@ of the package (see ``run_*.sh`` scripts). Then in the spark-shell
   +----------+---------+--------------------+-----+-----+
   only showing top 5 rows
 
+Using at NERSC
+================
+
+Although HPC systems are not designed for IO intensive jobs,
+Spark standalone mode and filesystem-agnostic approach makes it also a
+candidate to process data stored in HPC-style shared file systems such as Lustre.
+A script is provided at the root of the project (see ``run_cori.sh``)
+to launch a Spark Job on Cori at NERSC.
+Keep in mind that raw performances (i.e. without any attempt to take into account
+that we read from Lustre and not for example HDFS) are worst than in a pure
+distributed environment (2-3x less from quick and dirty tests).
+
 Building From Source
 ================
 
