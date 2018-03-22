@@ -447,14 +447,11 @@ package object fits {
       fB.data.close()
 
       // Distribute the table data
-      val rdd = spark.sparkContext.newAPIHadoopFile(
-        fn,
+      val rdd = spark.sparkContext.newAPIHadoopFile(fn,
         classOf[FitsFileInputFormat],
         classOf[LongWritable],
-        classOf[List[List[_]]],
-        conf)
-          .flatMap(x => x._2)
-          .map(x => Row.fromSeq(x))
+        classOf[Seq[Row]],
+        conf).flatMap(x => x._2)
 
       // Return DataFrame with Schema
       spark.createDataFrame(rdd, schema)

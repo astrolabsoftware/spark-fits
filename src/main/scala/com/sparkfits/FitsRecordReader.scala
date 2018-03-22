@@ -53,7 +53,7 @@ import com.sparkfits.FitsLib.FitsBlock
   * type element by element, and finally grouped into rows.
   *
   */
-class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
+class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
   // Initialise mutable variables to be used by the executors
   // Handle the HDFS block boundaries
@@ -76,7 +76,7 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
 
   // The (key, value) used to create the RDD
   private var recordKey: LongWritable = null
-  private var recordValue: List[List[_]] = null
+  private var recordValue: Seq[Row] = null
 
   // Intermediate variable to store binary data
   private var recordValueBytes: Array[Byte] = null
@@ -101,10 +101,10 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
 
   /**
     * Get the current Value.
-    * @return (List[List[_]]) Value is a list of heterogeneous lists. It will
+    * @return (Seq[Row]) Value is a list of heterogeneous lists. It will
     *   be converted to List[Row] later.
     */
-  override def getCurrentValue: List[List[_]] = {
+  override def getCurrentValue: Seq[Row] = {
     recordValue
   }
 
@@ -328,43 +328,19 @@ class FitsRecordReader extends RecordReader[LongWritable, List[List[_]]] {
       fB.data.readFully(recordValueBytes, 0, recordLength)
 
       // Convert each row
-
       // 1 task: 32 MB @ 2s
-      val tmp = for {
-        i <- 0 to recordLength / rowSizeLong.toInt - 1
-      } yield (fB.readLineFromBuffer(
-          recordValueBytes.slice(
-            rowSizeInt*i, rowSizeInt*(i+1))))
-      recordValue = tmp.toList
-
-      // 1 task: 32 MB @ 5s
-      // val tmp = recordValueBytes.grouped(rowSizeLong.toInt)
-      //   .map(x => fB.readLineFromBuffer(x))
-      // recordValue = tmp.toList
-
-      // 1 task: 32 MB @ 1-2s
-      // /!\ Prepend!!! Must reverse the list (TODO)
-      // recordValue = List[List[Any]](fB.readLineFromBuffer(
-      //   recordValueBytes.slice(0, rowSizeLong.toInt)))
-      // for (i <- 1 to recordLength / rowSizeInt - 1) {
-      //   recordValue = fB.readLineFromBuffer(
-      //     recordValueBytes.slice(rowSizeInt*i, rowSizeInt*(i+1))) :: recordValue
-      // }
-
-      // 1 task: 32 MB @ 2s
-      // val recordValue = new Array[List[Any]](recordLength / rowSizeInt)
-      // for (i <- 0 to recordLength / rowSizeInt - 1) {
-      //   recordValue(i) = fB.readLineFromBuffer(recordValueBytes.slice(rowSizeInt*i, rowSizeInt*(i+1)))
-      // }
-      // recordValue = tmp.toList
-
-      // val l1 = mutable.MutableList.empty[List[Any]]
-      // for (i <- 0 to recordLength / rowSizeInt - 1) {
-      //   l1 += fB.readLineFromBuffer(recordValueBytes.slice(rowSizeInt*i, rowSizeInt*(i+1)))
-      // }
-      // recordValue = l1.toList
-
-      // recordValue = tmp.map(x => Row.fromSeq(x)).toList
+      val tmp = Seq.newBuilder[Row]
+      for (i <- 0 to recordLength / rowSizeLong.toInt - 1) {
+        tmp += Row.fromSeq(fB.readLineFromBuffer(
+            recordValueBytes.slice(
+              rowSizeInt*i, rowSizeInt*(i+1))))
+      }
+      recordValue = tmp.result
+      // recordValue = for {
+      //   i <- 0 to recordLength / rowSizeLong.toInt - 1
+      // } yield (Row.fromSeq(fB.readLineFromBuffer(
+      //     recordValueBytes.slice(
+      //       rowSizeInt*i, rowSizeInt*(i+1)))))
 
       // update our current position
       currentPosition = currentPosition + recordLength
