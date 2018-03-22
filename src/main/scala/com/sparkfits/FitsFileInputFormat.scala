@@ -30,10 +30,10 @@ private[sparkfits] object FitsFileInputFormat {
   /**
     * `FitsFileInputFormat` extends `FileInputFormat` by creating a custom
     * RecordReader for FITS file. Note that the output class type is
-    * KEY: LongWritable, VALUE: List[List[_]]. VALUE will be converted later
+    * KEY: LongWritable, VALUE: IndexedSeq[Row]. VALUE will be converted later
     * into Row to easily create DataFrame.
     */
-  class FitsFileInputFormat extends FileInputFormat[LongWritable, List[List[_]]] {
+  class FitsFileInputFormat extends FileInputFormat[LongWritable, IndexedSeq[Row]] {
 
     /**
       * Override the RecordReader class with our custom RecordReader for FITS file
@@ -44,6 +44,6 @@ private[sparkfits] object FitsFileInputFormat {
       *   The context for task attempts (see Hadoop code source).
       */
     override def createRecordReader(split: InputSplit, context: TaskAttemptContext):
-      RecordReader[LongWritable, List[List[_]]] = new FitsRecordReader()
+      RecordReader[LongWritable, IndexedSeq[Row]] = new FitsRecordReader()
   }
 }
