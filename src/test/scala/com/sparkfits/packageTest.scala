@@ -221,4 +221,13 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
     assert(exception.getMessage.contains("0 files detected"))
   }
+
+  // Test ordering of elements in the DF
+  test("Ordering test: Is the first element of the DF correct?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .load(fn)
+    assert(results.select(col("target")).first.getString(0) == "NGC0000000")
+  }
 }
