@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import Dependencies._
+import xerial.sbt.Sonatype._
 
 lazy val root = (project in file(".")).
  settings(
@@ -23,6 +24,8 @@ lazy val root = (project in file(".")).
    )),
    // Name of the application
    name := "spark-fits",
+   // Name of the orga
+   organization := "com.github.JulienPeloton",
    // Do not execute test in parallel
    parallelExecution in Test := false,
    // Fail the test suite if statement coverage is < 70%
@@ -46,3 +49,35 @@ lazy val root = (project in file(".")).
      scalaTest % Test
    )
  )
+
+// POM settings for Sonatype
+homepage := Some(
+ url("https://github.com/JulienPeloton/spark-fits")
+)
+scmInfo := Some(
+ ScmInfo(
+   url("https://github.com/JulienPeloton/spark-fits"),
+   " https://github.com/JulienPeloton/spark-fits.git"
+ )
+)
+
+developers := List(
+ Developer(
+   "JulienPeloton",
+   "Julien Peloton",
+   "peloton@lal.in2p3.fr",
+   url("https://github.com/JulienPeloton")
+ )
+)
+
+licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+
+publishMavenStyle := true
+
+publishTo := {
+ val nexus = "https://oss.sonatype.org/"
+ if (isSnapshot.value)
+  Some("snapshots" at nexus + "content/repositories/snapshots")
+ else
+  Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+}
