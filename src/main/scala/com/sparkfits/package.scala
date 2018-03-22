@@ -450,7 +450,7 @@ package object fits {
       val rdd = spark.sparkContext.newAPIHadoopFile(fn,
         classOf[FitsFileInputFormat],
         classOf[LongWritable],
-        classOf[IndexedSeq[Row]],
+        classOf[Seq[Row]],
         conf).flatMap(x => x._2)
 
       // Return DataFrame with Schema

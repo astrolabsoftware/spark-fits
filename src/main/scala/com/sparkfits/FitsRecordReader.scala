@@ -53,7 +53,7 @@ import com.sparkfits.FitsLib.FitsBlock
   * type element by element, and finally grouped into rows.
   *
   */
-class FitsRecordReader extends RecordReader[LongWritable, IndexedSeq[Row]] {
+class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
   // Initialise mutable variables to be used by the executors
   // Handle the HDFS block boundaries
@@ -76,7 +76,7 @@ class FitsRecordReader extends RecordReader[LongWritable, IndexedSeq[Row]] {
 
   // The (key, value) used to create the RDD
   private var recordKey: LongWritable = null
-  private var recordValue: IndexedSeq[Row] = null
+  private var recordValue: Seq[Row] = null
 
   // Intermediate variable to store binary data
   private var recordValueBytes: Array[Byte] = null
@@ -101,10 +101,10 @@ class FitsRecordReader extends RecordReader[LongWritable, IndexedSeq[Row]] {
 
   /**
     * Get the current Value.
-    * @return (IndexedSeq[Row]) Value is a list of heterogeneous lists. It will
+    * @return (Seq[Row]) Value is a list of heterogeneous lists. It will
     *   be converted to List[Row] later.
     */
-  override def getCurrentValue: IndexedSeq[Row] = {
+  override def getCurrentValue: Seq[Row] = {
     recordValue
   }
 
@@ -329,11 +329,18 @@ class FitsRecordReader extends RecordReader[LongWritable, IndexedSeq[Row]] {
 
       // Convert each row
       // 1 task: 32 MB @ 2s
-      recordValue = for {
-        i <- 0 to recordLength / rowSizeLong.toInt - 1
-      } yield (Row.fromSeq(fB.readLineFromBuffer(
-          recordValueBytes.slice(
-            rowSizeInt*i, rowSizeInt*(i+1)))))
+      val tmp = Seq.newBuilder[Row]
+      for (i <- 0 to recordLength / rowSizeLong.toInt - 1) {
+        tmp += Row.fromSeq(fB.readLineFromBuffer(
+            recordValueBytes.slice(
+              rowSizeInt*i, rowSizeInt*(i+1))))
+      }
+      recordValue = tmp.result
+      // recordValue = for {
+      //   i <- 0 to recordLength / rowSizeLong.toInt - 1
+      // } yield (Row.fromSeq(fB.readLineFromBuffer(
+      //     recordValueBytes.slice(
+      //       rowSizeInt*i, rowSizeInt*(i+1)))))
 
       // update our current position
       currentPosition = currentPosition + recordLength
