@@ -9,6 +9,7 @@ Spark FITS
   :target: https://codecov.io/gh/JulienPeloton/spark-fits
 
 Since 23/03/18
+
 .. image:: http://hits.dwyl.io/JulienPeloton/spark-fits.svg
     :target: http://hits.dwyl.io/JulienPeloton/spark-fits
 
