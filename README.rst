@@ -5,6 +5,11 @@ Spark FITS
 .. image:: https://travis-ci.org/JulienPeloton/spark-fits.svg?branch=master
     :target: https://travis-ci.org/JulienPeloton/spark-fits
 
+.. image:: https://codecov.io/gh/JulienPeloton/spark-fits/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/JulienPeloton/spark-fits
+
+
+
 .. contents:: **Table of Contents**
 
 The package
