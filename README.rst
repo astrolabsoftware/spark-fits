@@ -8,8 +8,8 @@ Spark FITS
 .. image:: https://codecov.io/gh/JulienPeloton/spark-fits/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/JulienPeloton/spark-fits
 
-.. image:: https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits/badge.svg
-  :target: https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits
+.. image:: https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11/badge.svg
+  :target: https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11
 
 .. contents:: **Table of Contents**
 
