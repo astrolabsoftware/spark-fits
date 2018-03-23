@@ -59,9 +59,16 @@ Scala API
 
 **Linking**
 
-You can link against this library in your program at the following coordinates: TBD.
+You can link against this library in your program at the following coordinates
+in your ``build.sbt``:
+
+.. code:: scala
+
+  libraryDependencies += "com.github.JulienPeloton" % "spark-fits_2.11" % "0.2.0"
 
 **Scala 2.10.6 and 2.11.X**
+
+Here is the minimal syntax in Scala 2.10.6 and 2.11.X to play with the package:
 
 .. code:: scala
 
@@ -144,14 +151,14 @@ For example, to include it when starting the spark shell:
 ::
 
   // Not yet available!
-  $SPARK_HOME/bin/spark-shell --packages com.toto:spark-fits_2.11:0.Y.0
+  $SPARK_HOME/bin/spark-shell --packages com.github.JulienPeloton:spark-fits_2.11:0.2.0
 
 Alternatively you can build or download the jar, and add it when launching the spark shell
 
 ::
 
   // Available!
-  $SPARK_HOME/bin/spark-shell --jars /path/to/jar/spark-fits.jar
+  $SPARK_HOME/bin/spark-shell --jars /path/to/jar/<spark-fits.jar>
 
 To build the JAR, just run ``sbt ++{SBT_VERSION} package`` from the root
 of the package (see ``run_*.sh`` scripts). Then in the spark-shell
