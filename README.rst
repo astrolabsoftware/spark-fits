@@ -8,6 +8,9 @@ Spark FITS
 .. image:: https://codecov.io/gh/JulienPeloton/spark-fits/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/JulienPeloton/spark-fits
 
+.. image:: https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits/badge.svg
+  :target: https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits
+
 .. contents:: **Table of Contents**
 
 The package
