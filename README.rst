@@ -70,6 +70,10 @@ in your ``build.sbt``:
 
 .. code:: scala
 
+  // %% will automatically set the Scala version needed for Spark FITS
+  libraryDependencies += "com.github.JulienPeloton" %% "spark-fits" % "0.2.0"
+
+  // Alternatively you can also specify directly the Scala version, e.g.
   libraryDependencies += "com.github.JulienPeloton" % "spark-fits_2.11" % "0.2.0"
 
 **Scala 2.10.6 and 2.11.X**
