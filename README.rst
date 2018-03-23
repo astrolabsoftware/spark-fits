@@ -8,7 +8,8 @@ Spark FITS
 .. image:: https://codecov.io/gh/JulienPeloton/spark-fits/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/JulienPeloton/spark-fits
 
-
+.. image:: http://hits.dwyl.io/JulienPeloton/spark-fits.svg
+    :target: http://hits.dwyl.io/JulienPeloton/spark-fits
 
 .. contents:: **Table of Contents**
 
