@@ -150,14 +150,13 @@ For example, to include it when starting the spark shell:
 
 ::
 
-  // Not yet available!
   $SPARK_HOME/bin/spark-shell --packages com.github.JulienPeloton:spark-fits_2.11:0.2.0
 
-Alternatively you can build or download the jar, and add it when launching the spark shell
+Alternatively to have the latest development you can download this repo and build the jar,
+and add it when launching the spark shell
 
 ::
 
-  // Available!
   $SPARK_HOME/bin/spark-shell --jars /path/to/jar/<spark-fits.jar>
 
 To build the JAR, just run ``sbt ++{SBT_VERSION} package`` from the root
