@@ -37,7 +37,6 @@ object ReadFits {
     // Loop over the two HDU of the test file
     for (hdu <- 1 to 2) {
       val df = spark.readfits
-        .option("datatype", "table")        // Binary table
         .option("HDU", hdu)                 // Index of the HDU
         .option("verbose", true)            // pretty print
         .option("recordLength", 1 * 1024)   // 1 KB per record

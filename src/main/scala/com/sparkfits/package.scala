@@ -307,33 +307,33 @@ package object fits {
       verbosity = Try{extraOptions("verbose")}.getOrElse("false").toBoolean
 
       // Check that you can read the data!
-      val dataType = Try {
-        extraOptions("datatype")
-      }
-      dataType match {
-        case Success(value) => extraOptions("datatype")
-        case Failure(e : NullPointerException) =>
-          throw new NullPointerException(e.getMessage)
-        case Failure(e : NoSuchElementException) =>
-          throw new NoSuchElementException("""
-          You did not specify the data type!
-          Please choose one of the following:
-            spark.readfits.option("datatype", "table")
-            spark.readfits.option("datatype", "image")
-            """)
-        case Failure(_) => println("Unknown Exception")
-      }
+      // val dataType = Try {
+      //   extraOptions("datatype")
+      // }
+      // dataType match {
+      //   case Success(value) => extraOptions("datatype")
+      //   case Failure(e : NullPointerException) =>
+      //     throw new NullPointerException(e.getMessage)
+      //   case Failure(e : NoSuchElementException) =>
+      //     throw new NoSuchElementException("""
+      //     You did not specify the data type!
+      //     Please choose one of the following:
+      //       spark.readfits.option("datatype", "table")
+      //       spark.readfits.option("datatype", "image")
+      //       """)
+      //   case Failure(_) => println("Unknown Exception")
+      // }
 
       // Check that the user specifies table
-      val dataTypeTable = extraOptions("datatype").contains("table")
-      dataTypeTable match {
-        case true => extraOptions("datatype")
-        case false => throw new AssertionError("""
-          Currently only reading data from table is supported.
-          Support for image data will be added later.
-          Please use spark.readfits.option("datatype", "table")
-          """)
-      }
+      // val dataTypeTable = extraOptions("datatype").contains("table")
+      // dataTypeTable match {
+      //   case true => extraOptions("datatype")
+      //   case false => throw new AssertionError("""
+      //     Currently only reading data from table is supported.
+      //     Support for image data will be added later.
+      //     Please use spark.readfits.option("datatype", "table")
+      //     """)
+      // }
 
       // Check that the user specifies table
       val isIndexHDU = Try {

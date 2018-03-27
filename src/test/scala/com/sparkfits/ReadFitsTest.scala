@@ -59,23 +59,23 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Add more and put a loop for several tests!
   val fn = "src/test/resources/test_file.fits"
 
-  // Test if the user provides the data type in the HDU
-  test("dataType test: is there table or image in options?") {
-    val results = spark.readfits
-    val exception = intercept[NoSuchElementException] {
-      results.load(fn)
-    }
-    assert(exception.getMessage.contains("datatype"))
-  }
-
-  // Test if the data type is table (image not yet supported)
-  test("dataType test: Is the datatype a table?") {
-    val results = spark.readfits
-    val exception = intercept[AssertionError] {
-      results.option("datatype", "image").load(fn)
-    }
-    assert(exception.getMessage.contains("datatype"))
-  }
+  // // Test if the user provides the data type in the HDU
+  // test("dataType test: is there table or image in options?") {
+  //   val results = spark.readfits
+  //   val exception = intercept[NoSuchElementException] {
+  //     results.load(fn)
+  //   }
+  //   assert(exception.getMessage.contains("datatype"))
+  // }
+  //
+  // // Test if the data type is table (image not yet supported)
+  // test("dataType test: Is the datatype a table?") {
+  //   val results = spark.readfits
+  //   val exception = intercept[AssertionError] {
+  //     results.option("datatype", "image").load(fn)
+  //   }
+  //   assert(exception.getMessage.contains("datatype"))
+  // }
 
   // Test if the user provides the HDU index to be read
   test("HDU test: Is there a HDU number?") {
