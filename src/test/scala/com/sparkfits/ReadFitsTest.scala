@@ -122,6 +122,16 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
     assert(results.select("Index").count() == 20000)
   }
 
+  // Test if one accesses column as expected for HDU 1
+  test("Column test: Can you select only some columns?") {
+    val results = spark.readfits
+      .option("datatype", "table")
+      .option("HDU", 1)
+      .option("columns", "target")
+      .load(fn)
+    assert(results.first.size == 1)
+  }
+
   // Test if type cast is done correctly
   test("Type test: Do you see a Boolean?") {
     val results = spark.readfits

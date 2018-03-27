@@ -79,11 +79,12 @@ object FitsSchema {
     // Grab max number of column
     val colmax = fB.getNCols(header)
 
-    // Get the list of StructField recursively.
-    if (col == colmax)
-      Nil
-    else
-      ReadMyType(fB.getColumnName(header, col), fB.getColumnType(header, col)) :: ListOfStruct(fB, col + 1)
+    // Get the list of StructField.
+    val lStruct = List.newBuilder[StructField]
+    for (col <- fB.colPositions) {
+      lStruct += ReadMyType(fB.getColumnName(header, col), fB.getColumnType(header, col))
+    }
+    lStruct.result
   }
 
   /**

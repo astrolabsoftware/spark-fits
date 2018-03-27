@@ -191,6 +191,19 @@ package object fits {
     }
 
     /**
+      * Adds an input options for reading the underlying data source.
+      * (key, List[String])
+      *
+      * @param key : (String)
+      *   Name of the option
+      * @param value : (List[String])
+      *   Value of the option.
+      */
+    def option(key: String, value: List[String]): FitsContext = {
+      option(key, value.mkString(","))
+    }
+
+    /**
       * Adds a schema to our data. It will overwrite the inferred schema from
       * the HDU header. Useful if the header is corrupted.
       *
