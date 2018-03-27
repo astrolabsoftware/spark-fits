@@ -221,8 +221,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val names = fB1.getHeaderNames(header)
 
     // Check an entry with a name (TTYPE1), and one without.
-    // By default, header line without name gets a default value of "".
-    assert(names("TTYPE1") == "target" && names("NAXIS1") == "")
+    // By default, header line without name are not taken.
+    assert(names("TTYPE1") == "target" && !names.contains("NAXIS1"))
   }
 
   // Check the comment conversion

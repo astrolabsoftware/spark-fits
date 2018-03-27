@@ -103,6 +103,17 @@ object FitsLib {
     } else getColTypes(blockHeader)
     val ncols = rowTypes.size
 
+    // Check if the user specifies columns to select
+    val colNames = getHeaderNames(blockHeader)
+
+    val selectedColNames = if (conf.get("columns") != null) {
+      conf.getStrings("columns").deep.toList.asInstanceOf[List[String]]
+    } else {
+      colNames.filter(x=>x._1.contains("TTYPE")).values.toList.asInstanceOf[List[String]]
+    }
+    val colPositions = selectedColNames.map(
+      x=>getColumnPos(blockHeader, x)).toList.sorted
+
     // splitLocations is an array containing the location of elements
     // (byte index) in a row. Example if we have a row with [20A, E, E], one
     // will have splitLocations = [0, 20, 24, 28] that is a string on 20 Bytes,
@@ -400,19 +411,18 @@ object FitsLib {
       *
       * @param buf : (Array[Byte])
       *   Row of byte read from the data block.
-      * @param col : (Int=0)
-      *   Index of the column (used for the recursion).
       * @return (List[_]) The row as list of elements (float, int, string, etc.)
       *   as given by the header.
       *
       */
-    def readLineFromBuffer(buf : Array[Byte], col : Int = 0): List[_] = {
+    def readLineFromBuffer(buf : Array[Byte]): List[_] = {
 
-      if (col == ncols) {
-        Nil
-      } else {
-        getElementFromBuffer(buf.slice(splitLocations(col), splitLocations(col+1)), rowTypes(col)) :: readLineFromBuffer(buf, col + 1)
+      val row = List.newBuilder[Any]
+      for (col <- colPositions) {
+        row += getElementFromBuffer(
+          buf.slice(splitLocations(col), splitLocations(col+1)), rowTypes(col))
       }
+      row.result
     }
 
     /**
@@ -600,7 +610,9 @@ object FitsLib {
         val name = Try{name_tmp.substring(1, name_tmp.length).trim()}.getOrElse("")
 
         // Update the map
-        headerMap += (keys(i) -> name)
+        if (name != "") {
+          headerMap += (keys(i) -> name)
+        }
       }
 
       // Return the map
@@ -699,6 +711,37 @@ object FitsLib {
       val names = getHeaderNames(header)
       // Zero-based index
       names("TTYPE" + (colIndex + 1).toString)
+    }
+
+    /**
+      * Get the position (zero based) of a column with name `colName` of a HDU.
+      *
+      * @param header : (Array[String])
+      *   The header of the HDU.
+      * @param colName : (String)
+      *   The name of the column
+      * @return (Int), position (zero-based) of the column.
+      *
+      */
+    def getColumnPos(header : Array[String], colName : String) : Int = {
+      // Grab the header names as map(keywords/names)
+      val names = getHeaderNames(header)
+
+      // Get the position of the column. Header names are TTYPE#
+      val pos = Try {
+        names.filter(x => x._2 == colName).keys.head.substring(5).toInt
+      }.getOrElse(-1)
+
+      val isCol = pos >= 0
+      isCol match {
+        case true => isCol
+        case false => throw new AssertionError(s"""
+          $colName is not a valid column name!
+          """)
+      }
+
+      // Zero based
+      pos - 1
     }
 
     /**

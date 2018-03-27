@@ -98,6 +98,7 @@ Here is the minimal syntax in Scala 2.10.6 and 2.11.X to play with the package:
     val df = spark.readfits
       .option("datatype", "table")          // [mandatory] We support only table for the moment.
       .option("HDU", <Int>)                 // [mandatory] Which HDU you want to read.
+      .option("columns", <List[String]>)    // [optional]  Names of the columns to load. Default loads all columns.
       .option("recordLength", <Int>)        // [optional]  If you want to define yourself the length of a record.
       .option("verbose", <Boolean>)         // [optional]  If you want to print debugging messages on screen.
       .schema(<StructType>)                 // [optional]  If you want to bypass the header.
@@ -110,6 +111,12 @@ You can also specify a directory containing several FITS files
 (``path="hdfs://<IP>:<PORT>//path_to_dir"``) with the same HDU structure.
 The connector will load the data from the same HDU from all the files in one single
 DataFrame. This is particularly useful to manipulate many small files written the same way as once.
+
+You can specify which columns you want to load in the DataFrame, using the option ``columns``.
+Example, ``.option("columns", List("target", "Index"))`` will load all the data, but
+will decode only these two columns. If not specified, all columns will be loaded in the
+DataFrame (and you can select columns manually later). In a future release, the selection of columns will be
+done at the level of the loading of the data directly (for speed-up).
 
 The ``recordLength`` option controls how the data is split and read inside each HDFS block (or more
 precisely inside each InputSplit as they are not the same) by individual mappers for processing.
