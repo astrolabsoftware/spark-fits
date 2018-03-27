@@ -27,38 +27,18 @@ This is rather similar but not strictly equivalent to what was done previously f
 In addition we developed the necessary tools to interpret the FITS file format
 in HDFS by extending FileInputFormat and RecordReader Hadoop classes.
 
+This package provides
+
+* Read fits table and organize the HDU data into DataFrames.
+* Automatically distribute the data of a FITS HDU over machines.
+* Automatically infer DataFrame schema from the HDU header. Alternatively, users can specify the schema.
+
 Requirements
 ================
 
 This library requires Spark 2.0+ (not tested for earlier version).
 The library has been tested with Scala 2.10.6 and 2.11.X. If you want to use another
 version, feel free to contact us.
-
-Features
-================
-
-* Read fits table and organize the HDU data into DataFrames.
-* Automatically distribute the data of a FITS HDU over machines.
-* Automatically infer DataFrame schema from the HDU header. Alternatively, users can specify the schema.
-
-Provided Examples
-================
-
-We provide two shell scripts to show the use of the library:
-
-**Local use**
-
-::
-
-  ./run.sh
-
-**Spark standalone**
-
-::
-
-  ./run_cluster.sh
-
-Just make sure that you set up correctly the paths and the different variables.
 
 Scala API
 ================
@@ -230,6 +210,25 @@ of the package (see ``run_*.sh`` scripts). Then in the spark-shell
   +----------+---------+--------------------+-----+-----+
   only showing top 5 rows
 
+Provided examples
+================
+
+We provide two shell scripts to show the use of the library:
+
+**Local use**
+
+::
+
+  ./run.sh
+
+**Spark standalone**
+
+::
+
+  ./run_cluster.sh
+
+Just make sure that you set up correctly the paths and the different variables.
+
 Using at NERSC
 ================
 
@@ -242,7 +241,7 @@ Keep in mind that raw performances (i.e. without any attempt to take into accoun
 that we read from Lustre and not for example HDFS) are worst than in a pure
 distributed environment (2-3x less from quick and dirty tests).
 
-Building From Source
+Building from source
 ================
 
 This library is built with SBT (see the ``build.sbt`` script provided).
@@ -276,7 +275,6 @@ Use SBT to build the doc:
 
   sbt ++{SCALA_VERSION} doc
   open target/scala_${SCALA_VERSION}/api/index.html
-
 
 Header limitations
 ================
