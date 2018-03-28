@@ -109,7 +109,7 @@ object FitsLib {
     val selectedColNames = if (conf.get("columns") != null) {
       conf.getStrings("columns").deep.toList.asInstanceOf[List[String]]
     } else {
-      colNames.filter(x=>x._1.contains("TTYPE")).values.toList.asInstanceOf[List[String]]
+      colNames.filter(x=>x._1.contains("TYPE")).values.toList.asInstanceOf[List[String]]
     }
     val colPositions = selectedColNames.map(
       x=>getColumnPos(blockHeader, x)).toList.sorted
@@ -122,6 +122,36 @@ object FitsLib {
       List[Int]()
     } else {
       (0 :: rowSplitLocations(0)).scan(0)(_ +_).tail
+    }
+
+    /**
+      * Check the type of HDU. Available: BINTABLE, IMAGE, or EMPTY.
+      * If not registered, returns NOT UNDERSTOOD.
+      * Note: Not working if an image is stored in a primary HDU... TBD.
+      *
+      * @return (String) The type of the HDU data.
+      */
+    def hduType : String = {
+      // Get the header NAMES
+      val colNames = getHeaderNames(blockHeader)
+
+      // Check if the HDU is empty, a table or an image
+      val isTable = colNames.filter(
+        x=>x._2.contains("BINTABLE")).values.toList.size > 0
+      val isImage = colNames.filter(
+        x=>x._2.contains("IMAGE")).values.toList.size > 0
+      val isEmpty = empty_hdu
+
+      val fitstype = if (isTable) {
+        "BINTABLE"
+      } else if (isImage) {
+        "IMAGE"
+      } else if (isEmpty) {
+        "EMPTY"
+      } else {
+        "NOT UNDERSTOOD"
+      }
+      fitstype
     }
 
     /**

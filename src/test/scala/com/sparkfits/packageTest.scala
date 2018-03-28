@@ -101,7 +101,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   // Test DataFrame
   test("DataFrame test: can you really make a DF from the hdu?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .load(fn)
     assert(results.isInstanceOf[DataFrame])
@@ -121,7 +120,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     )
 
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .schema(schema)
       .load(fn)
@@ -137,7 +135,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   // Test Data distribution
   test("Data distribution test: Can you count all elements?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .load(fn)
     assert(results.select(col("Index")).count().toInt == 20000)
@@ -145,7 +142,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   test("Data distribution test: Can you sum up all elements?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .load(fn)
     assert(
@@ -157,7 +153,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   test("Data distribution test: Do you pass over all blocks?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .option("recordLength", 16 * 1024)
       .load(fn)
@@ -170,7 +165,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   test("Header printing test") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .option("verbose", true)
       .option("recordLength", 16 * 1024)
@@ -184,7 +178,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   test("Multi files test: Can you read several FITS file?") {
     val fn = "src/test/resources/dir"
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .option("verbose", true)
       .option("recordLength", 16 * 1024)
@@ -195,7 +188,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   test("Multi files test: Can you detect an error in reading different FITS file?") {
     val fn = "src/test/resources/dirNotOk"
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .option("verbose", true)
       .option("recordLength", 16 * 1024)
@@ -210,7 +202,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   test("No file test: Can you detect an error if there is no input FITS file found?") {
     val fn = "src/test/resources/dirfjsdhf"
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .option("verbose", true)
       .option("recordLength", 16 * 1024)
@@ -225,7 +216,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   // Test ordering of elements in the DF
   test("Ordering test: Is the first element of the DF correct?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .load(fn)
     assert(results.select(col("target")).first.getString(0) == "NGC0000000")
