@@ -63,7 +63,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   test("HDU test: Is there a HDU number?") {
     val results = spark.readfits
     val exception = intercept[NoSuchElementException] {
-      results.option("datatype", "table").load(fn)
+      results.load(fn)
     }
     assert(exception.getMessage.contains("HDU"))
   }
@@ -72,21 +72,27 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   test("HDU test: Is HDU index above the max HDU index?") {
     val results = spark.readfits
     val exception = intercept[AssertionError] {
-      results.option("datatype", "table").option("HDU", 30).load(fn)
+      results.option("HDU", 30).load(fn)
     }
     assert(exception.getMessage.contains("HDU"))
   }
 
   // Test if the user provides the data type in the HDU
-  test("Table test: can you return an empty DataFrame if it's not a table?") {
+  test("HDU type test: Return an empty DataFrame if HDU is empty?") {
     val results = spark.readfits.option("HDU", 0).load(fn)
+    assert(results.count() == 0)
+  }
+
+  // Test if the user provides the data type in the HDU
+  test("HDU type test: Return an empty DataFrame if HDU is an image?") {
+    val fn_image = "src/test/resources/toTest/tst0009.fits"
+    val results = spark.readfits.option("HDU", 2).load(fn_image)
     assert(results.count() == 0)
   }
 
   // Test if one accesses column as expected for HDU 1
   test("Count test: Do you count all elements in a column in HDU 1?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .load(fn)
     assert(results.select("RA").count() == 20000)
@@ -95,7 +101,6 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Test if one accesses column as expected for HDU 1
   test("Count test: Do you count all elements in a column in HDU 2?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 2)
       .load(fn)
     assert(results.select("Index").count() == 20000)
@@ -104,7 +109,6 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Test if one accesses column as expected for HDU 1
   test("Column test: Can you select only some columns?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .option("columns", "target")
       .load(fn)
@@ -114,7 +118,6 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Test if type cast is done correctly
   test("Type test: Do you see a Boolean?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 2)
       .load(fn)
     // Elements of a column are arrays of 1 element
@@ -124,7 +127,6 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Test if type cast is done correctly
   test("Type test: Do you see a Long?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
@@ -134,7 +136,6 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Test if type cast is done correctly
   test("Type test: Do you see a Int?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
@@ -144,7 +145,6 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Test if type cast is done correctly
   test("Type test: Do you see a Float?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
@@ -154,7 +154,6 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Test if type cast is done correctly
   test("Type test: Do you see a Double?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
@@ -164,7 +163,6 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Test if type cast is done correctly
   test("Type test: Do you see a String?") {
     val results = spark.readfits
-      .option("datatype", "table")
       .option("HDU", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
