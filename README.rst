@@ -29,8 +29,8 @@ in HDFS by extending FileInputFormat and RecordReader Hadoop classes.
 
 This package provides
 
-* Read fits table and organize the HDU data into DataFrames.
-* Automatically distribute the data of a FITS HDU over machines.
+* Read fits file and organize the HDU data into DataFrames.
+* Automatically distribute the bintable of a FITS HDU over machines.
 * Automatically infer DataFrame schema from the HDU header. Alternatively, users can specify the schema.
 
 Requirements
@@ -76,7 +76,6 @@ Here is the minimal syntax in Scala 2.10.6 and 2.11.X to play with the package:
 
     // Read as a DataFrame a HDU of a table fits.
     val df = spark.readfits
-      .option("datatype", "table")          // [mandatory] We support only table for the moment.
       .option("HDU", <Int>)                 // [mandatory] Which HDU you want to read.
       .option("columns", <List[String]>)    // [optional]  Names of the columns to load. Default loads all columns.
       .option("recordLength", <Int>)        // [optional]  If you want to define yourself the length of a record.
@@ -125,14 +124,12 @@ In case the HEADER is not present or corrupted, you can also manually specify it
   // Read as a DataFrame the first HDU of a table fits,
   // and infer schema from the header.
   val dfAutoHeader = spark.readfits
-    .option("datatype", "table")
     .option("HDU", 1)
     .load(fn)
 
   // Read as a DataFrame the first HDU of a table fits,
   // and use a custom schema.
   val dfCustomHeader = spark.readfits
-    .option("datatype", "table")
     .option("HDU", 1)
     .schema(userSchema)             // bypass the header, and read the userSchema
     .load(fn)
@@ -163,7 +160,6 @@ of the package (see ``run_*.sh`` scripts). Then in the spark-shell
 
   scala> import com.sparkfits.fits._
   scala> val df = spark.readfits
-    .option("datatype", "table")
     .option("HDU", 1)
     .option("verbose", true)
     .load("file:///path/to/spark-fits/src/test/resources/test_file.fits")
