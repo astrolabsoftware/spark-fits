@@ -102,6 +102,17 @@ object FitsSchema {
   }
 
   /**
+    * Return schema for empty DataFrame
+    *
+    * @return Return a `StructType` with one entry stating nothing.
+    *
+    */
+  def getEmptySchema : StructType = {
+    // Construct empty schema
+    StructType(StructField("empty", StringType, true) :: Nil)
+  }
+
+  /**
     * A few checks on the header for bintable.
     * Careful, it will throw errors for image!
     *

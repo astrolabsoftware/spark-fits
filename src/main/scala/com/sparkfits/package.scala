@@ -237,14 +237,17 @@ package object fits {
     }
 
     /**
-      * Check that the schemas of different FITS files to be added are
+      * Check that the schemas of different FITS HDU to be added are
       * the same. Throw an AssertionError if not.
+      * The check is performed only for BINTABLE.
       *
       * @param listOfFitsFiles : (List[String])
       *   List of files as a list of String.
+      * @return (String) the type of HDU: BINTABLE, IMAGE, EMPTY, or
+      *   NOT UNDERSTOOD if not registered.
       *
       */
-    def checkSchema(listOfFitsFiles : List[String]) : Unit = {
+    def checkSchemaAndReturnType(listOfFitsFiles : List[String]) : String = {
       // Wanted HDU
       val indexHDU = conf.get("HDU").toInt
 
@@ -252,31 +255,40 @@ package object fits {
       val path_init = new Path(listOfFitsFiles(0))
 
       val fB_init = new FitsBlock(path_init, conf, indexHDU)
-      val schema_init = getSchema(fB_init)
-      fB_init.data.close()
+      val fitstype = fB_init.hduType
 
-      for (file <- listOfFitsFiles.slice(1, listOfFitsFiles.size)) {
-        var path = new Path(file)
-        val fB = new FitsBlock(path, conf, indexHDU)
-        val schema = getSchema(fB)
-        val isOk = schema_init == schema
-        isOk match {
-          case true => isOk
-          case false => {
-            println(listOfFitsFiles(0))
-            println("----> ",  schema_init)
-            println(file)
-            println("----> ",  schema)
-            throw new AssertionError("""
-            You are trying to add HDU data with different structures!
-            Check that the number of columns, names of columns and element
-            types are the same. re-run with .option("verbose", true) to
-            list the files.
-          """)
+      val check = if (fitstype == "BINTABLE") {
+        val schema_init = getSchema(fB_init)
+        fB_init.data.close()
+
+        for (file <- listOfFitsFiles.slice(1, listOfFitsFiles.size)) {
+          var path = new Path(file)
+          val fB = new FitsBlock(path, conf, indexHDU)
+          val schema = getSchema(fB)
+          val isOk = schema_init == schema
+          isOk match {
+            case true => isOk
+            case false => {
+              println(listOfFitsFiles(0))
+              println("----> ",  schema_init)
+              println(file)
+              println("----> ",  schema)
+              throw new AssertionError("""
+              You are trying to add HDU data with different structures!
+              Check that the number of columns, names of columns and element
+              types are the same. re-run with .option("verbose", true) to
+              list the files.
+            """)
+            }
           }
+          fB.data.close()
         }
-        fB.data.close()
+      } else {
+        println(s"""
+          FITS type $fitstype not supported yet.
+          An empty DataFrame will be returned.""")
       }
+      fitstype
     }
 
     /**
@@ -293,47 +305,22 @@ package object fits {
       * The schema of the DataFrame is directly inferred from the
       * header of the fits HDU.
       *
+      * If the HDU type is not a BINTABLE, return an empty DataFrame.
+      *
       * @param fn : (String)
       *   Filename of the fits file to be read, or a directory containing FITS files
       *   with the same HDU structure.
       * @param silent : (Boolean)
       *   If false, print out debugging messages. Default is true.
       * @return (DataFrame) always one single DataFrame made from the HDU of
-      * one FITS file, or from the same kind of HDU from several FITS file.
+      *   one FITS file, or from the same kind of HDU from several FITS file.
+      *   Empty if the HDU type is not a BINTABLE.
+      *
       */
     def load(fn : String) : DataFrame = {
 
       // Level of verbosity. Default is false
       verbosity = Try{extraOptions("verbose")}.getOrElse("false").toBoolean
-
-      // Check that you can read the data!
-      // val dataType = Try {
-      //   extraOptions("datatype")
-      // }
-      // dataType match {
-      //   case Success(value) => extraOptions("datatype")
-      //   case Failure(e : NullPointerException) =>
-      //     throw new NullPointerException(e.getMessage)
-      //   case Failure(e : NoSuchElementException) =>
-      //     throw new NoSuchElementException("""
-      //     You did not specify the data type!
-      //     Please choose one of the following:
-      //       spark.readfits.option("datatype", "table")
-      //       spark.readfits.option("datatype", "image")
-      //       """)
-      //   case Failure(_) => println("Unknown Exception")
-      // }
-
-      // Check that the user specifies table
-      // val dataTypeTable = extraOptions("datatype").contains("table")
-      // dataTypeTable match {
-      //   case true => extraOptions("datatype")
-      //   case false => throw new AssertionError("""
-      //     Currently only reading data from table is supported.
-      //     Support for image data will be added later.
-      //     Please use spark.readfits.option("datatype", "table")
-      //     """)
-      // }
 
       // Check that the user specifies table
       val isIndexHDU = Try {
@@ -383,11 +370,11 @@ package object fits {
       }
 
       // Check that all the files have the same Schema
-      // in order to perform the union
-      checkSchema(listOfFitsFiles)
+      // in order to perform the union. Return the HDU type.
+      val fitstype = checkSchemaAndReturnType(listOfFitsFiles)
 
       // Load one or all the FITS files found
-      load(listOfFitsFiles)
+      load(listOfFitsFiles, fitstype)
     }
 
     /**
@@ -397,25 +384,36 @@ package object fits {
       * The schema of the DataFrame is directly inferred from the
       * header of the fits HDU.
       *
+      * If the HDU type is not a BINTABLE, return an empty DataFrame.
+      *
       * @param fns : (List[String])
       *   List of filenames with the same structure.
       * @param silent : (Boolean)
       *   If false, print out debugging messages. Default is true.
       * @return (DataFrame) always one single DataFrame made from the HDU of
-      * one FITS file, or from the same kind of HDU from several FITS file.
+      *   one FITS file, or from the same kind of HDU from several FITS file.
+      *   Empty if the HDU type is not a BINTABLE.
       *
       */
-    def load(fns : List[String]) : DataFrame = {
+    def load(fns : List[String], fitstype: String) : DataFrame = {
 
       // Number of files
       val nFiles = fns.size
 
       // Initialise
-      var df = loadOne(fns(0))
+      var df = if (fitstype == "BINTABLE") {
+        loadOneTable(fns(0))
+      } else {
+        loadOneEmpty
+      }
 
       // Union if more than one file
       for ((file, index) <- fns.slice(1, nFiles).zipWithIndex) {
-        df = df.union(loadOne(file))
+        df = if (fitstype == "BINTABLE") {
+          df.union(loadOneTable(file))
+        } else {
+          df.union(loadOneEmpty)
+        }
       }
       df
     }
@@ -430,7 +428,7 @@ package object fits {
       *   If false, print out debugging messages. Default is true.
       * @return : DataFrame made from one single HDU.
       */
-    def loadOne(fn : String) : DataFrame = {
+    def loadOneTable(fn : String) : DataFrame = {
 
       // Open the file
       val path = new Path(fn)
@@ -466,8 +464,18 @@ package object fits {
         classOf[Seq[Row]],
         conf).flatMap(x => x._2)
 
-      // Return DataFrame with Schema
+      // Return a DataFrame according to the RDD and the Schema
       spark.createDataFrame(rdd, schema)
     }
+
+    /**
+      * Return an empty DataFrame.
+      *
+      * @return (DataFrame) Empty DataFrame.
+      */
+    def loadOneEmpty : DataFrame = {
+      spark.createDataFrame(spark.sparkContext.emptyRDD[Row], getEmptySchema)
+    }
+
   }
 }

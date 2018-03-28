@@ -97,18 +97,6 @@ object FitsLib {
     } else readHeader
     resetCursorAtHeader
 
-    // Check that we have a bintable (to be changed later on when
-    // images will be ready)
-    val colNames = getHeaderNames(blockHeader)
-    val isTable = colNames.filter(x=>x._2.contains("BINTABLE")).values.toList.size > 0 || empty_hdu
-    isTable match {
-      case true => isTable
-      case false => throw new AssertionError("""
-        Currently only reading data from bintable is supported.
-        Support for image data will be added later.
-        """)
-    }
-
     // Get informations on element types and number of columns.
     val rowTypes = if (empty_hdu) {
       List[String]()
@@ -116,7 +104,7 @@ object FitsLib {
     val ncols = rowTypes.size
 
     // Check if the user specifies columns to select
-    // val colNames = getHeaderNames(blockHeader)
+    val colNames = getHeaderNames(blockHeader)
 
     val selectedColNames = if (conf.get("columns") != null) {
       conf.getStrings("columns").deep.toList.asInstanceOf[List[String]]
@@ -134,6 +122,36 @@ object FitsLib {
       List[Int]()
     } else {
       (0 :: rowSplitLocations(0)).scan(0)(_ +_).tail
+    }
+
+    /**
+      * Check the type of HDU. Available: BINTABLE, IMAGE, or EMPTY.
+      * If not registered, returns NOT UNDERSTOOD.
+      * Note: Not working if an image is stored in a primary HDU... TBD.
+      *
+      * @return (String) The type of the HDU data.
+      */
+    def hduType : String = {
+      // Get the header NAMES
+      val colNames = getHeaderNames(blockHeader)
+
+      // Check if the HDU is empty, a table or an image
+      val isEmpty = empty_hdu
+      val isTable = colNames.filter(
+        x=>x._2.contains("BINTABLE")).values.toList.size > 0
+      val isImage = colNames.filter(
+        x=>x._2.contains("IMAGE")).values.toList.size > 0
+
+      val fitstype = if (isEmpty) {
+        "EMPTY"
+      } else if (isTable) {
+        "BINTABLE"
+      } else if (isImage) {
+        "IMAGE"
+      } else {
+        "NOT UNDERSTOOD"
+      }
+      fitstype
     }
 
     /**
