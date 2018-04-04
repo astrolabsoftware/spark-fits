@@ -49,7 +49,6 @@ package object fits {
    * {{{
    * scala> val fn = "src/test/resources/test_file.fits"
    * scala> val df = spark.readfits
-   *  .option("datatype", "table")
    *  .option("HDU", 1)
    *  .option("printHDUHeader", true)
    *  .load(fn)
