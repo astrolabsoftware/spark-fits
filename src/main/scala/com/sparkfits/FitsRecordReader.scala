@@ -151,7 +151,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     val file = fileSplit.getPath
 
     // Uncomment this to get ID identifying the InputSplit in the form
-    // hdfs://server.domain:8020/path/to/my/file:start+stop
+    // hdfs://server.domain:8020/path/to/my/file:start+length
     // println(fileSplit.toString)
 
     // Hadoop Job configuration
@@ -210,7 +210,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
     // A priori, there is no reason for a random split of the FITS file to start
     // at the beginning of a row. Therefore we do the following:
-    //  - The first block starts at 0 + header_start
+    //  - The block starts
     //  - its data is processed record-by-record (see below for the
     //    processing of the records)
     //  - at the end of the block, the stop index might be in the middle of a
@@ -221,8 +221,8 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     //  - its data is processed record-by-record
     //  - etc.
     // Summary: Add last row if we start the block at the middle of a row.
-
-    // We assume that fileSplit.getStart starts at 0 for the first block.
+    // We assume that fileSplit.getStart starts at the
+    // beginning of the data block for the first valid block.
     splitStart = if((splitStart_tmp) % rowSizeLong != startstop._2 && splitStart_tmp != startstop._2) {
 
       // Decrement the starting index to fully catch the line we are sitting on
@@ -235,33 +235,10 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       splitStart_tmp + tmp_byte
     } else splitStart_tmp
 
-    // // the byte position this fileSplit starts at
-    // // Add the header offset to the starting position block
-    // splitStart = start + startstop._2
-
-    // // If the splitStart is above the end of the FITS HDU, reduce it.
-    // // Concretely, that means there is nothing else to do, and nextKeyValue
-    // // will return False. This is completely an artifact of the way we
-    // // distribute FITS -> the number of blocks is determined with the size
-    // // of the file, but we are interested in only one HDU inside this file.
-    // // Therefore, there will be blocks not containing data from this HDU, and
-    // // their starting index will be above the end of the HDU.
-    // // This is clearly a waste of resource, and not efficient at all.
-    // // TODO: Extend InputSplit.
-    // splitStart = if (splitStart > startstop._3) {
-    //   startstop._3
-    // } else splitStart
-    //
-    // // splitEnd byte marker that the fileSplit ends at
-    // // Truncate the splitEnd if it goes above the end of the HDU
-    // splitEnd = if (splitStart + fileSplit.getLength > startstop._3) {
-    //   startstop._3
-    // } else splitStart + fileSplit.getLength
-
     // println(s"BLOCK: Start: $splitStart, Stop: $splitEnd")
 
     // Get the record length in Bytes (get integer!). First look if the user
-    // specify a size for the recordLength. If not, set it to 128 Ko.
+    // specify a size for the recordLength. If not, set it to 1 Ko.
     val recordLengthFromUser = Try{conf.get("recordLength").toInt}
       .getOrElse((1 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt)
 
@@ -282,7 +259,6 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     fB.data.seek(splitStart)
 
     // Set our starting block position
-    println(splitStart, splitEnd, recordLength)
     currentPosition = splitStart
   }
 
@@ -300,13 +276,6 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       fB.data.close()
       return false
     }
-
-    // // Close the file if splitStart is above splitEnd!
-    // // See initialize for this pathological case.
-    // if (splitStart >= splitEnd) {
-    //   fB.data.close()
-    //   return false
-    // }
 
     // Close the file if we went outside the block!
     // This means we sent all our records.
