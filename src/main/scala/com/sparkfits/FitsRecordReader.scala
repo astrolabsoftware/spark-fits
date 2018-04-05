@@ -223,7 +223,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     // Summary: Add last row if we start the block at the middle of a row.
     // We assume that fileSplit.getStart starts at the
     // beginning of the data block for the first valid block.
-    splitStart = if((splitStart_tmp) % rowSizeLong != startstop._2 && splitStart_tmp != startstop._2) {
+    splitStart = if((splitStart_tmp) % rowSizeLong != startstop._2 && splitStart_tmp != startstop._2 && splitStart_tmp != 0) {
 
       // Decrement the starting index to fully catch the line we are sitting on
       var tmp_byte = 0
