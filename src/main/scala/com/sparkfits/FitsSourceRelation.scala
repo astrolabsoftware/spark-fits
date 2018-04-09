@@ -14,15 +14,33 @@ import com.sparkfits.FitsFileInputFormat._
 import com.sparkfits.FitsLib.FitsBlock
 import org.apache.hadoop.conf.Configuration
 import com.sparkfits.FitsSchema.getEmptySchema
+import com.sparkfits.FitsSchema.getSchema
+import com.sparkfits.fits._
+import org.apache.spark.SparkException
+import org.apache.hadoop.io.LongWritable
 
-class FitsRelation( val paths: Array[String], val hdu: Int)(@transient val sqlContext: SQLContext)
+class FitsRelation(parameters: Map[String, String])(@transient val sqlContext: SQLContext)
     extends BaseRelation with TableScan {
 
-  // val path = new Path(paths)
-  // val indexHDU = conf.get("HDU").toInt
-  // val fB = new FitsBlock(path, conf, indexHDU)
+  // Initialise Hadoop configuration
+  val conf = new Configuration(sqlContext.sparkContext.hadoopConfiguration)
 
-  // val hadoopConfiguration = sqlContext.hadoopConfiguration
+  // val extensions = parameters.getOrElse("extension", "h5").split(",").map(_.trim)
+  // val chunkSize = parameters.getOrElse("chunk size", "10000").toInt
+
+  val path = parameters.get("path") match {
+    case Some(x) => x
+    case None => sys.error("'path' must be specified.")
+  }
+
+  val hdu = parameters.get("HDU") match {
+    case Some(x) => x
+    case None => throw new SparkException("You must provide a HDU")
+  }
+
+  val pathFS = new Path(path)
+  val indexHDU = 1//conf.get("HDU").toInt
+  val fB = new FitsBlock(pathFS, conf, indexHDU)
   // val fileSystem = FileSystem.get(hadoopConfiguration)
 
   // lazy val files: Array[URI] = {
@@ -56,7 +74,7 @@ class FitsRelation( val paths: Array[String], val hdu: Int)(@transient val sqlCo
   //   case _ => throw new java.io.FileNotFoundException("No files")
   // }
 
-  override def schema: StructType = getEmptySchema
+  override def schema: StructType = getSchema(fB)
 
   override def buildScan(): RDD[Row] = {
     // val scans = datasets.map{ UnboundedScan(_, chunkSize) }
@@ -70,13 +88,12 @@ class FitsRelation( val paths: Array[String], val hdu: Int)(@transient val sqlCo
     // }
     // Open the file
     // // Distribute the table data
-    // val rdd = spark.sparkContext.newAPIHadoopFile(fn,
-    //   classOf[FitsFileInputFormat],
-    //   classOf[LongWritable],
-    //   classOf[Seq[Row]],
-    //   conf).flatMap(x => x._2)
-    // rdd
-    sqlContext.sparkContext.emptyRDD[Row]
+    val rdd = sqlContext.sparkContext.newAPIHadoopFile(path,
+      classOf[FitsFileInputFormat],
+      classOf[LongWritable],
+      classOf[Seq[Row]],
+      conf).flatMap(x => x._2)
+    rdd
   }
 
 }

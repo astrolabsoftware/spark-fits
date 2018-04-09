@@ -42,21 +42,10 @@ import com.sparkfits.FitsFileInputFormat._
 
 import org.apache.spark.sql.{DataFrame, DataFrameReader}
 
-// package object fits {
-//   /*
-//    * Adds a method, `hdf5`, to DataFrameReader
-//    */
-//   implicit class FitsDataFrameReader(reader: DataFrameReader) {
-//
-//     def fits(file: String, hdu: String): DataFrame =
-//         reader.format("com.sparkfits").option("HDU", hdu).load(file)
-//   }
-// }
-
 package object fits {
 
   /*
-   * Adds a method, `hdf5`, to DataFrameReader
+   * Adds a method, `fits`, to DataFrameReader
    */
   implicit class FitsDataFrameReader(reader: DataFrameReader) {
 
