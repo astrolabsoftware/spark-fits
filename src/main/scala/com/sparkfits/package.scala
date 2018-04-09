@@ -31,13 +31,38 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.sources.RelationProvider
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.sources.BaseRelation
 
 // Internal import
 import com.sparkfits.FitsSchema._
 import com.sparkfits.FitsLib.FitsBlock
 import com.sparkfits.FitsFileInputFormat._
 
+import org.apache.spark.sql.{DataFrame, DataFrameReader}
+
+// package object fits {
+//   /*
+//    * Adds a method, `hdf5`, to DataFrameReader
+//    */
+//   implicit class FitsDataFrameReader(reader: DataFrameReader) {
+//
+//     def fits(file: String, hdu: String): DataFrame =
+//         reader.format("com.sparkfits").option("HDU", hdu).load(file)
+//   }
+// }
+
 package object fits {
+
+  /*
+   * Adds a method, `hdf5`, to DataFrameReader
+   */
+  implicit class FitsDataFrameReader(reader: DataFrameReader) {
+
+    def fits: String => DataFrame = reader.format("com.sparkfits").load
+
+  }
 
   /**
    * Adds a method, `fitsFile`, to SparkSession that allows reading FITS data.
