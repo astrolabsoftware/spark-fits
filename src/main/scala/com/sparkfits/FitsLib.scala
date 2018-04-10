@@ -759,7 +759,7 @@ object FitsLib {
 
       // Get the position of the column. Header names are TTYPE#
       val pos = Try {
-        names.filter(x => x._2 == colName).keys.head.substring(5).toInt
+        names.filter(x => x._2.toLowerCase == colName.toLowerCase).keys.head.substring(5).toInt
       }.getOrElse(-1)
 
       val isCol = pos >= 0

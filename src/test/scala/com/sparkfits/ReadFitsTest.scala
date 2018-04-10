@@ -22,7 +22,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
-import com.sparkfits.fits._
+// import com.sparkfits.fits._
 
 /**
   * Test class for the package object.
@@ -61,7 +61,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if the user provides the HDU index to be read
   test("HDU test: Is there a HDU number?") {
-    val results = spark.readfits
+    val results = spark.read.format("com.sparkfits")
     val exception = intercept[NoSuchElementException] {
       results.load(fn)
     }
@@ -70,46 +70,52 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if the user provides the HDU index to be read
   test("HDU test: Is HDU index above the max HDU index?") {
-    val results = spark.readfits
+    val results = spark.read.format("com.sparkfits")
     val exception = intercept[AssertionError] {
-      results.option("HDU", 30).load(fn)
+      results.option("hdu", 30).load(fn)
     }
     assert(exception.getMessage.contains("HDU"))
   }
 
   // Test if the user provides the data type in the HDU
   test("HDU type test: Return an empty DataFrame if HDU is empty?") {
-    val results = spark.readfits.option("HDU", 0).load(fn)
-    assert(results.count() == 0)
+    val results = spark.read.format("com.sparkfits")
+    val exception = intercept[AssertionError] {
+      results.option("hdu", 0).load(fn)
+    }
+    assert(exception.getMessage.contains("HDU"))
   }
 
   // Test if the user provides the data type in the HDU
   test("HDU type test: Return an empty DataFrame if HDU is an image?") {
     val fn_image = "src/test/resources/toTest/tst0009.fits"
-    val results = spark.readfits.option("HDU", 2).load(fn_image)
-    assert(results.count() == 0)
+    val results = spark.read.format("com.sparkfits")
+    val exception = intercept[AssertionError] {
+      results.option("hdu", 2).load(fn_image)
+    }
+    assert(exception.getMessage.contains("HDU"))
   }
 
   // Test if one accesses column as expected for HDU 1
   test("Count test: Do you count all elements in a column in HDU 1?") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .load(fn)
     assert(results.select("RA").count() == 20000)
   }
 
   // Test if one accesses column as expected for HDU 1
   test("Count test: Do you count all elements in a column in HDU 2?") {
-    val results = spark.readfits
-      .option("HDU", 2)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 2)
       .load(fn)
     assert(results.select("Index").count() == 20000)
   }
 
   // Test if one accesses column as expected for HDU 1
   test("Column test: Can you select only some columns?") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .option("columns", "target")
       .load(fn)
     assert(results.first.size == 1)
@@ -117,8 +123,8 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Boolean?") {
-    val results = spark.readfits
-      .option("HDU", 2)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 2)
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("Discovery").first()(0).isInstanceOf[Boolean])
@@ -126,8 +132,8 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Long?") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("Index").first()(0).isInstanceOf[Long])
@@ -135,8 +141,8 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Int?") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("RunId").first()(0).isInstanceOf[Int])
@@ -144,8 +150,8 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Float?") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("RA").first()(0).isInstanceOf[Float])
@@ -153,8 +159,8 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Double?") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("Dec").first()(0).isInstanceOf[Double])
@@ -162,8 +168,8 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a String?") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("target").first()(0).isInstanceOf[String])

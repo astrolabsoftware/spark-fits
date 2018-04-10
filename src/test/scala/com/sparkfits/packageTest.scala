@@ -19,13 +19,12 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.DataFrameReader
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
 
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-
-import com.sparkfits.fits._
 
 /**
   * Test class for the package object.
@@ -63,45 +62,15 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   val fn = "src/test/resources/test_file.fits"
 
   // Test if readfits does nothing :D
-  test("Readfits test: Do you send back a FitsContext?") {
-    val results = spark.readfits
-    assert(results.isInstanceOf[FitsContext])
-  }
-
-  // Test if options grab what we give to it
-  test("Option test: can you record a new argument?") {
-    val results = spark.readfits.option("toto", "tutu")
-    assert(results.extraOptions.contains("toto"))
-  }
-
-  // Test if options grab a String
-  test("Option test: can you record a String value?") {
-    val results = spark.readfits.option("toto", "tutu")
-    assert(results.extraOptions("toto").contains("tutu"))
-  }
-
-  // Test if options grab a Double
-  test("Option test: can you record a Double value?") {
-    val results = spark.readfits.option("toto", 3.0)
-    assert(results.extraOptions("toto").contains("3.0"))
-  }
-
-  // Test if options grab a Long
-  test("Option test: can you record a Long value?") {
-    val results = spark.readfits.option("toto", 3)
-    assert(results.extraOptions("toto").contains("3"))
-  }
-
-  // Test if options grab a Boolean
-  test("Option test: can you record a Boolean value?") {
-    val results = spark.readfits.option("toto", true)
-    assert(results.extraOptions("toto").contains("true"))
+  test("Readfits test: Do you send back a DataFrameReader?") {
+    val results = spark.read.format("com.sparkfits")
+    assert(results.isInstanceOf[DataFrameReader])
   }
 
   // Test DataFrame
   test("DataFrame test: can you really make a DF from the hdu?") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .load(fn)
     assert(results.isInstanceOf[DataFrame])
   }
@@ -119,30 +88,30 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       )
     )
 
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .schema(schema)
       .load(fn)
     assert(results.columns.deep == Array("toto", "tutu", "tata", "titi", "tete").deep)
   }
 
-  // Test block option
-  test("Data distribution test: Can you set the record size?") {
-    val results = spark.readfits.option("recordLength", 128 * 1024)
-    assert(results.extraOptions("recordLength").contains("131072"))
-  }
+  // // Test block option
+  // test("Data distribution test: Can you set the record size?") {
+  //   val results = spark.read.format("com.sparkfits").option("recordlength", 128 * 1024)
+  //   assert(results.extraOptions("recordLength").contains("131072"))
+  // }
 
   // Test Data distribution
   test("Data distribution test: Can you count all elements?") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .load(fn)
     assert(results.select(col("Index")).count().toInt == 20000)
   }
 
   test("Data distribution test: Can you sum up all elements?") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .load(fn)
     assert(
       results.select(
@@ -152,9 +121,9 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Data distribution test: Do you pass over all blocks?") {
-    val results = spark.readfits
-      .option("HDU", 1)
-      .option("recordLength", 16 * 1024)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
+      .option("recordlength", 16 * 1024)
       .load(fn)
 
     val count = results.select(col("Index")).count().toInt
@@ -164,12 +133,10 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Header printing test") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .option("verbose", true)
-      .option("recordLength", 16 * 1024)
-
-    assert(results.extraOptions.contains("verbose"))
+      .option("recordlength", 16 * 1024)
 
     // Finally print the header and exit.
     assert(results.load(fn).isInstanceOf[DataFrame])
@@ -177,20 +144,20 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   test("Multi files test: Can you read several FITS file?") {
     val fn = "src/test/resources/dir"
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .option("verbose", true)
-      .option("recordLength", 16 * 1024)
+      .option("recordlength", 16 * 1024)
 
     assert(results.load(fn).isInstanceOf[DataFrame])
   }
 
   test("Multi files test: Can you detect an error in reading different FITS file?") {
     val fn = "src/test/resources/dirNotOk"
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .option("verbose", true)
-      .option("recordLength", 16 * 1024)
+      .option("recordlength", 16 * 1024)
 
       val exception = intercept[AssertionError] {
         results.load(fn)
@@ -201,10 +168,10 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   test("No file test: Can you detect an error if there is no input FITS file found?") {
     val fn = "src/test/resources/dirfjsdhf"
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .option("verbose", true)
-      .option("recordLength", 16 * 1024)
+      .option("recordlength", 16 * 1024)
 
       val exception = intercept[NullPointerException] {
         results.load(fn)
@@ -215,8 +182,8 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   // Test ordering of elements in the DF
   test("Ordering test: Is the first element of the DF correct?") {
-    val results = spark.readfits
-      .option("HDU", 1)
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
       .load(fn)
     assert(results.select(col("target")).first.getString(0) == "NGC0000000")
   }
