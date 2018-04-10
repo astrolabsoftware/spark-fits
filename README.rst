@@ -158,12 +158,12 @@ As for Scala:
     // Read as a DataFrame a HDU of a table fits.
     df = spark.read\
       .format("com.sparkfits")\
-      .option("hdu", <Int>)\                 // [mandatory] Which HDU you want to read.
-      .option("columns", <String>)\          // [optional]  Comma-separated column names to load. Default loads all columns.
-      .option("recordlength", <Int>)\        // [optional]  If you want to define yourself the length of a record.
-      .option("verbose", <Boolean>)\         // [optional]  If you want to print debugging messages on screen.
-      .schema(<StructType>)\                 // [optional]  If you want to bypass the header.
-      .load(<String>)                        // [mandatory] Path to file or directory. Load data as DataFrame.
+      .option("hdu", int)\                 # [mandatory] Which HDU you want to read.
+      .option("columns", str)\             # [optional]  Comma-separated column names to load. Default loads all columns.
+      .option("recordlength", int)\        # [optional]  If you want to define yourself the length of a record.
+      .option("verbose", bool)\            # [optional]  If you want to print debugging messages on screen.
+      .schema(StructType)\                 # [optional]  If you want to bypass the header.
+      .load(str)                           # [mandatory] Path to file or directory. Load data as DataFrame.
 
 Using with Spark shell/pyspark
 ================
