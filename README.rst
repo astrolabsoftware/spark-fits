@@ -234,6 +234,7 @@ Same with Jupyter notebook:
 
 ::
 
+  cd /path/to/notebooks
   export PYSPARK_DRIVER_PYTHON_OPTS="path/to/jupyter-notebook"
   $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
 
