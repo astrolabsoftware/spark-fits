@@ -346,6 +346,12 @@ To build a JAR file simply run
   sbt ++${SCALA_VERSION} package
 
 from the project root. The build configuration includes support for Scala 2.10.6 and 2.11.X.
+In addition you can build the doc using SBT:
+
+::
+
+  sbt ++{SCALA_VERSION} doc
+  open target/scala_${SCALA_VERSION}/api/index.html
 
 Running the test suite
 ================
@@ -359,16 +365,6 @@ To launch the test suite, just run:
 We also provide a script (test.sh) that you can run.
 You should get the result on the screen, plus details of the coverage at
 ``target/scala_${SCALA_VERSION}/scoverage-report/index.html``.
-
-Building the doc
-================
-
-Use SBT to build the doc:
-
-::
-
-  sbt ++{SCALA_VERSION} doc
-  open target/scala_${SCALA_VERSION}/api/index.html
 
 Header limitations
 ================
