@@ -147,16 +147,17 @@ See full description of options in the Scala API:
 
 .. code:: python
 
-  // Import SparkSession
+  ## Import SparkSession
   from pyspark.sql import SparkSession
 
+
   if __name__ == "__main__":
-    // Initialise your SparkSession
+    ## Initialise your SparkSession
     spark = SparkSession\
-      .builder()\
+      .builder\
       .getOrCreate()
 
-    // Read as a DataFrame a HDU of a table fits.
+    ## Read as a DataFrame a HDU of a table fits.
     df = spark.read\
       .format("com.sparkfits")\
       .option("hdu", int)\
@@ -192,9 +193,7 @@ Using with spark-shell/pyspark
 ----------------
 
 This package can be added to Spark using the ``--packages`` command line option.
-For example, to include it when starting the spark shell:
-
-**Spark compiled with Scala 2.11**
+For example, to include it when starting the spark shell (**Spark compiled with Scala 2.11**):
 
 ::
 
@@ -221,7 +220,8 @@ or with pyspark
   $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
 
 To build the JAR, just run ``sbt ++{SBT_VERSION} package`` from the root
-of the package (see ``run_*.sh`` scripts). Then in the spark-shell
+of the package (see ``run_*.sh`` scripts).
+Here is an example in the spark-shell:
 
 .. code :: scala
 
