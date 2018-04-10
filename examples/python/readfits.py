@@ -15,19 +15,40 @@ from pyspark.sql import SparkSession
 
 import argparse
 
-def quiet_logs(sc):
+def quiet_logs(sc, log_level="ERROR"):
+    """
+    Set the level of log in Spark.
+
+    Parameters
+    ----------
+    sc : SparkContext
+        The SparkContext for the session
+    log_level : String [optional]
+        Level of log wanted: INFO, WARN, ERROR, OFF, etc.
+
+    """
+    ## Get the logger
     logger = sc._jvm.org.apache.log4j
-    logger.LogManager.getLogger("org"). setLevel(logger.Level.ERROR)
-    logger.LogManager.getLogger("akka").setLevel(logger.Level.ERROR)
+
+    ## Set the level
+    level = getattr(logger.Level, log_level, "INFO")
+
+    logger.LogManager.getLogger("org"). setLevel(level)
+    logger.LogManager.getLogger("akka").setLevel(level)
 
 def addargs(parser):
     """ Parse command line arguments for readfits """
 
-    ## Defaults args - load instrument, scan and sky parameters
+    ## Arguments
     parser.add_argument(
         '-inputpath', dest='inputpath',
         required=True,
         help='Path to a FITS file or a directory containing FITS files')
+
+    parser.add_argument(
+        '-log_level', dest='log_level',
+        default="ERROR",
+        help='Level of log for Spark. Default is ERROR.')
 
 
 if __name__ == "__main__":
@@ -45,13 +66,13 @@ if __name__ == "__main__":
         .getOrCreate()
 
     ## Set logs to be quiet
-    # quiet_logs(spark.sqlContext)
+    quiet_logs(spark.sparkContext, log_level=args.log_level)
 
     ## Loop over HDUs, and print a few rows with the schema.
-    for i in range(1, 3):
+    for hdu in range(1, 3):
         df = spark.read\
             .format("com.sparkfits")\
-            .option("hdu", 1)\
+            .option("hdu", hdu)\
             .load(args.inputpath)
 
         df.show()

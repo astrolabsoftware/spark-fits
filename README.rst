@@ -189,6 +189,9 @@ See full description of options in the Scala API:
 Included examples
 ================
 
+Example scripts in Scala and Python, plus a Jupyter notebook
+in python are included in the directory ``examples/``.
+
 Using with spark-shell/pyspark
 ----------------
 

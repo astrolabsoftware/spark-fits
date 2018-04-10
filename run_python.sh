@@ -36,4 +36,4 @@ spark-submit \
   --master local[*] \
   --jars target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
   examples/python/readfits.py \
-  -inputpath $fitsfn
+  -inputpath $fitsfn -log_level ERROR
