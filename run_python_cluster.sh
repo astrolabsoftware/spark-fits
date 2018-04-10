@@ -24,16 +24,14 @@ VERSION=0.2.0
 sbt ++${SBT_VERSION} package
 
 # Parameters (put your file)
-fitsfn="file://$PWD/src/test/resources/test_file.fits"
-# fitsfn="file://$PWD/src/test/resources/fits_33554432.fits"
-# fitsfn="file://$PWD/src/test/resources/test_longheader_file.fits"
-# fitsfn="file://$PWD/src/test/resources/toTest/swift_events.fits"
-# fitsfn="file://$PWD/src/test/resources/dir"
-# fitsfn="file://$PWD/src/test/resources/dirNotOk"
+fitsfn="hdfs://134.158.75.222:8020//user/julien.peloton/cat2149.fits"
 
 # Run it!
 spark-submit \
-  --master local[*] \
+  --master spark://134.158.75.222:7077 \
+  --driver-memory 4g --executor-memory 18g \
   --jars target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
   src/main/python/examples/readfits.py \
   -inputpath $fitsfn
+
+# --executor-cores 17 --total-executor-cores 102 \
