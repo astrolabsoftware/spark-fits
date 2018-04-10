@@ -35,5 +35,5 @@ fitsfn="file://$PWD/src/test/resources/test_file.fits"
 spark-submit \
   --master local[*] \
   --jars target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
-  src/main/python/examples/readfits.py \
+  examples/python/readfits.py \
   -inputpath $fitsfn

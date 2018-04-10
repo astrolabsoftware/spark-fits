@@ -32,7 +32,8 @@ def addargs(parser):
 
 if __name__ == "__main__":
     """
-
+    Read the data from a FITS file using Spark,
+    and show the first rows and the schema.
     """
     parser = argparse.ArgumentParser(
         description='Distribute the data of a FITS file.')

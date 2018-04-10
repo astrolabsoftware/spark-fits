@@ -219,6 +219,23 @@ or with pyspark
 
   $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
 
+By default, pyspark uses a simple python shell.
+It is also possible to launch PySpark in IPython, by specifying:
+
+::
+
+  export PYSPARK_DRIVER_PYTHON_OPTS="path/to/ipython"
+  $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
+
+Same with Jupyter notebook:
+
+::
+
+  export PYSPARK_DRIVER_PYTHON_OPTS="path/to/jupyter-notebook"
+  $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
+
+See `here <https://spark.apache.org/docs/0.9.0/python-programming-guide.html>`_
+for more options for pyspark.
 To build the JAR, just run ``sbt ++{SBT_VERSION} package`` from the root
 of the package (see ``run_*.sh`` scripts).
 Here is an example in the spark-shell:

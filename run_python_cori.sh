@@ -28,6 +28,6 @@ shifter spark-submit \
   --master $SPARKURL \
   --driver-memory 15G --executor-memory 20G --executor-cores 17 --total-executor-cores 102 \
   --jars target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
-  src/main/python/examples/readfits.py \
+  examples/python/readfits.py \
   -inputpath $fitsfn
 stop-all.sh

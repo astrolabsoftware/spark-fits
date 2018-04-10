@@ -31,7 +31,7 @@ spark-submit \
   --master spark://134.158.75.222:7077 \
   --driver-memory 4g --executor-memory 18g \
   --jars target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
-  src/main/python/examples/readfits.py \
+  examples/python/readfits.py \
   -inputpath $fitsfn
 
 # --executor-cores 17 --total-executor-cores 102 \
