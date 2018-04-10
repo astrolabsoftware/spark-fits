@@ -23,7 +23,26 @@ import org.apache.spark.sql.types.StructType
   * FITS source implementation for Spark SQL.
   *
   */
-class DefaultSource extends RelationProvider with SchemaRelationProvider {
+class DefaultSource extends RelationProvider with SchemaRelationProvider with DataSourceRegister {
+
+  /**
+    * Short alias for spark-fits data source.
+    */
+  override def shortName(): String = "fits"
+
+  /**
+    * BaseRelations must also define an equality function that only returns true when the two
+    * instances will return the same data. This equality function is used when determining when
+    * it is safe to substitute cached results for a given relation.
+    *
+    * @param other (Any)
+    *   Other instance.
+    * @return (boolean) True if other is the same kind as DefaultSource.
+    */
+  override def equals(other: Any): Boolean = other match {
+    case _: DefaultSource => true
+    case _ => false
+  }
 
   /**
     * Create a new FitsRelation instance using parameters from Spark SQL DDL.

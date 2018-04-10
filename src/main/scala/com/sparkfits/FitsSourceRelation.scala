@@ -97,6 +97,12 @@ import com.sparkfits.FitsFileInputFormat._
 class FitsRelation(parameters: Map[String, String], userSchema: Option[StructType])(@transient val sqlContext: SQLContext)
     extends BaseRelation with TableScan {
 
+  // override def toString: String = "FITS"
+  //
+  // override def hashCode(): Int = getClass.hashCode()
+  //
+  // override def equals(other: Any): Boolean = other.isInstanceOf[FitsFileInputFormat]
+
   // Level of verbosity
   var verbosity : Boolean = false
 
@@ -195,7 +201,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   NOT UNDERSTOOD if not registered.
     *
     */
-  def checkSchemaAndReturnType(listOfFitsFiles : List[String]) : String = {
+  def checkSchemaAndReturnType(listOfFitsFiles : List[String]): String = {
     // Wanted HDU
     val indexHDU = conf.get("hdu").toInt
 
@@ -262,7 +268,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   Empty if the HDU type is not a BINTABLE.
     *
     */
-  def load(fn : String) : RDD[Row] = {
+  def load(fn : String): RDD[Row] = {
 
     val listOfFitsFiles = searchFitsFile(fn)
 
@@ -288,7 +294,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   Empty if the HDU type is not a BINTABLE.
     *
     */
-  def load(fns : List[String], fitstype: String) : RDD[Row] = {
+  def load(fns : List[String], fitstype: String): RDD[Row] = {
 
     // Number of files
     val nFiles = fns.size
@@ -317,7 +323,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   Path + filename of the fits file to be read.
     * @return : RDD[Row] made from one single HDU.
     */
-  def loadOneTable(fn : String) : RDD[Row] = {
+  def loadOneTable(fn : String): RDD[Row] = {
 
     // Open one file
     val path = new Path(fn)
@@ -357,6 +363,9 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     sqlContext.sparkContext.emptyRDD[Row]
   }
 
+  /**
+    * Register user parameters in the configuration (broadcasted).
+    */
   def registerConfigurations: Unit = {
     for (keyAndVal <- parameters) {
       conf.set(keyAndVal._1, keyAndVal._2)
@@ -385,6 +394,11 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     }
   }
 
+  /**
+    * Create RDD[Row] from FITS HDU data.
+    *
+    * @return (RDD[Row])
+    */
   override def buildScan(): RDD[Row] = {
 
     // Register the user parameters in the Hadoop conf
