@@ -185,8 +185,11 @@ See full description of options in the Scala API:
     .schema(<StructType>)
     .load(<String>);
 
-Using with Spark shell/pyspark
+Included examples
 ================
+
+Using with spark-shell/pyspark
+----------------
 
 This package can be added to Spark using the ``--packages`` command line option.
 For example, to include it when starting the spark shell:
@@ -270,35 +273,42 @@ of the package (see ``run_*.sh`` scripts). Then in the spark-shell
   +----------+---------+--------------------+-----+-----+
   only showing top 5 rows
 
-Provided examples
-================
+Local launch
+----------------
 
-We provide shell scripts to show the use of the library:
-
-**Local use**
+See the two shell scripts at the root of the package
 
 ::
 
   ./run_scala.sh  # Scala
   ./run_python.sh # Python
 
-**Spark standalone**
+Just make sure that you set up correctly the paths and the different variables.
+
+Cluster mode
+----------------
+
+See the two shell scripts at the root of the package
 
 ::
 
   ./run_scala_cluster.sh  # Scala
-  ./run_python_cluster.sh # python
+  ./run_python_cluster.sh # Python
 
 Just make sure that you set up correctly the paths and the different variables.
 
 Using at NERSC
-================
+----------------
 
 Although HPC systems are not designed for IO intensive jobs,
 Spark standalone mode and filesystem-agnostic approach makes it also a
 candidate to process data stored in HPC-style shared file systems such as Lustre.
-A script is provided at the root of the project
-(see ``run_scala_cori.sh`` and ``run_python_cori.sh``)
+Two scripts are provided at the root of the project
+::
+
+  sbatch run_scala_cori.sh  # Scala
+  sbatch run_python_cori.sh # Python
+
 to launch a Spark Job on Cori at NERSC.
 Keep in mind that raw performances (i.e. without any attempt to take into account
 that we read from Lustre and not for example HDFS) can be worst than in a pure
