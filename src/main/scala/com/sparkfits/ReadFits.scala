@@ -21,8 +21,6 @@ import org.apache.spark.sql.functions._
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
-import com.sparkfits.fits._
-
 object ReadFits {
   // Set to Level.WARN is you want verbosity
   Logger.getLogger("org").setLevel(Level.OFF)
@@ -36,10 +34,11 @@ object ReadFits {
 
     // Loop over the two HDU of the test file
     for (hdu <- 1 to 2) {
-      val df = spark.readfits
-        .option("HDU", hdu)                 // Index of the HDU
+      val df = spark.read
+        .format("com.sparkfits")
+        .option("hdu", hdu)                 // Index of the HDU
         .option("verbose", true)            // pretty print
-        .option("recordLength", 1 * 1024)   // 1 KB per record
+        .option("recordlength", 1 * 1024)   // 1 KB per record
         .load(args(0).toString)             // File to load
 
       df.show()

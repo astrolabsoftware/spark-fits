@@ -16,32 +16,37 @@ Spark FITS
 The package
 ================
 
-This library provides two different tools to manipulate FITS data with `Apache Spark <http://spark.apache.org/>`_:
+This library provides two different tools to
+manipulate FITS data with `Apache Spark <http://spark.apache.org/>`_:
 
 * A Spark connector for FITS file.
 * A Scala library to manipulate FITS file.
 
-From the user point of view, we use a "pimp my class" tactic, or in other words, we define
-an implicit on the ``SparkSession`` to allow interactions with the FITS file format.
-This is rather similar but not strictly equivalent to what was done previously for CSV.
-In addition we developed the necessary tools to interpret the FITS file format
-in HDFS by extending FileInputFormat and RecordReader Hadoop classes.
+The user interface has been done to be the same as other
+built-in Spark data sources (CSV, JSON, Avro, Parquet, etc).
 
-This package provides
+Currently available:
 
 * Read fits file and organize the HDU data into DataFrames.
 * Automatically distribute the bintable of a FITS HDU over machines.
-* Automatically infer DataFrame schema from the HDU header. Alternatively, users can specify the schema.
+* Automatically infer DataFrame schema from the HDU header.
 
 Requirements
 ================
 
 This library requires Spark 2.0+ (not tested for earlier version).
-The library has been tested with Scala 2.10.6 and 2.11.X. If you want to use another
-version, feel free to contact us.
+The library has been tested with Scala 2.10.6 and 2.11.X.
+If you want to use another version, feel free to contact us.
 
-Scala API
+APIs
 ================
+
+Spark FITS has API for Scala, Python, Java and R.
+All APIs share the same core classes and routines, so the ways to
+create DataFrame from all languages using Spark FITS are identical.
+
+Scala
+----------------
 
 **Linking**
 
@@ -56,17 +61,16 @@ in your ``build.sbt``:
   // Alternatively you can also specify directly the Scala version, e.g.
   libraryDependencies += "com.github.JulienPeloton" % "spark-fits_2.11" % "0.2.0"
 
+
 **Scala 2.10.6 and 2.11.X**
 
-Here is the minimal syntax in Scala 2.10.6 and 2.11.X to play with the package:
+Here is the minimal syntax in Scala 2.10.6 and 2.11.X
+to play with the package:
 
 .. code:: scala
 
   // Import SparkSession
   import org.apache.spark.sql.SparkSession
-
-  // Import the implicit to allow interaction with FITS
-  import com.sparkfits.fits._
 
   object ReadFits extends App {
     // Initialise your SparkSession
@@ -75,29 +79,29 @@ Here is the minimal syntax in Scala 2.10.6 and 2.11.X to play with the package:
       .getOrCreate()
 
     // Read as a DataFrame a HDU of a table fits.
-    val df = spark.readfits
-      .option("HDU", <Int>)                 // [mandatory] Which HDU you want to read.
-      .option("columns", <List[String]>)    // [optional]  Names of the columns to load. Default loads all columns.
-      .option("recordLength", <Int>)        // [optional]  If you want to define yourself the length of a record.
+    val df = spark.read
+      .format("com.sparkfits")
+      .option("hdu", <Int>)                 // [mandatory] Which HDU you want to read.
+      .option("columns", <String>)          // [optional]  Comma-separated column names to load. Default loads all columns.
+      .option("recordlength", <Int>)        // [optional]  If you want to define yourself the length of a record.
       .option("verbose", <Boolean>)         // [optional]  If you want to print debugging messages on screen.
       .schema(<StructType>)                 // [optional]  If you want to bypass the header.
       .load(<String>)                       // [mandatory] Path to file or directory. Load data as DataFrame.
   }
 
-Note that the file can be a file in a local system (``path="file://path/myfile.fits"``) or
-a file in HDFS (``path="hdfs://<IP>:<PORT>//path/myfile.fits"``).
-You can also specify a directory containing several FITS files
+Note that the file can be in a local system (``path="file://path/myfile.fits"``)
+or in HDFS (``path="hdfs://<IP>:<PORT>//path/myfile.fits"``).
+You can also specify a directory containing a set of FITS files
 (``path="hdfs://<IP>:<PORT>//path_to_dir"``) with the same HDU structure.
 The connector will load the data from the same HDU from all the files in one single
-DataFrame. This is particularly useful to manipulate many small files written the same way as once.
+DataFrame. This is particularly useful to manipulate many small files written the same way as one.
 
 You can specify which columns you want to load in the DataFrame, using the option ``columns``.
-Example, ``.option("columns", List("target", "Index"))`` will load all the data, but
+Example, ``.option("columns", List("target,Index"))`` will load all the data, but
 will decode only these two columns. If not specified, all columns will be loaded in the
-DataFrame (and you can select columns manually later). In a future release, the selection of columns will be
-done at the level of the loading of the data directly (for speed-up).
+DataFrame (and you can select columns manually later).
 
-The ``recordLength`` option controls how the data is split and read inside each HDFS block (or more
+The ``recordlength`` option controls how the data is split and read inside each HDFS block (or more
 precisely inside each InputSplit as they are not the same) by individual mappers for processing.
 By default it is set to 1 KB. Careful for large value, you might suffer from a long garbage collector time.
 The maximum size allowed for a single record to be processed is 2**31 - 1 (Int max value).
@@ -123,44 +127,128 @@ In case the HEADER is not present or corrupted, you can also manually specify it
 
   // Read as a DataFrame the first HDU of a table fits,
   // and infer schema from the header.
-  val dfAutoHeader = spark.readfits
-    .option("HDU", 1)
+  val dfAutoHeader = spark.read
+    .format("com.sparkfits")
+    .option("hdu", 1)
     .load(fn)
 
   // Read as a DataFrame the first HDU of a table fits,
   // and use a custom schema.
-  val dfCustomHeader = spark.readfits
-    .option("HDU", 1)
+  val dfCustomHeader = spark.read
+    .format("com.sparkfits")
+    .option("hdu", 1)
     .schema(userSchema)             // bypass the header, and read the userSchema
     .load(fn)
 
-Using with Spark shell
+Python
+----------------
+
+See full description of options in the Scala API:
+
+.. code:: python
+
+  ## Import SparkSession
+  from pyspark.sql import SparkSession
+
+
+  if __name__ == "__main__":
+    ## Initialise your SparkSession
+    spark = SparkSession\
+      .builder\
+      .getOrCreate()
+
+    ## Read as a DataFrame a HDU of a table fits.
+    df = spark.read\
+      .format("com.sparkfits")\
+      .option("hdu", int)\
+      .option("columns", str)\
+      .option("recordlength", int)\
+      .option("verbose", bool)\
+      .schema(StructType)\
+      .load(str)
+
+Java API
+----------------
+
+See full description of options in the Scala API:
+
+.. code:: java
+
+  // Import SparkSession
+  import org.apache.spark.sql.SparkSession
+
+  DataFrame df = spark.read()
+    .format("com.sparkfits")
+    .option("hdu", <Int>)
+    .option("columns", <String>)
+    .option("recordlength", <Int>)
+    .option("verbose", <Boolean>)
+    .schema(<StructType>)
+    .load(<String>);
+
+Included examples
 ================
 
-This package can be added to Spark using the ``--packages`` command line option.
-For example, to include it when starting the spark shell:
+Example scripts in Scala and Python, plus a Jupyter notebook
+in python are included in the directory ``examples/``.
 
-**Spark compiled with Scala 2.11**
+Using with spark-shell/pyspark
+----------------
+
+This package can be added to Spark using the ``--packages`` command line option.
+For example, to include it when starting the spark shell (**Spark compiled with Scala 2.11**):
 
 ::
 
   $SPARK_HOME/bin/spark-shell --packages com.github.JulienPeloton:spark-fits_2.11:0.2.0
 
+Using ``--packages`` ensures that this library and its dependencies will be added
+to the classpath. In Python, you would do the same
+
+::
+
+  $SPARK_HOME/bin/pyspark --packages com.github.JulienPeloton:spark-fits_2.11:0.2.0
+
 Alternatively to have the latest development you can download this repo and build the jar,
-and add it when launching the spark shell
+and add it when launching the spark shell (but won't be added in the classpath)
 
 ::
 
   $SPARK_HOME/bin/spark-shell --jars /path/to/jar/<spark-fits.jar>
 
+or with pyspark
+
+::
+
+  $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
+
+By default, pyspark uses a simple python shell.
+It is also possible to launch PySpark in IPython, by specifying:
+
+::
+
+  export PYSPARK_DRIVER_PYTHON_OPTS="path/to/ipython"
+  $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
+
+Same with Jupyter notebook:
+
+::
+
+  cd /path/to/notebooks
+  export PYSPARK_DRIVER_PYTHON_OPTS="path/to/jupyter-notebook"
+  $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
+
+See `here <https://spark.apache.org/docs/0.9.0/python-programming-guide.html>`_
+for more options for pyspark.
 To build the JAR, just run ``sbt ++{SBT_VERSION} package`` from the root
-of the package (see ``run_*.sh`` scripts). Then in the spark-shell
+of the package (see ``run_*.sh`` scripts).
+Here is an example in the spark-shell:
 
 .. code :: scala
 
-  scala> import com.sparkfits.fits._
-  scala> val df = spark.readfits
-    .option("HDU", 1)
+  scala> val df = spark.read
+    .format("com.sparkfits")
+    .option("hdu", 1)
     .option("verbose", true)
     .load("file:///path/to/spark-fits/src/test/resources/test_file.fits")
   +------ HEADER (HDU=1) ------+
@@ -206,36 +294,46 @@ of the package (see ``run_*.sh`` scripts). Then in the spark-shell
   +----------+---------+--------------------+-----+-----+
   only showing top 5 rows
 
-Provided examples
-================
+Local launch
+----------------
 
-We provide two shell scripts to show the use of the library:
-
-**Local use**
+See the two shell scripts at the root of the package
 
 ::
 
-  ./run.sh
+  ./run_scala.sh  # Scala
+  ./run_python.sh # Python
 
-**Spark standalone**
+Just make sure that you set up correctly the paths and the different variables.
+
+Cluster mode
+----------------
+
+See the two shell scripts at the root of the package
 
 ::
 
-  ./run_cluster.sh
+  ./run_scala_cluster.sh  # Scala
+  ./run_python_cluster.sh # Python
 
 Just make sure that you set up correctly the paths and the different variables.
 
 Using at NERSC
-================
+----------------
 
 Although HPC systems are not designed for IO intensive jobs,
 Spark standalone mode and filesystem-agnostic approach makes it also a
 candidate to process data stored in HPC-style shared file systems such as Lustre.
-A script is provided at the root of the project (see ``run_cori.sh``)
+Two scripts are provided at the root of the project
+::
+
+  sbatch run_scala_cori.sh  # Scala
+  sbatch run_python_cori.sh # Python
+
 to launch a Spark Job on Cori at NERSC.
 Keep in mind that raw performances (i.e. without any attempt to take into account
-that we read from Lustre and not for example HDFS) are worst than in a pure
-distributed environment (2-3x less from quick and dirty tests).
+that we read from Lustre and not for example HDFS) can be worst than in a pure
+distributed environment.
 
 Building from source
 ================

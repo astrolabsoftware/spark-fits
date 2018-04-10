@@ -158,7 +158,8 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     val conf = context.getConfiguration
 
     // Initialise our block (header + data)
-    fB = new FitsBlock(file, conf, conf.get("HDU").toInt)
+    fB = new FitsBlock(file, conf, conf.get("hdu").toInt)
+    // fB = new FitsBlock(file, conf, 1)
 
     // Define the bytes indices of our block
     // hdu_start=header_start, data_start, data_stop, hdu_stop
@@ -239,7 +240,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
     // Get the record length in Bytes (get integer!). First look if the user
     // specify a size for the recordLength. If not, set it to 1 Ko.
-    val recordLengthFromUser = Try{conf.get("recordLength").toInt}
+    val recordLengthFromUser = Try{conf.get("recordlength").toInt}
       .getOrElse((1 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt)
 
     // Seek for a round number of lines for the record

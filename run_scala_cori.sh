@@ -4,6 +4,7 @@
 #SBATCH -t 00:30:00
 #SBATCH -J sparkFITS
 #SBATCH -C haswell
+#SBATCH --image=nersc/spark-2.3.0:v1
 
 module load spark
 module load sbt
@@ -23,9 +24,9 @@ fitsfn="/global/cscratch1/sd/<user>/<path>"
 
 # Run it!
 start-all.sh
-spark-submit \
+shifter spark-submit \
   --master $SPARKURL \
-  --driver-memory 15G --executor-memory 20G --executor-cores 17 --total-executor-cores 102 \
+  --driver-memory 15g --executor-memory 50g --executor-cores 32 --total-executor-cores 192 \
   --class com.sparkfits.ReadFits \
   target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
   $fitsfn
