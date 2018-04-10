@@ -297,11 +297,12 @@ Using at NERSC
 Although HPC systems are not designed for IO intensive jobs,
 Spark standalone mode and filesystem-agnostic approach makes it also a
 candidate to process data stored in HPC-style shared file systems such as Lustre.
-A script is provided at the root of the project (see ``run_cori.sh``)
+A script is provided at the root of the project
+(see ``run_scala_cori.sh`` and ``run_python_cori.sh``)
 to launch a Spark Job on Cori at NERSC.
 Keep in mind that raw performances (i.e. without any attempt to take into account
-that we read from Lustre and not for example HDFS) are worst than in a pure
-distributed environment (2-3x less from quick and dirty tests).
+that we read from Lustre and not for example HDFS) can be worst than in a pure
+distributed environment.
 
 Building from source
 ================
