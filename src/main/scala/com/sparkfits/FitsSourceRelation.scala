@@ -107,7 +107,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
   private[sparkfits] val extraOptions = new scala.collection.mutable.HashMap[String, String]
 
   // Pre-load basic parameters for quick checks
-  val fn = parameters.get("path") match {
+  val filePath = parameters.get("path") match {
     case Some(x) => x
     case None => sys.error("'path' must be specified.")
   }
@@ -118,6 +118,50 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     You need to specify the HDU to be read!
     spark.readfits.option("hdu", <Int>)
       """)
+  }
+
+  /**
+    * Search for input FITS files. The input path can be either a single
+    * FITS file, or a folder containing several FITS files with the
+    * same HDU structure. Raise a NullPointerException if no files found.
+    *
+    * @param fn : (String)
+    *   Input path.
+    * @return (List[String]) List with all files found.
+    *
+    */
+  def searchFitsFile(fn: String): List[String] = {
+    // Make it Hadoop readable
+    val path = new Path(fn)
+    val fs = path.getFileSystem(conf)
+
+    // Check whether we want to load a single FITS file or several
+    val isDir = fs.isDirectory(path)
+    val isFile = fs.isFile(path)
+
+    // List all the files
+    val listOfFitsFiles : List[String] = if (isDir) {
+      val it = fs.listFiles(path, true)
+      getListOfFiles(it).filter{file => file.endsWith(".fits")}
+    } else if (isFile){
+      List(fn)
+    } else {
+      List[String]()
+    }
+
+    // Check that we have at least one file
+    listOfFitsFiles.size match {
+      case x if x > 0 => if (verbosity) {
+        println("Found " + listOfFitsFiles.size.toString + " file(s):")
+        listOfFitsFiles.foreach(println)
+      }
+      case x if x <= 0 => throw new NullPointerException(s"""
+          0 files detected! Is $fn a directory containing
+          FITS files or a FITS file?
+          """)
+    }
+
+    listOfFitsFiles
   }
 
   /**
@@ -142,7 +186,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
 
   /**
     * Check that the schemas of different FITS HDU to be added are
-    * the same. Throw an AssertionError if not.
+    * the same. Throw an AssertionError otherwise.
     * The check is performed only for BINTABLE.
     *
     * @param listOfFitsFiles : (List[String])
@@ -213,8 +257,6 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     * @param fn : (String)
     *   Filename of the fits file to be read, or a directory containing FITS files
     *   with the same HDU structure.
-    * @param silent : (Boolean)
-    *   If false, print out debugging messages. Default is true.
     * @return (RDD[Row]) always one single RDD made from the HDU of
     *   one FITS file, or from the same kind of HDU from several FITS file.
     *   Empty if the HDU type is not a BINTABLE.
@@ -222,36 +264,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     */
   def load(fn : String) : RDD[Row] = {
 
-    // Make it a Hadoop readable
-    // val conf = new Configuration()
-    val path = new Path(fn)
-    val fs = path.getFileSystem(conf)
-
-    // Check whether we want to load a single FITS file or several
-    val isDir = fs.isDirectory(path)
-    val isFile = fs.isFile(path)
-
-    // List all the files
-    val listOfFitsFiles : List[String] = if (isDir) {
-      val it = fs.listFiles(path, true)
-      getListOfFiles(it).filter{file => file.endsWith(".fits")}
-    } else if (isFile){
-      List(fn)
-    } else {
-      List[String]()
-    }
-
-    // Check that we have at least one file
-    listOfFitsFiles.size match {
-      case x if x > 0 => if (verbosity) {
-        println("Found " + listOfFitsFiles.size.toString + " file(s):")
-        listOfFitsFiles.foreach(println)
-      }
-      case x if x <= 0 => throw new NullPointerException(s"""
-          0 files detected! Is $fn a directory containing
-          FITS files or a FITS file?
-          """)
-    }
+    val listOfFitsFiles = searchFitsFile(fn)
 
     // Check that all the files have the same Schema
     // in order to perform the union. Return the HDU type.
@@ -270,8 +283,6 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *
     * @param fns : (List[String])
     *   List of filenames with the same structure.
-    * @param silent : (Boolean)
-    *   If false, print out debugging messages. Default is true.
     * @return (RDD[Row]) always one single RDD[Row] made from the HDU of
     *   one FITS file, or from the same kind of HDU from several FITS file.
     *   Empty if the HDU type is not a BINTABLE.
@@ -304,8 +315,6 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *
     * @param fn : (String)
     *   Path + filename of the fits file to be read.
-    * @param silent : (Boolean)
-    *   If false, print out debugging messages. Default is true.
     * @return : RDD[Row] made from one single HDU.
     */
   def loadOneTable(fn : String) : RDD[Row] = {
@@ -348,6 +357,13 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     sqlContext.sparkContext.emptyRDD[Row]
   }
 
+  def registerConfigurations: Unit = {
+    for (keyAndVal <- parameters) {
+      conf.set(keyAndVal._1, keyAndVal._2)
+      extraOptions += (keyAndVal._1 -> keyAndVal._2)
+    }
+  }
+
   /**
     * The schema of the DataFrame is inferred from the
     * header of the fits HDU directly unless the user specifies it.
@@ -355,29 +371,9 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     * @return (StructType) schema for the DataFrame
     */
   override def schema: StructType = {
-    for (keyAndVal <- parameters) {
-      conf.set(keyAndVal._1, keyAndVal._2)
-      extraOptions += (keyAndVal._1 -> keyAndVal._2)
-    }
+    registerConfigurations
     userSchema.getOrElse{
-      // Make it a Hadoop readable
-      // val conf = new Configuration()
-      val path = new Path(fn)
-      val fs = path.getFileSystem(conf)
-
-      // Check whether we want to load a single FITS file or several
-      val isDir = fs.isDirectory(path)
-      val isFile = fs.isFile(path)
-
-      // List all the files
-      val listOfFitsFiles : List[String] = if (isDir) {
-        val it = fs.listFiles(path, true)
-        getListOfFiles(it).filter{file => file.endsWith(".fits")}
-      } else if (isFile){
-        List(fn)
-      } else {
-        List[String]()
-      }
+      val listOfFitsFiles = searchFitsFile(filePath)
 
       val pathFS = new Path(listOfFitsFiles(0))
       val fB = new FitsBlock(pathFS, conf, hdu.toInt)
@@ -392,15 +388,12 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
   override def buildScan(): RDD[Row] = {
 
     // Register the user parameters in the Hadoop conf
-    for (keyAndVal <- parameters) {
-      conf.set(keyAndVal._1, keyAndVal._2)
-      extraOptions += (keyAndVal._1 -> keyAndVal._2)
-    }
+    registerConfigurations
 
     // Level of verbosity. Default is false
     verbosity = Try{extraOptions("verbose")}.getOrElse("false").toBoolean
 
     // Distribute the data
-    load(fn)
+    load(filePath)
   }
 }

@@ -113,12 +113,21 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   }
 
   // Test if one accesses column as expected for HDU 1
-  test("Column test: Can you select only some columns?") {
+  test("Column test: Can you select only one column?") {
     val results = spark.read.format("com.sparkfits")
       .option("hdu", 1)
       .option("columns", "target")
       .load(fn)
     assert(results.first.size == 1)
+  }
+
+  // Test if one accesses column as expected for HDU 1
+  test("Column test: Can you select only some columns?") {
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
+      .option("columns", "target,RA")
+      .load(fn)
+    assert(results.first.size == 2)
   }
 
   // Test if type cast is done correctly

@@ -95,12 +95,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     assert(results.columns.deep == Array("toto", "tutu", "tata", "titi", "tete").deep)
   }
 
-  // // Test block option
-  // test("Data distribution test: Can you set the record size?") {
-  //   val results = spark.read.format("com.sparkfits").option("recordlength", 128 * 1024)
-  //   assert(results.extraOptions("recordLength").contains("131072"))
-  // }
-
   // Test Data distribution
   test("Data distribution test: Can you count all elements?") {
     val results = spark.read.format("com.sparkfits")
@@ -160,7 +154,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       .option("recordlength", 16 * 1024)
 
       val exception = intercept[AssertionError] {
-        results.load(fn)
+        results.load(fn).count
       }
 
     assert(exception.getMessage.contains("different structures"))
