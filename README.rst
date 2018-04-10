@@ -167,7 +167,7 @@ See full description of options in the Scala API:
       .schema(StructType)\
       .load(str)
 
-Java API
+Java
 ----------------
 
 See full description of options in the Scala API:
