@@ -25,12 +25,16 @@ sbt ++${SBT_VERSION} package
 
 # Parameters (put your file)
 fitsfn="file://$PWD/src/test/resources/test_file.fits"
+# fitsfn="file://$PWD/src/test/resources/fits_33554432.fits"
+# fitsfn="file://$PWD/src/test/resources/test_longheader_file.fits"
+# fitsfn="file://$PWD/src/test/resources/toTest/swift_events.fits"
 # fitsfn="file://$PWD/src/test/resources/dir"
 # fitsfn="file://$PWD/src/test/resources/dirNotOk"
 
 # Run it!
 spark-submit \
   --master local[*] \
+  --jars target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
   --class com.sparkfits.ReadFits \
-  target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
-  $fitsfn
+  src/main/python/examples/readfits.py \
+  -inputpath $fitsfn

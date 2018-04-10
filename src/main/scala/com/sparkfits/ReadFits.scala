@@ -21,8 +21,6 @@ import org.apache.spark.sql.functions._
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
-import com.sparkfits.fits._
-
 object ReadFits {
   // Set to Level.WARN is you want verbosity
   Logger.getLogger("org").setLevel(Level.OFF)
