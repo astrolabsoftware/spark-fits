@@ -20,8 +20,6 @@ import java.nio.ByteBuffer
 import java.io.EOFException
 import java.nio.charset.StandardCharsets
 
-import scala.collection.mutable.HashMap
-
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.conf.Configuration
@@ -97,6 +95,14 @@ object FitsLib {
     } else readHeader
     resetCursorAtHeader
 
+    hduType match {
+      case "BINTABLE" => hduType
+      case "EMPTY" => hduType
+      case _ => throw new AssertionError(s"""
+        $hduType HDU not yet implemented!
+        """)
+    }
+
     // Get informations on element types and number of columns.
     val rowTypes = if (empty_hdu) {
       List[String]()
@@ -136,14 +142,18 @@ object FitsLib {
       val colNames = getHeaderNames(blockHeader)
 
       // Check if the HDU is empty, a table or an image
-      val isTable = colNames.filter(
+      val isBintable = colNames.filter(
         x=>x._2.contains("BINTABLE")).values.toList.size > 0
+      val isTable = colNames.filter(
+        x=>x._2.contains("TABLE")).values.toList.size > 0
       val isImage = colNames.filter(
         x=>x._2.contains("IMAGE")).values.toList.size > 0
       val isEmpty = empty_hdu
 
-      val fitstype = if (isTable) {
+      val fitstype = if (isBintable) {
         "BINTABLE"
+      } else if (isTable) {
+        "TABLE"
       } else if (isImage) {
         "IMAGE"
       } else if (isEmpty) {
@@ -152,6 +162,34 @@ object FitsLib {
         "NOT UNDERSTOOD"
       }
       fitstype
+    }
+
+    /**
+      * Compute the size of a data block.
+      *
+      * @param values : (Map[String, String])
+      *   Values from the header (see getHeaderValues)
+      * @return (Long) Size of the corresponding data block
+      *
+      */
+    def getDataLen(values: Map[String, String]): Long = {
+      // Initialise the data size
+      var dataSize = 0L
+
+      // Number of dimensions
+      val naxis = values("NAXIS").toInt
+
+      // Accumulate the size dimension-by-dimension
+      if (naxis > 0) {
+        dataSize = values("BITPIX").toLong / 8L
+        for (a <- 1 to naxis) {
+          val axis = values(s"NAXIS${a}").toLong
+          dataSize = dataSize * axis
+        }
+      }
+
+      // Return the data size
+      dataSize
     }
 
     /**
@@ -178,6 +216,8 @@ object FitsLib {
         // Initialise the offset to the header position
         header_start = data.getPos
 
+        // println(s"1) data.getPos=${data.getPos}")
+
         // add the header size (and move after it)
         val localHeader = readHeader
 
@@ -186,17 +226,17 @@ object FitsLib {
 
         // Size of the data block in Bytes.
         // Skip Data if None (typically HDU=0)
-        val datalen = Try {
-          getNRows(localHeader) * getSizeRowBytes(localHeader).toLong
+        val data_len = Try {
+          getDataLen(getHeaderValues(localHeader))
         }.getOrElse(0L)
 
         // Where the actual data stopped
-        data_stop = data.getPos + datalen
+        data_stop = data_start + data_len
 
         // Store the final offset
         // FITS is made of blocks of size 2880 bytes, so we might need to
         // pad to jump from the end of the data to the next header.
-        block_stop = if ((data.getPos + datalen) % FITSBLOCK_SIZE_BYTES == 0) {
+        block_stop = if ((data_start + data_len) % FITSBLOCK_SIZE_BYTES == 0) {
           data_stop
         } else {
           data_stop + FITSBLOCK_SIZE_BYTES -  (data_stop) % FITSBLOCK_SIZE_BYTES
@@ -247,7 +287,7 @@ object FitsLib {
         // Size of the data block in Bytes.
         // Skip Data if None (typically HDU=0)
         val datalen = Try {
-          getNRows(localHeader) * getSizeRowBytes(localHeader).toLong
+          getDataLen(getHeaderValues(localHeader))
         }.getOrElse(0L)
 
         // Store the final offset
@@ -550,100 +590,51 @@ object FitsLib {
     }
 
     /**
-      * Return the (KEYWORDS, VALUES) of the header
+      * Return the numerical values of the header.
       *
-      * @return (HashMap[String, Int]), map array with (keys, values_as_int).
+      * @return (Map[String, String]), map array with (keys, values).
       *
       */
-    def getHeaderValues(header : Array[String]) : HashMap[String, Int] = {
-
-      // Initialise our map
-      val headerMap = new HashMap[String, Int]
+    def getHeaderValues(header : Array[String]) : Map[String, String] = {
 
       // Get the KEYWORDS of the Header
       val keys = getHeaderKeywords(header)
 
-      // Loop over rows
-      for (i <- 0 to header.size - 1) {
+      // Filter values
+      val headerMap = header.map(x => x.split("="))
+          .filter(x => x.size > 1)
+          // (KEYWORD, NON-COMMENT)
+          .map(x => (x(0).trim(), x(1).split("/")(0).trim()))
+          .filter(x => !x._2.startsWith("'"))
+          // (KEYWORD, numerical values)
+          .map(x => (x._1, x._2))
+          .toMap
 
-        // One row
-        val row = header(i)
-
-        // Split at the comment
-        val v = row.split("/")(0)
-
-        // Init
-        var v_tmp = ""
-        var offset = 0
-        var letter : Char = 'a'
-
-        // recursion to get the value. Reverse order!
-        // 29. WTF???
-        do {
-          letter = v(29 - offset)
-          v_tmp = v_tmp + letter.toString
-          offset += 1
-        } while (letter != ' ')
-
-        // Reverse our result, and look for Int value.
-        // Could be better... Especially if we have something else than Int?
-        v_tmp = v_tmp.trim().reverse
-        headerMap += (keys(i) -> Try{v_tmp.toInt}.getOrElse(0))
-      }
       // Return the map(KEYWORDS -> VALUES)
       headerMap
     }
 
     /**
-      * Get the names of the header.
+      * Get the String values of the header.
       * We assume that the names are inside quotes 'my_name'.
       *
       * @param header : (Array[String])
       *   The header of the HDU.
-      * @return (HashMap[String, String]), a map of keyword/name.
+      * @return (Map[String, String]), a map of keyword/name.
       *
       */
-    def getHeaderNames(header : Array[String]) : HashMap[String, String] = {
-
-      // Initialise the map
-      val headerMap = new HashMap[String, String]
+    def getHeaderNames(header : Array[String]) : Map[String, String] = {
 
       // Get the KEYWORDS
       val keys = getHeaderKeywords(header)
-      for (i <- 0 to header.size - 1) {
-
-        // Take one row and make it an iterator of Char
-        // from the end of the KEYWORD.
-        val row = header(i)
-        val it = row.substring(MAX_KEYWORD_LENGTH, FITS_HEADER_CARD_SIZE).iterator
-
-        var name_tmp = ""
-        var isName = false
-
-        // Loop over the Chars of the row
-        do {
-          val nextChar = it.next()
-
-          // Trigger/shut name completion
-          if (nextChar == ''') {
-            isName = !isName
-          }
-
-          // Add what is inside the quotes (left quote included)
-          if (isName) {
-            name_tmp = name_tmp + nextChar
-          }
-        } while (it.hasNext)
-
-        // Try to see if there is something inside quotes
-        // Return empty String otherwise.
-        val name = Try{name_tmp.substring(1, name_tmp.length).trim()}.getOrElse("")
-
-        // Update the map
-        if (name != "") {
-          headerMap += (keys(i) -> name)
-        }
-      }
+      val headerMap = header.map(x => x.split("="))
+          .filter(x => x.size > 1)
+          // KEYWORD only
+          .map(x => (x(0).trim(), x(1).trim()))
+          .filter(x => x._2.startsWith("'"))
+          // (KEYWORD, String values)
+          .map(x => (x._1, x._2.split("'")(1).trim()))
+          .toMap
 
       // Return the map
       headerMap
@@ -655,27 +646,19 @@ object FitsLib {
       *
       * @param header : (Array[String])
       *   The header of the HDU.
-      * @return (HashMap[String, String]), a map of keyword/comment.
+      * @return (Map[String, String]), a map of keyword/comment.
       *
       */
-    def getHeaderComments(header : Array[String]) : HashMap[String, String] = {
-
-      // Init
-      val headerMap = new HashMap[String, String]
+    def getHeaderComments(header : Array[String]) : Map[String, String] = {
 
       // Get the KEYWORDS
       val keys = getHeaderKeywords(header)
 
-      // Loop over header row
-      for (i <- 0 to header.size - 1) {
-        // One row
-        val row = header(i)
-
-        // comments are written after a backslash (\).
-        // If None, return empty String.
-        val comments = Try{row.split("/")(1).trim()}.getOrElse("")
-        headerMap += (keys(i) -> comments)
-      }
+      val headerMap = header.map(x => x.split("/"))
+          .filter(x => x.size > 1)
+          // (KEYWORD, COMMENTS)
+          .map(x => (x(0).split("=")(0).trim(), x(1).trim()))
+          .toMap
 
       // Return the Map.
       headerMap
@@ -693,7 +676,7 @@ object FitsLib {
       */
     def getNRows(header : Array[String]) : Long = {
       val values = getHeaderValues(header)
-      values("NAXIS2")
+      values("NAXIS2").toLong
     }
 
     /**
@@ -708,7 +691,7 @@ object FitsLib {
       */
     def getNCols(header : Array[String]) : Long = {
       val values = getHeaderValues(header)
-      values("TFIELDS")
+      values("TFIELDS").toLong
     }
 
     /**
@@ -723,7 +706,7 @@ object FitsLib {
       */
     def getSizeRowBytes(header : Array[String]) : Int = {
       val values = getHeaderValues(header)
-      values("NAXIS1")
+      values("NAXIS1").toInt
     }
 
     /**
