@@ -207,7 +207,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
     // Check an entry with a value (BITPIX), and one without.
     // By default, header line without value gets a default value of 0.
-    assert(values("BITPIX") == 8 && values("TTYPE1") == 0)
+    assert(values("BITPIX").toInt == 8)
   }
 
   // Check the name conversion
@@ -235,10 +235,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     // Grab the names as map(keywords/names)
     val comments = fB1.getHeaderComments(header)
 
-    // Check an entry with a comment (XTENSION), and one without.
-    // By default, header line without comment gets a default value of "".
-    assert(comments("XTENSION") == "binary table extension" &&
-      comments("TTYPE1") == "")
+    // Check an entry with a comment (XTENSION).
+    assert(comments("XTENSION") == "binary table extension")
   }
 
   // Check the reader for the number of rows
