@@ -136,14 +136,18 @@ object FitsLib {
       val colNames = getHeaderNames(blockHeader)
 
       // Check if the HDU is empty, a table or an image
-      val isTable = colNames.filter(
+      val isBintable = colNames.filter(
         x=>x._2.contains("BINTABLE")).values.toList.size > 0
+      val isTable = colNames.filter(
+        x=>x._2.contains("TABLE")).values.toList.size > 0
       val isImage = colNames.filter(
         x=>x._2.contains("IMAGE")).values.toList.size > 0
       val isEmpty = empty_hdu
 
-      val fitstype = if (isTable) {
+      val fitstype = if (isBintable) {
         "BINTABLE"
+      } else if (isTable) {
+        "TABLE"
       } else if (isImage) {
         "IMAGE"
       } else if (isEmpty) {
@@ -152,6 +156,24 @@ object FitsLib {
         "NOT UNDERSTOOD"
       }
       fitstype
+    }
+
+    def getDataLen(values: HashMap[String, Int]) = {
+      var n = 0L
+      val naxis = values("NAXIS")
+      // println(s"3) naxis=${naxis}")
+      if (naxis > 0) {
+        n = values("BITPIX")/8
+        for (a <- 1 to naxis) {
+          val axis = values(s"NAXIS${a}")
+          // println(s"4) n=$n NAXIS${a} -> axis=${axis}")
+          n = n * axis
+          // println(s"4-1) n=$n NAXIS${a} -> axis=${axis}")
+        }
+        // println(s"5) $n")
+      }
+      // println(s"6) $n")
+      n
     }
 
     /**
@@ -173,30 +195,39 @@ object FitsLib {
       var data_stop : Long = 0
       var block_stop : Long = 0
 
+      // println("================BlockBoundaries====================")
+
       // Loop over HDUs, and stop at the desired one.
       do {
         // Initialise the offset to the header position
         header_start = data.getPos
+
+        // println(s"1) data.getPos=${data.getPos}")
 
         // add the header size (and move after it)
         val localHeader = readHeader
 
         // Data block starts after the header
         data_start = data.getPos
+        // println(s"2) data_start=${data_start}")
 
         // Size of the data block in Bytes.
         // Skip Data if None (typically HDU=0)
-        val datalen = Try {
-          getNRows(localHeader) * getSizeRowBytes(localHeader).toLong
+        val data_len = Try {
+          getDataLen(getHeaderValues(localHeader))
         }.getOrElse(0L)
 
+        // println(s"data_len=${data_len}")
+
         // Where the actual data stopped
-        data_stop = data.getPos + datalen
+        data_stop = data_start + data_len
+
+        // println(s"data_stop=${data_stop}")
 
         // Store the final offset
         // FITS is made of blocks of size 2880 bytes, so we might need to
         // pad to jump from the end of the data to the next header.
-        block_stop = if ((data.getPos + datalen) % FITSBLOCK_SIZE_BYTES == 0) {
+        block_stop = if ((data_start + data_len) % FITSBLOCK_SIZE_BYTES == 0) {
           data_stop
         } else {
           data_stop + FITSBLOCK_SIZE_BYTES -  (data_stop) % FITSBLOCK_SIZE_BYTES

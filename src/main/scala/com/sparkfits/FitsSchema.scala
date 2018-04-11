@@ -72,18 +72,25 @@ object FitsSchema {
     // Reset the cursor at header
     fB.resetCursorAtHeader
 
+    val lStruct = List.newBuilder[StructField]
+
     // Read the header
     val header = fB.blockHeader
-    checkBintableHeader(header)
+    checkAnyHeader(header)
 
-    // Grab max number of column
-    val colmax = fB.getNCols(header)
+    if (checkBintableHeader(header)) {
+      // Grab max number of column
+      val colmax = fB.getNCols(header)
 
-    // Get the list of StructField.
-    val lStruct = List.newBuilder[StructField]
-    for (col <- fB.colPositions) {
-      lStruct += ReadMyType(fB.getColumnName(header, col), fB.getColumnType(header, col))
+      // Get the list of StructField.
+      for (col <- fB.colPositions) {
+        lStruct += ReadMyType(fB.getColumnName(header, col), fB.getColumnType(header, col))
+      }
     }
+    else if (checkImageHeader(header)) {
+      println("ListOfStruct> checkImageHeader ok")
+    }
+
     lStruct.result
   }
 
@@ -119,28 +126,17 @@ object FitsSchema {
     * @param header : (Array[String])
     *   The header of the HDU.
     */
-  def checkBintableHeader(header : Array[String]) : Unit = {
+  def checkAnyHeader(header : Array[String]) : Boolean = {
 
     // Check that we have an extension
     val keysHasXtension = header(0).contains("XTENSION")
     keysHasXtension match {
       case true => keysHasXtension
-      case false => throw new AssertionError("""
-        Are you really trying to read a BINTABLE?
+      case false => throw new AssertionError(
+        """
         Your header has no keywords called XTENSION.
         Check that the HDU number you want to
         access is correct: spark.readfits.option("HDU", <Int>).
-        """)
-    }
-
-    // Check that we read a bintable
-    val headerStart = header(0).contains("BINTABLE")
-    val headerStartElement = header(0)
-    headerStart match {
-      case true => headerStart
-      case false => throw new AssertionError(s"""
-        Are you really trying to read a BINTABLE? Your header says that
-        the XTENSION is $headerStartElement
         """)
     }
 
@@ -154,5 +150,29 @@ object FitsSchema {
         using the option spark.readfits.option("verbose", true).
         """)
     }
+  }
+
+  /**
+    * A few checks on the header for bintable.
+    *
+    * @param header : (Array[String])
+    *   The header of the HDU.
+    */
+  def checkBintableHeader(header : Array[String]) : Boolean = {
+
+    // Check that we read a bintable
+    header(0).contains("BINTABLE")
+  }
+
+  /**
+    * A few checks on the header for image.
+    *
+    * @param header : (Array[String])
+    *   The header of the HDU.
+    */
+  def checkImageHeader(header : Array[String]) : Boolean = {
+
+    // Check that we read a image
+    header(0).contains("IMAGE")
   }
 }
