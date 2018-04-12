@@ -364,7 +364,7 @@ We also provide a script (test.sh) that you can run.
 You should get the result on the screen, plus details of the coverage at
 ``target/scala_${SCALA_VERSION}/scoverage-report/index.html``.
 
-Header limitations
+Header Challenge!
 ================
 
 The header tested so far are very simple, and not so exotic.
