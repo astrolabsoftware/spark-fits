@@ -17,7 +17,8 @@ The package
 ================
 
 This library provides two different tools to
-manipulate FITS data with `Apache Spark <http://spark.apache.org/>`_:
+manipulate `FITS <https://fits.gsfc.nasa.gov/fits_home.html>`_ 
+data with `Apache Spark <http://spark.apache.org/>`_:
 
 * A Spark connector for FITS file.
 * A Scala library to manipulate FITS file.
