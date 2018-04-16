@@ -24,7 +24,7 @@ VERSION=0.2.0
 sbt ++${SBT_VERSION} package
 
 # Parameters (put your file)
-fitsfn="file://$PWD/src/test/resources/test_file.fits"
+fitsfn="file://$PWD/src/test/resources/toTest/tst0009.fits"
 # fitsfn="file://$PWD/src/test/resources/fits_33554432.fits"
 # fitsfn="file://$PWD/src/test/resources/test_longheader_file.fits"
 # fitsfn="file://$PWD/src/test/resources/toTest/swift_events.fits"
