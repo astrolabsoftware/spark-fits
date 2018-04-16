@@ -1,5 +1,5 @@
 ================
-Spark FITS
+FITS Data Source for Apache Spark
 ================
 
 .. image:: https://travis-ci.org/JulienPeloton/spark-fits.svg?branch=master
@@ -17,7 +17,7 @@ The package
 ================
 
 This library provides two different tools to
-manipulate `FITS <https://fits.gsfc.nasa.gov/fits_home.html>`_ 
+manipulate `FITS <https://fits.gsfc.nasa.gov/fits_home.html>`_
 data with `Apache Spark <http://spark.apache.org/>`_:
 
 * A Spark connector for FITS file.
@@ -42,9 +42,9 @@ If you want to use another version, feel free to contact us.
 APIs
 ================
 
-Spark FITS has API for Scala, Python, Java and R.
+spark-fits has API for Scala, Python, Java and R.
 All APIs share the same core classes and routines, so the ways to
-create DataFrame from all languages using Spark FITS are identical.
+create DataFrame from all languages using spark-fits are identical.
 
 Scala
 ----------------
@@ -56,7 +56,7 @@ in your ``build.sbt``:
 
 .. code:: scala
 
-  // %% will automatically set the Scala version needed for Spark FITS
+  // %% will automatically set the Scala version needed for spark-fits
   libraryDependencies += "com.github.JulienPeloton" %% "spark-fits" % "0.2.0"
 
   // Alternatively you can also specify directly the Scala version, e.g.
@@ -371,7 +371,7 @@ Header Challenge!
 The header tested so far are very simple, and not so exotic.
 Over the time, we plan to add many new features based on complex examples
 (see `here <https://github.com/JulienPeloton/spark-fits/tree/master/src/test/resources/toTest>`_).
-If you use Spark FITS, and encounter errors while reading a header,
+If you use spark-fits, and encounter errors while reading a header,
 tell us (issues or PR) so that we fix the problem asap!
 
 TODO list
