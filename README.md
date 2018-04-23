@@ -312,6 +312,6 @@ TODO list
 -   Test other Spark version?
 -   Publish the doc.
 
-Since 23/03/18
+Since 23/04/18
 
 ![image](http://hits.dwyl.io/JulienPeloton/spark-fits.svg%0A%20:target:%20http://hits.dwyl.io/JulienPeloton/spark-fits)
