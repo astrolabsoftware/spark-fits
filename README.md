@@ -189,7 +189,8 @@ Included examples
 Example scripts in Scala and Python, plus a Jupyter notebook in python
 are included in the directory `examples/`.
 
-Using with spark-shell/pyspark ----------------
+Using with spark-shell/pyspark
+------------
 
 This package can be added to Spark using the `--packages` command line
 option. For example, to include it when starting the spark shell
