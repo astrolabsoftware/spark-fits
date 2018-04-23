@@ -24,7 +24,13 @@ VERSION=0.2.0
 sbt ++${SBT_VERSION} package
 
 # Parameters (put your file)
-fitsfn="hdfs://134.158.75.222:8020//user/julien.peloton/cat2149.fits"
+#fitsfn="file:/home/christian.arnault/spark-fits/b.fits"
+#fitsfn="file:/home/christian.arnault/spark-fits/a.fits"
+fitsfn="hdfs://134.158.75.222:8020//lsst/images/a.fits"
+#fitsfn="file:/home/christian.arnault/spark-fits/src/test/resources/toTest/tst0001.fits"
+#fitsfn="file:/home/christian.arnault/spark-fits/src/test/resources/test_file.fits"
+#fitsfn="hdfs://134.158.75.222:8020//user/julien.peloton/cat2149.fits"
+
 
 # Run it!
 spark-submit \

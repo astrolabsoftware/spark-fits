@@ -145,6 +145,8 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     val isDir = fs.isDirectory(path)
     val isFile = fs.isFile(path)
 
+    // println(s"isDir=$isDir isFile=$isFile path=$path")
+
     // List all the files
     val listOfFitsFiles : List[String] = if (isDir) {
       val it = fs.listFiles(path, true)
@@ -211,7 +213,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     val fB_init = new FitsBlock(path_init, conf, indexHDU)
     val fitstype = fB_init.hduType
 
-    val check = if (fitstype == "BINTABLE") {
+    val check = if (fitstype == "BINTABLE" || fitstype == "IMAGE") {
       val schema_init = getSchema(fB_init)
       fB_init.data.close()
 
@@ -224,10 +226,11 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
           case true => isOk
           case false => {
             println(listOfFitsFiles(0))
-            println("----> ",  schema_init)
+            println("----> ", schema_init)
             println(file)
-            println("----> ",  schema)
-            throw new AssertionError("""
+            println("----> ", schema)
+            throw new AssertionError(
+              """
             You are trying to add HDU data with different structures!
             Check that the number of columns, names of columns and element
             types are the same. re-run with .option("verbose", true) to
@@ -332,7 +335,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
 
     // Register header and block boundaries in the Hadoop configuration
     fB.registerHeader()
-    fB.registerBlockBoundaries()
+    fB.blockBoundaries.register(path, conf)
 
     // Check the header if needed
     if (verbosity) {
@@ -389,7 +392,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
       // Register header and block boundaries
       // in the Hadoop configuration for later re-use
       fB.registerHeader()
-      fB.registerBlockBoundaries()
+      fB.blockBoundaries.register(pathFS, conf)
       getSchema(fB)
     }
   }
