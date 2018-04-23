@@ -45,7 +45,7 @@ Scala
 You can link against this library in your program at the following
 coordinates in your `build.sbt`:
 
-``` {.sourceCode .scala}
+```scala
 // %% will automatically set the Scala version needed for spark-fits
 libraryDependencies += "com.github.JulienPeloton" %% "spark-fits" % "0.3.0"
 
@@ -58,7 +58,7 @@ libraryDependencies += "com.github.JulienPeloton" % "spark-fits_2.11" % "0.3.0"
 Here is the minimal syntax in Scala 2.10.6 and 2.11.X to play with the
 package:
 
-``` {.sourceCode .scala}
+```scala
 // Import SparkSession
 import org.apache.spark.sql.SparkSession
 
@@ -107,7 +107,7 @@ Note that the schema is directly inferred from the HEADER of the HDU. In
 case the HEADER is not present or corrupted, you can also manually
 specify it:
 
-``` {.sourceCode .scala}
+```scala
 // Specify manually the columns for the first HDU with their data types.
 // Note that you need to know in advance what is in the HDU (number
 // of columns and data types).
@@ -142,7 +142,7 @@ Python
 
 See full description of options in the Scala API:
 
-``` {.sourceCode .python}
+```python
 ## Import SparkSession
 from pyspark.sql import SparkSession
 
@@ -169,7 +169,7 @@ Java
 
 See full description of options in the Scala API:
 
-``` {.sourceCode .java}
+```java
 // Import SparkSession
 import org.apache.spark.sql.SparkSession
 
@@ -183,7 +183,8 @@ DataFrame df = spark.read()
   .load(<String>);
 ```
 
-Included examples ================
+Included examples
+====
 
 Example scripts in Scala and Python, plus a Jupyter notebook in python
 are included in the directory `examples/`.
@@ -280,7 +281,8 @@ Scala 2.10.6 and 2.11.X. In addition you can build the doc using SBT:
     sbt ++{SCALA_VERSION} doc
     open target/scala_${SCALA_VERSION}/api/index.html
 
-Running the test suite ================
+Running the test suite
+====
 
 To launch the test suite, just run:
 
@@ -290,7 +292,8 @@ We also provide a script (test.sh) that you can run. You should get the
 result on the screen, plus details of the coverage at
 `target/scala_${SCALA_VERSION}/scoverage-report/index.html`.
 
-Header Challenge! ================
+Header Challenge!
+====
 
 The header tested so far are very simple, and not so exotic. Over the
 time, we plan to add many new features based on complex examples (see
@@ -299,7 +302,7 @@ If you use spark-fits, and encounter errors while reading a header, tell
 us (issues or PR) so that we fix the problem asap!
 
 TODO list
-=========
+====
 
 -   Make the docker file
 -   Define custom Hadoop InputFile.
