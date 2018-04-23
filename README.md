@@ -269,7 +269,8 @@ Keep in mind that raw performances (i.e. without any attempt to take
 into account that we read from Lustre and not from HDFS for example) can
 be worst than in HTC systems.
 
-Building from source ================
+Building from source
+====
 
 This library is built with SBT (see the `build.sbt` script provided). To
 build a JAR file simply run
