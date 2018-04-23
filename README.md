@@ -1,12 +1,7 @@
   FITS Data Source for Apache Spark
   ------------------------------------------------------------------------------------------------------------------
 [![Build Status](https://travis-ci.org/JulienPeloton/spark-fits.svg?branch=master)](https://travis-ci.org/JulienPeloton/spark-fits)
-
-
-
 [![codecov](https://codecov.io/gh/JulienPeloton/spark-fits/branch/master/graph/badge.svg)](https://codecov.io/gh/JulienPeloton/spark-fits)
-
-
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11)
 
 <!-- .. contents:: **Table of Contents**
