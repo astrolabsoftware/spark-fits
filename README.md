@@ -1,13 +1,16 @@
   FITS Data Source for Apache Spark
   ------------------------------------------------------------------------------------------------------------------
-  .. image:: <https://travis-ci.org/JulienPeloton/spark-fits.svg?branch=master>
-  :target: <https://travis-ci.org/JulienPeloton/spark-fits>
-  .. image:: <https://codecov.io/gh/JulienPeloton/spark-fits/branch/master/graph/badge.svg>
-  :target: <https://codecov.io/gh/JulienPeloton/spark-fits>
-  .. image:: <https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11/badge.svg>
-  :target: <https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11>
-  .. contents:: **Table of Contents**
-  The package
+[![Build Status](https://travis-ci.org/JulienPeloton/spark-fits.svg?branch=master)](https://travis-ci.org/JulienPeloton/spark-fits)
+
+
+
+[![codecov](https://codecov.io/gh/JulienPeloton/spark-fits/branch/master/graph/badge.svg)](https://codecov.io/gh/JulienPeloton/spark-fits)
+
+
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11)
+
+<!-- .. contents:: **Table of Contents**
+The package -->
 
 This library provides two different tools to manipulate
 [FITS](https://fits.gsfc.nasa.gov/fits_home.html) data with [Apache
