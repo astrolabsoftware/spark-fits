@@ -100,20 +100,30 @@ object FitsLib {
   }
 
   trait Infos {
-    def getRow(buf: Array[Byte]): List[Any]
+    def implemented: Boolean
+
+    def getNRows(keyValues: Map[String, String]) : Long
+    def getSizeRowBytes(keyValues: Map[String, String]) : Int
+    def getNCols(keyValues : Map[String, String]) : Long
+    def getColTypes(keyValues : Map[String, String]): List[String]
+
     def listOfStruct : List[StructField]
-    def getNRows(header : Array[String]) : Long
-    def getNCols(header : Array[String]) : Long
-    def getColTypes(header : Array[String]): List[String]
+
+    def getRow(buf: Array[Byte]): List[Any]
     def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any
   }
 
   case class AnyInfos(hduType: String) extends Infos {
-    def getRow(buf: Array[Byte]): List[Any] = {null}
+    def implemented: Boolean = {false}
+
+    def getNRows(keyValues: Map[String, String]) : Long = {0L}
+    def getSizeRowBytes(keyValues: Map[String, String]) : Int = {0}
+    def getNCols(keyValues : Map[String, String]) : Long = {0L}
+    def getColTypes(keyValues : Map[String, String]): List[String] = {null}
+
     def listOfStruct : List[StructField] = {null}
-    def getNRows(header : Array[String]) : Long = {0L}
-    def getNCols(header : Array[String]) : Long = {0L}
-    def getColTypes(header : Array[String]): List[String] = {null}
+
+    def getRow(buf: Array[Byte]): List[Any] = {null}
     def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {null}
   }
 
@@ -181,6 +191,8 @@ object FitsLib {
     } else readFullHeaderBlocks
     resetCursorAtHeader
 
+    val hduType = getHduType
+
     val infos: Infos = hduType match {
       case "BINTABLE" => handleBintable(blockHeader, hduType)
       case "TABLE" => handleTable(blockHeader, hduType)
@@ -201,114 +213,34 @@ object FitsLib {
     }
 
     def handleImage(blockHeader: Array[String], hduType: String) = {
-      println(s"handleImage> blockHeader=${blockHeader.toString}")
 
       val kv = parseHeader(blockHeader)
 
       val pixelSize = (kv("BITPIX").toInt)/8
       val dimensions = kv("NAXIS").toInt
-      val axis = Array.newBuilder[Long]
+      val axisBuilder = Array.newBuilder[Long]
       for (d <- 1 to dimensions){
-        axis += kv("NAXIS" + d.toString).toLong
+        axisBuilder += kv("NAXIS" + d.toString).toLong
       }
-      FitsImageLib.ImageInfos(pixelSize, axis.result)
+      val axis = axisBuilder.result
+      val axisStr = axis.mkString(",")
+
+      // println(s"handleImage> pixelSize=$pixelSize dimensions=$dimensions axis=${axisStr}")
+
+      FitsImageLib.ImageInfos(pixelSize, axis)
     }
 
     // Get informations on element types and number of columns.
     def handleBintable(blockHeader: Array[String], hduType: String) = {
 
-      /**
-        * Description of a row in terms of bytes indices.
-        * rowSplitLocations returns an array containing the position of elements
-        * (byte index) in a row. Example if we have a row with [20A, E, E], one
-        * will have rowSplitLocations -> [0, 20, 24, 28] that is a string
-        * on 20 Bytes, followed by 2 floats on 4 bytes each.
-        *
-        * @param col : (Int)
-        *   Column position used for the recursion. Should be left at 0.
-        * @return (List[Int]), the position of elements (byte index) in a row.
-        *
-        */
-      def rowSplitLocations(rowTypes: List[String], col : Int = 0) : List[Int] = {
-        val ncols = rowTypes.size
-
-        if (col == ncols) {
-          Nil
-        } else {
-          getSplitLocation(rowTypes(col)) :: rowSplitLocations(rowTypes, col + 1)
-        }
-      }
-
-      /**
-        * Companion routine to rowSplitLocations. Returns the size of a primitive
-        * according to its type from the FITS header.
-        *
-        * @param fitstype : (String)
-        *   Element type according to FITS standards (I, J, K, E, D, L, A, etc)
-        * @return (Int), the size (bytes) of the element.
-        *
-        */
-      def getSplitLocation(fitstype : String) : Int = {
-        val shortType = shortStringValue(fitstype)
-
-        shortType match {
-          case x if shortType.contains("I") => 2
-          case x if shortType.contains("J") => 4
-          case x if shortType.contains("K") => 8
-          case x if shortType.contains("E") => 4
-          case x if shortType.contains("D") => 8
-          case x if shortType.contains("L") => 1
-          case x if shortType.endsWith("A") => {
-            // Example 20A means string on 20 bytes
-            x.slice(0, x.length - 1).toInt
-          }
-          case _ => {
-            println(s"""FitsLib.getSplitLocation> Cannot infer size of type $shortType from the header!
-              See com.sparkfits.FitsLib.getSplitLocation
-              """)
-            0
-          }
-        }
-      }
-
-      val localInfos = FitsBintableLib.BintableInfos()
-
-      val rowTypes = if (empty_hdu) {
-        List[String]()
-      } else localInfos.getColTypes(blockHeader)
-      val ncols = rowTypes.size
-
-      // Check if the user specifies columns to select
-      val colNames = parseHeader(blockHeader).
-        filter(x => x._1.contains("TTYPE")).
-        map(x => (x._1, x._2.split("'")(1).trim()))
-
       val selectedColNames = if (conf.get("columns") != null) {
         conf.getStrings("columns").deep.toList.asInstanceOf[List[String]]
       } else {
-        colNames.values.toList.asInstanceOf[List[String]]
+        null
       }
 
-      // println(s"Selected columns = ${selectedColNames.toString}")
-
-      val colPositions = selectedColNames.map(
-        x => getColumnPos(blockHeader, x)).toList.sorted
-
-      // splitLocations is an array containing the location of elements
-      // (byte index) in a row. Example if we have a row with [20A, E, E], one
-      // will have splitLocations = [0, 20, 24, 28] that is a string on 20 Bytes,
-      // followed by 2 floats on 4 bytes each.
-      val splitLocations = if (empty_hdu) {
-        List[Int]()
-      } else {
-        (0 :: rowSplitLocations(rowTypes, 0)).scan(0)(_ +_).tail
-      }
-
-      // println(s"handleBintable> rowTypes=${rowTypes.toString} colNames=${colNames.toString} colPositions=${colPositions.toString}")
-
-      localInfos.initialize(rowTypes, colNames, selectedColNames, colPositions, splitLocations)
-
-      localInfos
+      val localInfos = FitsBintableLib.BintableInfos()
+      localInfos.initialize(empty_hdu, blockHeader, selectedColNames)
     }
 
     def getBlockBoundaries: FitsBlockBoundaries = {
@@ -339,7 +271,7 @@ object FitsLib {
 
         val keyValues = parseHeader(localHeader)
 
-        // println(s"keyvalues=${keyValues.mkString("\n")}")
+        // println(s"keyValues=${keyValues.mkString("\n")}")
 
         // Size of the data block in Bytes.
         // Skip Data if None (typically HDU=0)
@@ -382,9 +314,10 @@ object FitsLib {
       *
       * @return (String) The type of the HDU data.
       */
-    def hduType : String = {
+    def getHduType : String = {
+
       // Get the header NAMES
-      val colNames = getHeaderNames(blockHeader)
+      val colNames = parseHeader(blockHeader)
 
       // Check if the HDU is empty, a table or an image
       val isBintable = colNames.filter(
@@ -737,7 +670,7 @@ object FitsLib {
       *
       */
     def readLineFromBuffer(buf : Array[Byte]): List[_] = {
-      if (hduType == "BINTABLE" || hduType == "IMAGE") {
+      if (infos.implemented) {
         infos.getRow(buf)
       }
       else null
@@ -761,32 +694,6 @@ object FitsLib {
         keywords(i) = line.substring(0, MAX_KEYWORD_LENGTH).trim()
       }
       keywords
-    }
-
-    /**
-      * Get the String values of the header.
-      * We assume that the names are inside quotes 'my_name'.
-      *
-      * @param header : (Array[String])
-      *   The header of the HDU.
-      * @return (Map[String, String]), a map of keyword/name.
-      *
-      */
-    def getHeaderNames(header : Array[String]) : Map[String, String] = {
-
-      // Get the KEYWORDS
-      val keys = getHeaderKeywords(header)
-      val headerMap = header.map(x => x.split("="))
-          .filter(x => x.size > 1)
-          // KEYWORD only
-          .map(x => (x(0).trim(), x(1).trim()))
-          .filter(x => x._2.startsWith("'"))
-          // (KEYWORD, String values)
-          .map(x => (x._1, x._2.split("'")(1).trim()))
-          .toMap
-
-      // Return the map
-      headerMap
     }
 
     /**
@@ -814,22 +721,6 @@ object FitsLib {
     }
 
     /**
-      * Get the size (bytes) of each row of a HDU.
-      * We rely on what's written in the header, meaning
-      * here we do not access the data directly.
-      *
-      * @param header : (Array[String])
-      *   The header of the HDU.
-      * @return (Int), the size (bytes) of one row as written in KEYWORD=NAXIS1.
-      *
-      */
-    def getSizeRowBytes(header : Array[String]) : Int = {
-      val keyValues = parseHeader(header)
-      //getDataLen(keyValues).toInt
-      keyValues("NAXIS1").toInt
-    }
-
-    /**
       * Get the name of a column with index `colIndex` of a HDU.
       *
       * @param header : (Array[String])
@@ -845,65 +736,5 @@ object FitsLib {
       // Zero-based index
       keyValues("TTYPE" + (colIndex + 1).toString)
     }
-
-    /**
-      * Get the position (zero based) of a column with name `colName` of a HDU.
-      *
-      * @param header : (Array[String])
-      *   The header of the HDU.
-      * @param colName : (String)
-      *   The name of the column
-      * @return (Int), position (zero-based) of the column.
-      *
-      */
-    def getColumnPos(header : Array[String], colName : String) : Int = {
-      // Grab the header names as map(keywords/names)
-      val keyValues = parseHeader(header)
-
-      val v = keyValues.
-        filter(x => x._1.contains("TTYPE")).
-        map(x => (x._1, x._2.split("'")(1).trim())).
-        values
-
-      // println(s"getColumnPos> v=${v.toString} colName=$colName")
-
-      // Get the position of the column. Header names are TTYPE#
-      val pos = Try {
-        keyValues.
-          filter(x => x._1.contains("TTYPE")).
-          map(x => (x._1, x._2.split("'")(1).trim())).
-          filter(x => x._2.toLowerCase == colName.toLowerCase).
-          keys.head.substring(5).toInt
-      }.getOrElse(-1)
-
-      val isCol = pos >= 0
-      isCol match {
-        case true => isCol
-        case false => throw new AssertionError(s"""
-          $colName is not a valid column name!
-          """)
-      }
-
-      // Zero based
-      pos - 1
-    }
-
-    /**
-      * Get the type of the elements of a column with index `colIndex` of a HDU.
-      *
-      * @param header : (Array[String])
-      *   The header of the HDU.
-      * @param colIndex : (Int)
-      *   Index (zero-based) of a column.
-      * @return (String), the type (FITS convention) of the elements of the column.
-      *
-      */
-    def getColumnType(header : Array[String], colIndex : Int) : String = {
-      // Grab the header names as map(keywords/names)
-      val keyValues = parseHeader(header)
-      // Zero-based index
-      keyValues("TFORM" + (colIndex + 1).toString)
-    }
-
   }
 }

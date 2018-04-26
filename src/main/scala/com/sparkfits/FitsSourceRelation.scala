@@ -160,7 +160,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     // Check that we have at least one file
     listOfFitsFiles.size match {
       case x if x > 0 => if (verbosity) {
-        println("Found " + listOfFitsFiles.size.toString + " file(s):")
+        println("FitsRelation.searchFitsFile> Found " + listOfFitsFiles.size.toString + " file(s):")
         listOfFitsFiles.foreach(println)
       }
       case x if x <= 0 => throw new NullPointerException(s"""
@@ -203,7 +203,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   NOT UNDERSTOOD if not registered.
     *
     */
-  def checkSchemaAndReturnType(listOfFitsFiles : List[String]): String = {
+  def checkSchemaAndReturnType(listOfFitsFiles : List[String]): Boolean = {
     // Wanted HDU
     val indexHDU = conf.get("hdu").toInt
 
@@ -211,9 +211,8 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     val path_init = new Path(listOfFitsFiles(0))
 
     val fB_init = new FitsBlock(path_init, conf, indexHDU)
-    val fitstype = fB_init.hduType
 
-    val check = if (fitstype == "BINTABLE" || fitstype == "IMAGE") {
+    if (fB_init.infos.implemented) {
       val schema_init = getSchema(fB_init)
       fB_init.data.close()
 
@@ -225,10 +224,10 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
         isOk match {
           case true => isOk
           case false => {
-            println(listOfFitsFiles(0))
-            println("----> ", schema_init)
-            println(file)
-            println("----> ", schema)
+            // println(listOfFitsFiles(0))
+            // println("----> ", schema_init)
+            // println(file)
+            // println("----> ", schema)
             throw new AssertionError(
               """
             You are trying to add HDU data with different structures!
@@ -240,13 +239,13 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
         }
         fB.data.close()
       }
+      true
     } else {
       println(s"""
-        FITS type $fitstype not supported yet.
+        FITS type ${fB_init.hduType} not supported yet.
         An empty DataFrame will be returned.""")
+      false
     }
-    // internalSchema = schema
-    fitstype
   }
 
   /**
@@ -261,7 +260,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   - (HDFS)  hdfs://<IP>:<PORT>//path/to/data
     *
     *
-    * If the HDU type is not a BINTABLE, return an empty RDD[Row].
+    * If the HDU type is not "implemented", return an empty RDD[Row].
     *
     * @param fn : (String)
     *   Filename of the fits file to be read, or a directory containing FITS files
@@ -277,10 +276,10 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
 
     // Check that all the files have the same Schema
     // in order to perform the union. Return the HDU type.
-    val fitstype = checkSchemaAndReturnType(listOfFitsFiles)
+    val implemented = checkSchemaAndReturnType(listOfFitsFiles)
 
     // Load one or all the FITS files found
-    load(listOfFitsFiles, fitstype)
+    load(listOfFitsFiles, implemented)
   }
 
   /**
@@ -288,7 +287,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     * The structure of the HDU must be the same, that is contain the
     * same number of columns with the same name and element types.
     *
-    * If the HDU type is not a BINTABLE, return an empty RDD[Row].
+    * If the HDU type is not "implemented", return an empty RDD[Row].
     *
     * @param fns : (List[String])
     *   List of filenames with the same structure.
@@ -297,13 +296,13 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   Empty if the HDU type is not a BINTABLE.
     *
     */
-  def load(fns : List[String], fitstype: String): RDD[Row] = {
+  def load(fns : List[String], implemented: Boolean): RDD[Row] = {
 
     // Number of files
     val nFiles = fns.size
 
     // Initialise
-    var rdd = if (fitstype == "BINTABLE") {
+    var rdd = if (implemented) {
       loadOneTable(fns(0))
     } else {
       loadOneEmpty
@@ -311,7 +310,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
 
     // Union if more than one file
     for ((file, index) <- fns.slice(1, nFiles).zipWithIndex) {
-      rdd = if (fitstype == "BINTABLE") {
+      rdd = if (implemented) {
         rdd.union(loadOneTable(file))
       } else {
         rdd.union(loadOneEmpty)
@@ -320,7 +319,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     rdd
   }
 
-  /** Load a BinaryTableHDU data contained in one HDU as a RDD[Row].
+  /** Load a xxx FITS data contained in one HDU as a RDD[Row].
     *
     * @param fn : (String)
     *   Path + filename of the fits file to be read.

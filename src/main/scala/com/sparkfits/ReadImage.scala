@@ -21,14 +21,14 @@ import org.apache.spark.sql.functions._
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
-object ReadFits {
+object ReadImage {
   // Set to Level.WARN is you want verbosity
   Logger.getLogger("org").setLevel(Level.WARN)
   Logger.getLogger("akka").setLevel(Level.WARN)
 
   val spark = SparkSession
     .builder()
-    .appName("ReadFits")
+    .appName("ReadImage")
     .getOrCreate()
 
   def main(args : Array[String]) = {
@@ -38,7 +38,7 @@ object ReadFits {
       val df = spark.read
         .format("com.sparkfits")
         .option("hdu", hdu)                 // Index of the HDU
-        .option("verbose", true)            // pretty print
+        // .option("verbose", true)            // pretty print
         .option("recordlength", 1 * 1024)   // 1 KB per record
         .load(args(0).toString)             // File to load
 

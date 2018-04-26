@@ -20,11 +20,32 @@ import scala.util.{Try, Success, Failure}
   */
 object FitsTableLib {
   case class TableInfos() extends FitsLib.Infos {
+
+    def implemented: Boolean = {false}
+
+    def getNRows(keyValues: Map[String, String]) : Long = {0L}
+    def getSizeRowBytes(keyValues: Map[String, String]) : Int = {0}
+    def getNCols(keyValues : Map[String, String]) : Long = {0L}
+    def getColTypes(keyValues : Map[String, String]): List[String] = {null}
+
+    def listOfStruct : List[StructField] = {
+      // Get the list of StructField.
+      val lStruct = List.newBuilder[StructField]
+      /*
+      for (col <- colPositions) {
+        lStruct += readMyType(colNames(col), rowTypes(col))
+      }
+      */
+      lStruct.result
+    }
+
     def getRow(buf: Array[Byte]): List[Any] = {
       var row = List.newBuilder[Any]
 
       row.result
     }
+
+    def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {null}
 
     def readMyType(name : String, fitstype : String, isNullable : Boolean = true): StructField = {
       fitstype match {
@@ -36,22 +57,6 @@ object FitsTableLib {
           StructField(name, StringType, isNullable)
         }
       }
-    }
-
-    def getNRows(header : Array[String]) : Long = {0L}
-    def getNCols(header : Array[String]) : Long = {0L}
-    def getColTypes(header : Array[String]): List[String] = {null}
-    def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {null}
-
-    def listOfStruct : List[StructField] = {
-      // Get the list of StructField.
-      val lStruct = List.newBuilder[StructField]
-      /*
-      for (col <- colPositions) {
-        lStruct += readMyType(colNames(col), rowTypes(col))
-      }
-      */
-      lStruct.result
     }
   }
 }

@@ -75,7 +75,7 @@ object FitsSchema {
     val header = fB.blockHeader
     checkAnyHeader(header)
 
-    if (checkBintableHeader(header)){
+    if (fB.infos.implemented){
       fB.infos.listOfStruct
     }
     else {
@@ -138,17 +138,4 @@ object FitsSchema {
         """)
     }
   }
-
-  /**
-    * Verify if the header is a bintable.
-    *
-    * @param header : (Array[String])
-    *   The header of the HDU.
-    */
-  def checkBintableHeader(header : Array[String]) : Boolean = {
-
-    // Check that we read a bintable
-    header(0).contains("BINTABLE")
-  }
-
 }

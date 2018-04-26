@@ -90,10 +90,10 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   test("HDU type test: Return an empty DataFrame if HDU is an image?") {
     val fn_image = "src/test/resources/toTest/tst0009.fits"
     val results = spark.read.format("com.sparkfits")
-    val exception = intercept[AssertionError] {
-      results.option("hdu", 2).load(fn_image)
-    }
-    assert(exception.getMessage.contains("HDU"))
+      .option("hdu", 2)
+      .load(fn_image)
+    val count = results.count()
+    assert(count == 22)
   }
 
   // Test if one accesses column as expected for HDU 1

@@ -24,15 +24,12 @@ VERSION=0.2.0
 sbt ++${SBT_VERSION} package
 
 # Parameters (put your file)
-#fitsfn="hdfs://134.158.75.222:8020//lsst/images/a.fits"
-#fitsfn="file:/home/christian.arnault/spark-fits/src/test/resources/toTest/tst0001.fits"
-#fitsfn="file:/home/christian.arnault/spark-fits/src/test/resources/test_file.fits"
-fitsfn="hdfs://134.158.75.222:8020//lsst/tests/toTest/tst0009.fits"
-#fitsfn="hdfs://134.158.75.222:8020//user/julien.peloton/cat2149.fits"
+fitsfn="hdfs://134.158.75.222:8020//lsst/tests/tst0009.fits"
+fitsfn="hdfs://134.158.75.222:8020//lsst/images/a.fits"
 
 
 # Run it!
-cmd="spark-submit --master spark://134.158.75.222:7077 --driver-memory 4g --executor-memory 18g --class com.sparkfits.ReadFits target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar $fitsfn"
+cmd="spark-submit --master spark://134.158.75.222:7077 --driver-memory 4g --executor-memory 18g --class com.sparkfits.ReadImage target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar $fitsfn"
 
 $cmd
 

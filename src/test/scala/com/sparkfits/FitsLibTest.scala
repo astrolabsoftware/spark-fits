@@ -25,6 +25,7 @@ import org.apache.spark.sql.types._
 import com.sparkfits.FitsLib._
 import com.sparkfits.FitsSchema._
 import com.sparkfits.FitsBintableLib._
+import com.sparkfits.FitsImageLib._
 
 /**
   * Test class for the FitsSchema object.
@@ -119,9 +120,10 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
     // Read the header and set the cursor at the beginning of the data block
     val header = fB1.blockHeader
+    val keyValues = FitsLib.parseHeader(header)
 
     // Define a row and read data from the file
-    val bufferSize = fB1.getSizeRowBytes(header).toInt
+    val bufferSize = fB1.infos.getSizeRowBytes(keyValues).toInt
     val buffer = new Array[Byte](bufferSize)
     fB1.resetCursorAtData
     fB1.data.readFully(buffer, 0, bufferSize)
@@ -173,7 +175,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   val fB1 = new FitsBlock(file, conf, 1)
   val header = fB1.blockHeader
-  val coltypes = fB1.infos.getColTypes(header)
+  val keyValue = FitsLib.parseHeader(header)
+  val coltypes = fB1.infos.getColTypes(keyValue)
   val s = FitsLib.shortStringValue(coltypes(0))
   test(s"shortStringValue> coltypes(0)=${coltypes(0)} => $s"){}
 
@@ -183,9 +186,10 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
     // Read the header
     val header = fB1.blockHeader
+    val keyValue = FitsLib.parseHeader(header)
 
     // Grab the column type (FITS standard)
-    val coltypes = fB1.infos.getColTypes(header)
+    val coltypes = fB1.infos.getColTypes(keyValue)
 
     assert(coltypes(0) == "10A" && coltypes(1) == "E" && coltypes(2) == "D" &&
       coltypes(3) == "K" && coltypes(4) == "J")
@@ -262,8 +266,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header2 = fB2.blockHeader
 
     // Grab the number of rows
-    val nrows1 = fB1.infos.getNRows(header1)
-    val nrows2 = fB2.infos.getNRows(header2)
+    val nrows1 = fB1.infos.getNRows(FitsLib.parseHeader(header1))
+    val nrows2 = fB2.infos.getNRows(FitsLib.parseHeader(header2))
 
     assert(nrows1 == 20000 && nrows2 == 20000)
   }
@@ -278,8 +282,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header2 = fB2.blockHeader
 
     // Grab the number of rows
-    val ncols1 = fB1.infos.getNCols(header1)
-    val ncols2 = fB2.infos.getNCols(header2)
+    val ncols1 = fB1.infos.getNCols(FitsLib.parseHeader(header1))
+    val ncols2 = fB2.infos.getNCols(FitsLib.parseHeader(header2))
 
     assert(ncols1 == 5 && ncols2 == 3)
   }
@@ -294,8 +298,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header2 = fB2.blockHeader
 
     // Grab the number of rows
-    val rowSize1 = fB1.getSizeRowBytes(header1)
-    val rowSize2 = fB2.getSizeRowBytes(header2)
+    val rowSize1 = fB1.infos.getSizeRowBytes(FitsLib.parseHeader(header1))
+    val rowSize2 = fB2.infos.getSizeRowBytes(FitsLib.parseHeader(header2))
 
     assert(rowSize1 == 34 && rowSize2 == 25)
   }

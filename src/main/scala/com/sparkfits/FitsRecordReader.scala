@@ -144,6 +144,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     */
   override def initialize(inputSplit: InputSplit, context: TaskAttemptContext) {
 
+    // println(s"FitsRecordReader.initialize> ")
     // Hadoop description of the input file (Path, split, start/stop indices).
     val fileSplit = inputSplit.asInstanceOf[FileSplit]
 
@@ -159,7 +160,6 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
     // Initialise our block (header + data)
     fB = new FitsBlock(file, conf, conf.get("hdu").toInt)
-    // fB = new FitsBlock(file, conf, 1)
 
     // Define the bytes indices of our block
     // hdu_start=header_start, dataStart, dataStop, hdu_stop
@@ -167,12 +167,15 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
     // Get the header
     header = fB.blockHeader
+    val keyValues = FitsLib.parseHeader(header)
 
     // Get the number of rows and the size (B) of one row.
     // this is dependent on the HDU type
-    nrowsLong = fB.infos.getNRows(header)
-    rowSizeInt = fB.getSizeRowBytes(header)
+    nrowsLong = fB.infos.getNRows(keyValues)
+    rowSizeInt = fB.infos.getSizeRowBytes(keyValues)
     rowSizeLong = rowSizeInt.toLong
+
+    // println(s"FitsRecordReader.initialize> nrowsLong=$nrowsLong rowSizeInt=$rowSizeInt")
 
     // What Hadoop gave us
     val start_theo = fileSplit.getStart
