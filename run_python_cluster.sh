@@ -25,13 +25,20 @@ sbt ++${SBT_VERSION} package
 
 # Parameters (put your file)
 fitsfn="hdfs://134.158.75.222:8020//user/julien.peloton/cat2149.fits"
+fitsfn="hdfs://134.158.75.222:8020//lsst/images/a.fits"
+
+master="--master spark://134.158.75.222:7077"
+memory="--driver-memory 4g --executor-memory 18g"
+conf="--conf spark.kryoserializer.buffer.max=1g"
+jars="--jars target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar"
+pgm="src/main/python/ReadImage.py"
+imput="-inputpath $fitsfn"
 
 # Run it!
-spark-submit \
-  --master spark://134.158.75.222:7077 \
-  --driver-memory 4g --executor-memory 18g \
-  --jars target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
-  examples/python/readfits.py \
-  -inputpath $fitsfn
+cmd="spark-submit ${master} ${memory} ${conf} ${jars} ${pgm} ${input}"
+
+echo $cmd
+
+#   examples/python/readfits.py
 
 # --executor-cores 17 --total-executor-cores 102 \

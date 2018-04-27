@@ -42,11 +42,6 @@ object ReadImage {
         .option("recordlength", 1 * 1024)   // 1 KB per record
         .load(args(0).toString)             // File to load
 
-      println("show>")
-      df.show()
-      println("printSchema>")
-      df.printSchema()
-
       val count = df.count()
       println("Total rows: " + count.toString)
     }

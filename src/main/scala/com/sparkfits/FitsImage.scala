@@ -30,13 +30,35 @@ object FitsImageLib {
       *
       */
     def getNRows(keyValues: Map[String, String]) : Long = {
-      // println(s"FitsImageLib.ImageInfos.getNRows> ")
-      ((axis.reduce(_ * _) * pixelSize) / getSizeRowBytes(keyValues)) + 1
+      val totalBytes = axis.reduce(_ * _) * pixelSize
+      val rowBytes = getSizeRowBytes(keyValues)
+
+      val result = if (totalBytes % rowBytes == 0) {
+        (totalBytes / rowBytes).toLong
+      }
+      else {
+        ((totalBytes / rowBytes) + 1).toLong
+      }
+
+      println(s"FitsImageLib.ImageInfos.getNRows> result=$result")
+
+      result
     }
 
     def getSizeRowBytes(keyValues: Map[String, String]) : Int = {
       // println(s"FitsImageLib.ImageInfos.getSizeRowBytes> ")
-      1024
+      var size = (pixelSize * axis(0)).toInt
+      // Try and get the integer division factor until size becomes lower than 1024
+      var factor = 2
+      do {
+        if (size % factor == 0) {
+          size /= factor
+        }
+        else {
+          factor += 1
+        }
+      } while (size > 1024)
+      size
     }
 
     def getNCols(keyValues : Map[String, String]) : Long = {

@@ -196,6 +196,22 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   }
 
+  test("FitsLib test: what is the recordLength for an image ") {
+    // val file = "src/test/resources/toTest/tst0009.fits"
+    // val hdu = 2
+    val file = "hdfs://134.158.75.222:8020//lsst/images/a.fits"
+    val hdu = 1
+    val fB1 = new FitsBlock(new Path(file), conf, hdu)
+    val header = fB1.blockHeader
+    val keyValue = FitsLib.parseHeader(header)
+    val rowSize = fB1.infos.getSizeRowBytes(keyValue)
+    val nrows = fB1.infos.getNRows(keyValue)
+
+    val startstop = fB1.getBlockBoundaries
+
+    assert(null == s"rowSize=$rowSize nrows=$nrows startstop=${startstop}")
+  }
+
   // Check the header keywords conversion
   test("FitsLib test: Can you grab the keywords of the header?") {
     val fB1 = new FitsBlock(file, conf, 1)
