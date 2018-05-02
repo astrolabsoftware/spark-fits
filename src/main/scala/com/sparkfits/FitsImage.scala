@@ -15,7 +15,7 @@ import scala.util.Random
   * There is no support for image HDU for the moment.
   */
 object FitsImageLib {
-  case class ImageInfos(pixelSize: Int, axis: Array[Long]) extends FitsLib.Infos {
+  case class ImageHDU(pixelSize: Int, axis: Array[Long]) extends FitsLib.HDU {
 
     def implemented: Boolean = {true}
 
@@ -40,13 +40,13 @@ object FitsImageLib {
         ((totalBytes / rowBytes) + 1).toLong
       }
 
-      println(s"FitsImageLib.ImageInfos.getNRows> result=$result")
+      println(s"FitsImageLib.ImageHDU.getNRows> result=$result")
 
       result
     }
 
     def getSizeRowBytes(keyValues: Map[String, String]) : Int = {
-      // println(s"FitsImageLib.ImageInfos.getSizeRowBytes> ")
+      // println(s"FitsImageLib.ImageHDU.getSizeRowBytes> ")
       var size = (pixelSize * axis(0)).toInt
       // Try and get the integer division factor until size becomes lower than 1024
       var factor = 2
@@ -62,7 +62,7 @@ object FitsImageLib {
     }
 
     def getNCols(keyValues : Map[String, String]) : Long = {
-      // println(s"FitsImageLib.ImageInfos.getNCols> ")
+      // println(s"FitsImageLib.ImageHDU.getNCols> ")
       1L
     }
 
@@ -76,7 +76,7 @@ object FitsImageLib {
       *
       */
     def getColTypes(keyValues : Map[String, String]): List[String] = {
-      // println(s"FitsImageLib.ImageInfos.getColTypes> ")
+      // println(s"FitsImageLib.ImageHDU.getColTypes> ")
       // Get the names of the Columns
 
       val colTypes = List.newBuilder[String]
@@ -85,7 +85,7 @@ object FitsImageLib {
     }
 
     def listOfStruct : List[StructField] = {
-      // println(s"FitsImageLib.ImageInfos.listOfStruct> ")
+      // println(s"FitsImageLib.ImageHDU.listOfStruct> ")
       // Get the list of StructField.
 
       val lStruct = List.newBuilder[StructField]
@@ -100,7 +100,7 @@ object FitsImageLib {
     }
 
     def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {
-      // println(s"FitsImageLib.ImageInfos.getElementFromBuffer> ")
+      // println(s"FitsImageLib.ImageHDU.getElementFromBuffer> ")
 
       subbuf
     }

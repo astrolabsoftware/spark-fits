@@ -27,7 +27,7 @@ import org.apache.spark.sql.types._
   * There is no support for image HDU for the moment.
   */
 object FitsBintableLib {
-  case class BintableInfos() extends FitsLib.Infos {
+  case class BintableHDU() extends FitsLib.HDU {
 
     /** Bintables are implemented */
     def implemented: Boolean = {true}

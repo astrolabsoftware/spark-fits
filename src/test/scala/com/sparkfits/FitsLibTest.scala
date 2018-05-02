@@ -20,7 +20,7 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.conf.Configuration
 
-import org.apache.spark.sql.types._
+// import org.apache.spark.sql.types._
 
 import com.sparkfits.FitsLib._
 import com.sparkfits.FitsSchema._
@@ -123,7 +123,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val keyValues = FitsLib.parseHeader(header)
 
     // Define a row and read data from the file
-    val bufferSize = fB1.infos.getSizeRowBytes(keyValues).toInt
+    val bufferSize = fB1.hdu.getSizeRowBytes(keyValues).toInt
     val buffer = new Array[Byte](bufferSize)
     fB1.resetCursorAtData
     fB1.data.readFully(buffer, 0, bufferSize)
@@ -143,7 +143,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val keyValues = FitsLib.parseHeader(header)
     fB1.resetCursorAtData
 
-    val splitLocations = fB1.infos.asInstanceOf[BintableInfos].splitLocations
+    val splitLocations = fB1.hdu.asInstanceOf[BintableHDU].splitLocations
     val ncols = splitLocations.size - 1
 
     var bufferSize: Int = 0
@@ -159,7 +159,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
       // Convert from binary to primitive
       // shortStringValue(keyValues("TFORM" + (col + 1).toString))
-      el = fB1.infos.getElementFromBuffer(buffer, shortStringValue(keyValues("TFORM" + (pos + 1).toString)))
+      el = fB1.hdu.getElementFromBuffer(buffer, shortStringValue(keyValues("TFORM" + (pos + 1).toString)))
     }
 
     // The next one should be the beginning of the next row
@@ -168,7 +168,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     fB1.data.readFully(buffer, 0, bufferSize)
 
     // Convert from binary to primitive
-    el = fB1.infos.getElementFromBuffer(buffer, shortStringValue(keyValues("TFORM" + (1).toString)))
+    el = fB1.hdu.getElementFromBuffer(buffer, shortStringValue(keyValues("TFORM" + (1).toString)))
 
     assert(el == "NGC0000001")
   }
@@ -176,7 +176,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
   // val fB1 = new FitsBlock(file, conf, 1)
   // val header = fB1.blockHeader
   // val keyValues = FitsLib.parseHeader(header)
-  // val coltypes = fB1.infos.getColTypes(keyValues)
+  // val coltypes = fB1.hdu.getColTypes(keyValues)
   // val s = FitsLib.shortStringValue(coltypes(0))
   // test(s"shortStringValue> coltypes(0)=${coltypes(0)} => $s"){}
 
@@ -189,7 +189,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val keyValues = FitsLib.parseHeader(header)
 
     // Grab the column type (FITS standard)
-    val coltypes = fB1.infos.getColTypes(keyValues)
+    val coltypes = fB1.hdu.getColTypes(keyValues)
 
     assert(coltypes(0) == "10A" && coltypes(1) == "E" && coltypes(2) == "D" &&
       coltypes(3) == "K" && coltypes(4) == "J")
@@ -204,8 +204,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
   //   val fB1 = new FitsBlock(new Path(file), conf, hdu)
   //   val header = fB1.blockHeader
   //   val keyValue = FitsLib.parseHeader(header)
-  //   val rowSize = fB1.infos.getSizeRowBytes(keyValue)
-  //   val nrows = fB1.infos.getNRows(keyValue)
+  //   val rowSize = fB1.hdu.getSizeRowBytes(keyValue)
+  //   val nrows = fB1.hdu.getNRows(keyValue)
   //
   //   val startstop = fB1.getBlockBoundaries
   //
@@ -283,8 +283,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header2 = fB2.blockHeader
 
     // Grab the number of rows
-    val nrows1 = fB1.infos.getNRows(FitsLib.parseHeader(header1))
-    val nrows2 = fB2.infos.getNRows(FitsLib.parseHeader(header2))
+    val nrows1 = fB1.hdu.getNRows(FitsLib.parseHeader(header1))
+    val nrows2 = fB2.hdu.getNRows(FitsLib.parseHeader(header2))
 
     assert(nrows1 == 20000 && nrows2 == 20000)
   }
@@ -299,8 +299,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header2 = fB2.blockHeader
 
     // Grab the number of rows
-    val ncols1 = fB1.infos.getNCols(FitsLib.parseHeader(header1))
-    val ncols2 = fB2.infos.getNCols(FitsLib.parseHeader(header2))
+    val ncols1 = fB1.hdu.getNCols(FitsLib.parseHeader(header1))
+    val ncols2 = fB2.hdu.getNCols(FitsLib.parseHeader(header2))
 
     assert(ncols1 == 5 && ncols2 == 3)
   }
@@ -315,8 +315,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header2 = fB2.blockHeader
 
     // Grab the number of rows
-    val rowSize1 = fB1.infos.getSizeRowBytes(FitsLib.parseHeader(header1))
-    val rowSize2 = fB2.infos.getSizeRowBytes(FitsLib.parseHeader(header2))
+    val rowSize1 = fB1.hdu.getSizeRowBytes(FitsLib.parseHeader(header1))
+    val rowSize2 = fB2.hdu.getSizeRowBytes(FitsLib.parseHeader(header2))
 
     assert(rowSize1 == 34 && rowSize2 == 25)
   }

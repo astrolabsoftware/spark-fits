@@ -23,7 +23,7 @@ import org.apache.spark.sql.types._
   * There is no support for image HDU for the moment.
   */
 object FitsTableLib {
-  case class TableInfos() extends FitsLib.Infos {
+  case class TableHDU() extends FitsLib.HDU {
 
     /** Not yet implemented */
     def implemented: Boolean = {false}

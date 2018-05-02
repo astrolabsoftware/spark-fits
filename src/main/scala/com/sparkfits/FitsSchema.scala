@@ -75,8 +75,8 @@ object FitsSchema {
     val header = fB.blockHeader
     checkAnyHeader(header)
 
-    if (fB.infos.implemented){
-      fB.infos.listOfStruct
+    if (fB.hdu.implemented){
+      fB.hdu.listOfStruct
     }
     else {
       List[StructField]()

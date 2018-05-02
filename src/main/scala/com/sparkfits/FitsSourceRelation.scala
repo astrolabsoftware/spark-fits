@@ -26,7 +26,6 @@ import org.apache.hadoop.fs.LocatedFileStatus
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.SparkException
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.sources.TableScan
 import org.apache.spark.sql.sources.BaseRelation
@@ -118,7 +117,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     case None => sys.error("'path' must be specified.")
   }
 
-  val hdu = parameters.get("hdu") match {
+  val indexHDU = parameters.get("hdu") match {
     case Some(x) => x
     case None => throw new NoSuchElementException("""
     You need to specify the HDU to be read!
@@ -212,7 +211,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
 
     val fB_init = new FitsBlock(path_init, conf, indexHDU)
 
-    if (fB_init.infos.implemented) {
+    if (fB_init.hdu.implemented) {
       val schema_init = getSchema(fB_init)
       fB_init.data.close()
 
@@ -387,7 +386,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
       val listOfFitsFiles = searchFitsFile(filePath)
 
       val pathFS = new Path(listOfFitsFiles(0))
-      val fB = new FitsBlock(pathFS, conf, hdu.toInt)
+      val fB = new FitsBlock(pathFS, conf, conf.get("hdu").toInt)
       // Register header and block boundaries
       // in the Hadoop configuration for later re-use
       fB.registerHeader()

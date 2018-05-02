@@ -171,8 +171,8 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
     // Get the number of rows and the size (B) of one row.
     // this is dependent on the HDU type
-    nrowsLong = fB.infos.getNRows(keyValues)
-    rowSizeInt = fB.infos.getSizeRowBytes(keyValues)
+    nrowsLong = fB.hdu.getNRows(keyValues)
+    rowSizeInt = fB.hdu.getSizeRowBytes(keyValues)
     rowSizeLong = rowSizeInt.toLong
 
     // println(s"FitsRecordReader.initialize> nrowsLong=$nrowsLong rowSizeInt=$rowSizeInt")

@@ -114,7 +114,7 @@ object FitsLib {
     * number of columns, types of elements, and methods to access elements.
     *
     */
-  trait Infos {
+  trait HDU {
 
     /**
       * Whether the HDU is implemented in the library.
@@ -141,7 +141,7 @@ object FitsLib {
     * Generic class extending Infos concerning dummy HDU (e.g. not implemented).
     * Set all variables and methods to null/0/false.
     */
-  case class AnyInfos(hduType: String) extends Infos {
+  case class AnyHDU(hduType: String) extends HDU {
 
     // Not implemented
     def implemented: Boolean = {false}
@@ -233,11 +233,11 @@ object FitsLib {
 
     // Check whether we know the HDU type.
     val hduType = getHduType
-    val infos: Infos = hduType match {
+    val hdu: HDU = hduType match {
       case "BINTABLE" => handleBintable(blockHeader, hduType)
       case "TABLE" => handleTable(blockHeader, hduType)
       case "IMAGE" => handleImage(blockHeader, hduType)
-      case "EMPTY" => AnyInfos(hduType)
+      case "EMPTY" => AnyHDU(hduType)
       case _ => throw new AssertionError(s"""
         $hduType HDU not yet implemented!
         """)
@@ -249,12 +249,12 @@ object FitsLib {
       *
       * @param blockHeader : (Array[String])
       *   Header of the HDU.
-      * @return (TableInfos) informations concerning the Table.
+      * @return (TableHDU) informations concerning the Table.
       *
       */
     def handleTable(blockHeader: Array[String], hduType: String) = {
       println(s"handleTable> blockHeader=${blockHeader.toString}")
-      FitsTableLib.TableInfos()
+      FitsTableLib.TableHDU()
     }
 
     def handleImage(blockHeader: Array[String], hduType: String) = {
@@ -270,7 +270,7 @@ object FitsLib {
       val axis = axisBuilder.result
       val axisStr = axis.mkString(",")
 
-      FitsImageLib.ImageInfos(pixelSize, axis)
+      FitsImageLib.ImageHDU(pixelSize, axis)
     }
 
     // Get informations on element types and number of columns.
@@ -282,8 +282,8 @@ object FitsLib {
         null
       }
 
-      val localInfos = FitsBintableLib.BintableInfos()
-      localInfos.initialize(empty_hdu, blockHeader, selectedColNames)
+      val localHDU = FitsBintableLib.BintableHDU()
+      localHDU.initialize(empty_hdu, blockHeader, selectedColNames)
     }
 
     def getBlockBoundaries: FitsBlockBoundaries = {
@@ -713,8 +713,8 @@ object FitsLib {
       *
       */
     def readLineFromBuffer(buf : Array[Byte]): List[_] = {
-      if (infos.implemented) {
-        infos.getRow(buf)
+      if (hdu.implemented) {
+        hdu.getRow(buf)
       }
       else null
     }

@@ -90,7 +90,7 @@ class FitsSchemaTest extends FunSuite with BeforeAndAfterAll {
   // test(s"getNCols> keyValues=${keyValues.toString} tfields=${keyValues("TFIELDS")}"){}
 
   test("Schema test: can you generate a list for all columns?") {
-    val ncols = fB1.infos.getNCols(FitsLib.parseHeader(header1))
+    val ncols = fB1.hdu.getNCols(FitsLib.parseHeader(header1))
     val myList = ListOfStruct(fB1)
 
     assert(myList.size == ncols)
