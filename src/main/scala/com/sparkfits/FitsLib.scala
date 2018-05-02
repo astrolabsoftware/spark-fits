@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.fs.FileSystem
-import org.apache.hadoop.fs.FSDataInputStream
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.types._
 
@@ -63,18 +62,21 @@ object FitsLib {
   }
 
   /**
-    * Class to hold block boundaries. These values are computed at first file scan
-    * then encoded to be broadcasted to all datanodes through the Hadoop configuration block.
+    * Class to hold block boundaries. These values are computed at first
+    * file scan then encoded to be broadcasted to all datanodes through
+    * the Hadoop configuration block.
     *
-    * @param headerStart
-    * @param dataStart
-    * @param dataStop
-    * @param blockStop
+    * @param headerStart : (Long)
+    *   Starting byte of the header blocks
+    * @param dataStart : (Long)
+    *   Starting byte of the data blocks
+    * @param dataStop : (Long)
+    *   Last byte of non-zero data (could be in a middle of a data block)
+    * @param blockStop : (Long)
+    *   Last byte of the data blocks (data blocks are multiple of 2880 bytes)
     */
-  case class FitsBlockBoundaries(headerStart: Long = 0L,
-                                 dataStart: Long = 0L,
-                                 dataStop: Long = 0L,
-                                 blockStop: Long = 0L) {
+  case class FitsBlockBoundaries(headerStart: Long = 0L, dataStart: Long = 0L,
+    dataStop: Long = 0L, blockStop: Long = 0L) {
 
     /**
       * Register the boundaries of the HDU in the Hadoop configuration.
@@ -90,48 +92,90 @@ object FitsLib {
       conf.set(hdfsPath + "blockboundaries", str)
     }
 
+    /**
+      * Set starting byte to last byte (empty block).
+      *
+      */
     def empty = {
       dataStart == dataStop
     }
 
+    /**
+      * Override the method toString to print block boundaries info.
+      * Useful for debugging.
+      */
     override def toString: String = {
       s"[headerStart=$headerStart dataStart=$dataStart dataStop=$dataStop blockStop=$blockStop]"
     }
   }
 
+  /**
+    *
+    * Trait containing generic informations concerning HDU informations.
+    * This includes for example number of rows, size of a row,
+    * number of columns, types of elements, and methods to access elements.
+    *
+    */
   trait Infos {
+
+    /**
+      * Is the HDU implemented in the library?
+      * @return (Boolean)
+      */
     def implemented: Boolean
 
+    // Geometrical informations about the HDU (size, element types, etc)
     def getNRows(keyValues: Map[String, String]) : Long
     def getSizeRowBytes(keyValues: Map[String, String]) : Int
     def getNCols(keyValues : Map[String, String]) : Long
     def getColTypes(keyValues : Map[String, String]): List[String]
 
+    // Useful to convert the Header into a DF schema.
     def listOfStruct : List[StructField]
 
+    // Methods to access the elements of the data block.
     def getRow(buf: Array[Byte]): List[Any]
     def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any
   }
 
+  /**
+    *
+    * Generic class extending Infos concerning dummy HDU (e.g. not implemented).
+    * Set all variables and methods to null/0/false.
+    */
   case class AnyInfos(hduType: String) extends Infos {
+
+    // Not implemented
     def implemented: Boolean = {false}
 
+    // Zero-size, null type elements
     def getNRows(keyValues: Map[String, String]) : Long = {0L}
     def getSizeRowBytes(keyValues: Map[String, String]) : Int = {0}
     def getNCols(keyValues : Map[String, String]) : Long = {0L}
     def getColTypes(keyValues : Map[String, String]): List[String] = {null}
 
+    // Null schema
     def listOfStruct : List[StructField] = {null}
 
+    // No elements to return
     def getRow(buf: Array[Byte]): List[Any] = {null}
     def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {null}
   }
 
-  def shortStringValue(s: String) = {
+  /**
+    *
+    * Remove single quotes around a string, and trim the resulting string.
+    * e.g. "'toto '" would return "toto".
+    *
+    * @param s : (String)
+    *   Input string.
+    * @return (String), Trimmed input String without the starting and
+    *   ending single quotes.
+    */
+  def shortStringValue(s: String): String = {
     if (s.startsWith("'") && s.endsWith("'")) {
       s.slice(1, s.size - 1).trim
-    }
-    else {s}
+    } else s
   }
 
   /**
@@ -157,12 +201,9 @@ object FitsLib {
 
     // Check that the HDU asked is below the max HDU index.
     // Check only header no registered yet
-    // println(s"===================== FitsBlock-1> path=$hdfsPath hduIndex=$hduIndex")
     val numberOfHdus = if (conf.get(hdfsPath + "_header") == null) {
       getNHDU
     } else hduIndex + 1
-
-    // println(s"FitsBlock-2> path=$hdfsPath hduIndex=$hduIndex numberOfHdus=$numberOfHdus")
 
     val isHDUBelowMax = hduIndex < numberOfHdus
     isHDUBelowMax match {
@@ -183,6 +224,7 @@ object FitsLib {
       getBlockBoundaries
     }
 
+    // Initialise the HDU
     val empty_hdu = blockBoundaries.empty
 
     // Get the header and set the cursor to its start.
@@ -191,8 +233,8 @@ object FitsLib {
     } else readFullHeaderBlocks
     resetCursorAtHeader
 
+    // Check whether we know the HDU type.
     val hduType = getHduType
-
     val infos: Infos = hduType match {
       case "BINTABLE" => handleBintable(blockHeader, hduType)
       case "TABLE" => handleTable(blockHeader, hduType)
@@ -204,9 +246,14 @@ object FitsLib {
     }
 
     /**
-      * =============== end of FitBlock main code =========================================
+      *
+      * Return the informations concerning a Table HDU.
+      *
+      * @param blockHeader : (Array[String])
+      *   Header of the HDU.
+      * @return (TableInfos) informations concerning the Table.
+      *
       */
-
     def handleTable(blockHeader: Array[String], hduType: String) = {
       println(s"handleTable> blockHeader=${blockHeader.toString}")
       FitsTableLib.TableInfos()

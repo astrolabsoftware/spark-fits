@@ -22,8 +22,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
-// import com.sparkfits.fits._
-
 /**
   * Test class for the package object.
   */

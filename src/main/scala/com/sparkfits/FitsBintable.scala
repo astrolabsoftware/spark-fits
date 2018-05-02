@@ -1,3 +1,18 @@
+/*
+ * Copyright 2018 Julien Peloton
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.sparkfits
 
 import scala.util.{Try, Success, Failure}
@@ -314,6 +329,20 @@ object FitsBintableLib {
       this
     }
 
+    /**
+      * Return DF schema-compatible structure according to Header informations.
+      *
+      * @param name : (String)
+      *   Name of the column
+      * @param fitstype : (String)
+      *   Type of the column elements according to the FITS header.
+      * @param isNullable : (Boolean)
+      *   Whether the DF entry is nullable. Default is True.
+      *
+      * @return (StructField) StructField containing column information. This
+      *   StructField will be used later to build the schema of the DataFrame.
+      *
+      */
     def readMyType(name : String, fitstype : String, isNullable : Boolean = true): StructField = {
       fitstype match {
         case x if fitstype.contains("I") => StructField(name, ShortType, isNullable)
