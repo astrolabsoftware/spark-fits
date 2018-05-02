@@ -15,13 +15,10 @@
  */
 package com.sparkfits
 
-import java.io.IOError
-import java.nio.ByteBuffer
 import java.io.EOFException
 import java.nio.charset.StandardCharsets
 
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.types._
 
@@ -45,19 +42,21 @@ object FitsLib {
   // Size of KEYWORD (KEYS) in FITS (bytes)
   val MAX_KEYWORD_LENGTH = 8
 
+  // Separator used for values from blockBoundaries
   val separator = ";;"
 
+  /**
+    * Return the (key,values) of the header.
+    *
+    * @param header : (Array[String])
+    *   The header of the HDU.
+    * @return (Map[String, String]), map array with (keys, values).
+    *
+    */
   def parseHeader(header : Array[String]) : Map[String, String] = {
-    /**
-      * Return the (key,values) of the header.
-      *
-      * @return (Map[String, String]), map array with (keys, values).
-      *
-      */
     header.map(x => x.split("="))
       .filter(x => x.size > 1)
       .map(x => (x(0).trim(), x(1).split("/")(0).trim()))
-      // .map(x => (x._1, x._2))
       .toMap
   }
 
@@ -110,7 +109,6 @@ object FitsLib {
   }
 
   /**
-    *
     * Trait containing generic informations concerning HDU informations.
     * This includes for example number of rows, size of a row,
     * number of columns, types of elements, and methods to access elements.
@@ -119,12 +117,12 @@ object FitsLib {
   trait Infos {
 
     /**
-      * Is the HDU implemented in the library?
+      * Whether the HDU is implemented in the library.
       * @return (Boolean)
       */
     def implemented: Boolean
 
-    // Geometrical informations about the HDU (size, element types, etc)
+    /** Geometrical informations about the HDU (size, element types, etc) */
     def getNRows(keyValues: Map[String, String]) : Long
     def getSizeRowBytes(keyValues: Map[String, String]) : Int
     def getNCols(keyValues : Map[String, String]) : Long
@@ -271,8 +269,6 @@ object FitsLib {
       }
       val axis = axisBuilder.result
       val axisStr = axis.mkString(",")
-
-      // println(s"handleImage> pixelSize=$pixelSize dimensions=$dimensions axis=${axisStr}")
 
       FitsImageLib.ImageInfos(pixelSize, axis)
     }
@@ -723,26 +719,6 @@ object FitsLib {
       else null
     }
 
-
-    /**
-      * Return the KEYWORDS of the header.
-      *
-      * @return (Array[String]), array with the KEYWORDS of the HDU header.
-      *
-      */
-    def getHeaderKeywords(header : Array[String]) : Array[String] = {
-      // Get the KEYWORDS
-      val keywords = new Array[String](header.size)
-
-      // Loop over KEYWORDS
-      for (i <- 0 to header.size - 1) {
-        val line = header(i)
-        // Get the keyword
-        keywords(i) = line.substring(0, MAX_KEYWORD_LENGTH).trim()
-      }
-      keywords
-    }
-
     /**
       * Get the comments of the header.
       * We assume the comments are written after a backslash (\).
@@ -753,10 +729,6 @@ object FitsLib {
       *
       */
     def getHeaderComments(header : Array[String]) : Map[String, String] = {
-
-      // Get the KEYWORDS
-      val keys = getHeaderKeywords(header)
-
       val headerMap = header.map(x => x.split("/"))
           .filter(x => x.size > 1)
           // (KEYWORD, COMMENTS)
@@ -765,23 +737,6 @@ object FitsLib {
 
       // Return the Map.
       headerMap
-    }
-
-    /**
-      * Get the name of a column with index `colIndex` of a HDU.
-      *
-      * @param header : (Array[String])
-      *   The header of the HDU.
-      * @param colIndex : (Int)
-      *   Index (zero-based) of a column.
-      * @return (String), the name of the column.
-      *
-      */
-    def getColumnName(header : Array[String], colIndex : Int) : String = {
-      // Grab the header names as map(keywords/names)
-      val keyValues = parseHeader(header)
-      // Zero-based index
-      keyValues("TTYPE" + (colIndex + 1).toString)
     }
   }
 }

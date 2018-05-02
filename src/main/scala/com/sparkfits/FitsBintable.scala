@@ -29,6 +29,7 @@ import org.apache.spark.sql.types._
 object FitsBintableLib {
   case class BintableInfos() extends FitsLib.Infos {
 
+    /** Bintables are implemented */
     def implemented: Boolean = {true}
 
     /**
@@ -36,8 +37,8 @@ object FitsBintableLib {
       * We rely on what's written in the header, meaning
       * here we do not access the data directly.
       *
-      * @param header : (Array[String])
-      *   The header of the HDU.
+      * @param keyValues : (Map[String, String])
+      *   keyValues from the header of the HDU (see parseHeader).
       * @return (Long), the number of rows as written in KEYWORD=NAXIS2.
       *
       */
@@ -50,8 +51,8 @@ object FitsBintableLib {
       * We rely on what's written in the header, meaning
       * here we do not access the data directly.
       *
-      * @param header : (Array[String])
-      *   The header of the HDU.
+      * @param keyValues : (Map[String, String])
+      *   keyValues from the header of the HDU (see parseHeader).
       * @return (Int), the size (bytes) of one row as written in KEYWORD=NAXIS1.
       *
       */
@@ -64,22 +65,22 @@ object FitsBintableLib {
       * We rely on what's written in the header, meaning
       * here we do not access the data directly.
       *
-      * @param header : (Array[String])
-      *   The header of the HDU.
+      * @param keyValues : (Map[String, String])
+      *   keyValues from the header of the HDU (see parseHeader).
       * @return (Long), the number of rows as written in KEYWORD=TFIELDS.
       *
       */
     def getNCols(keyValues : Map[String, String]) : Long = {
-      // println(s"getNCols> keyValues=${keyValues.toString}")
-      if (keyValues.contains("TFIELDS")) keyValues("TFIELDS").toLong
-      else 0L
+      if (keyValues.contains("TFIELDS")) {
+        keyValues("TFIELDS").toLong
+      } else 0L
     }
 
     /**
       * Return the types of elements for each column as a list.
       *
-      * @param col : (Int)
-      *   Column index used for the recursion.
+      * @param keyValues : (Map[String, String])
+      *   keyValues from the header of the HDU (see parseHeader).
       * @return (List[String]), list with the types of elements for each column
       *   as given by the header.
       *
@@ -95,29 +96,37 @@ object FitsBintableLib {
       colTypes.result
     }
 
+    /**
+      *
+      * Build a list of StructField from header information.
+      * The list of StructField is then used to build the DataFrame schema.
+      *
+      * @return (List[StructField]) List of StructField with column name,
+      *   column type, and whether the column is nullable.
+      *
+      */
     def listOfStruct : List[StructField] = {
-      // Grab max number of column
-      // Get the list of StructField.
+      // Initialise the list of StructField.
       val lStruct = List.newBuilder[StructField]
 
-      val cns = List.newBuilder[String]
+      // Loop over necessary columns specified by the user.
       for (colIndex <- colPositions) {
-        cns += colNames("TTYPE" + (colIndex + 1).toString)
-      }
+        // Column name
+        val colName = FitsLib.shortStringValue(
+          colNames("TTYPE" + (colIndex + 1).toString))
 
-      // println(s"BintableInfos.listOfStruct> rowTypes=${rowTypes.toString} colPositions=${colPositions.toString} cns=${cns.toString}")
-
-      for (colIndex <- colPositions) {
-        val colName = FitsLib.shortStringValue(colNames("TTYPE" + (colIndex + 1).toString))
-
-        // println(s"listOfStruct> colname=${colName} rowType=${rowTypes(colIndex)}")
-
+        // Full structure
         lStruct += readMyType(colName, rowTypes(colIndex))
       }
 
+      // Return the result
       lStruct.result
     }
 
+    /**
+      * Convert a bintable row elements from binary to primitives.
+      *
+      */
     def getRow(buf: Array[Byte]): List[Any] = {
       var row = List.newBuilder[Any]
 
@@ -174,8 +183,9 @@ object FitsBintableLib {
           new String(subbuf, StandardCharsets.UTF_8).trim()
         }
         case _ => {
-          println(s"""FitsLib.getElementFromBuffer> Cannot infer size of type $shortType from the header!
-              See getElementFromBuffer
+          println(s"""
+            FitsLib.getElementFromBuffer> Cannot infer size of type
+            $shortType from the header! See getElementFromBuffer
               """)
           0
         }
@@ -234,8 +244,9 @@ object FitsBintableLib {
           x.slice(0, x.length - 1).toInt
         }
         case _ => {
-          println(s"""FitsLib.getSplitLocation> Cannot infer size of type $shortType from the header!
-              See com.sparkfits.FitsLib.getSplitLocation
+          println(s"""
+            FitsLib.getSplitLocation> Cannot infer size of type $shortType
+            from the header! See com.sparkfits.FitsLib.getSplitLocation
               """)
           0
         }
@@ -255,11 +266,10 @@ object FitsBintableLib {
     def getColumnPos(keyValues : Map[String, String], colName : String) : Int = {
       // Get the position of the column. Header names are TTYPE#
       val pos = Try {
-        keyValues.
-          filter(x => x._1.contains("TTYPE")).
-          map(x => (x._1, x._2.split("'")(1).trim())).
-          filter(x => x._2.toLowerCase == colName.toLowerCase).
-          keys.head.substring(5).toInt
+        keyValues.filter(x => x._1.contains("TTYPE"))
+          .map(x => (x._1, x._2.split("'")(1).trim()))
+          .filter(x => x._2.toLowerCase == colName.toLowerCase)
+          .keys.head.substring(5).toInt
       }.getOrElse(-1)
 
       val isCol = pos >= 0
@@ -289,7 +299,8 @@ object FitsBintableLib {
       FitsLib.shortStringValue(keyValues("TFORM" + (colIndex + 1).toString))
     }
 
-    def initialize(empty_hdu: Boolean, header : Array[String], selectedColumns: List[String] = null) = {
+    def initialize(empty_hdu: Boolean, header : Array[String],
+        selectedColumns: List[String] = null) = {
 
       val keyValues = FitsLib.parseHeader(header)
 
@@ -325,7 +336,7 @@ object FitsBintableLib {
       } else {
         (0 :: rowSplitLocations(rowTypes, 0)).scan(0)(_ +_).tail
       }
-      // println(s"handleBintable> rowTypes=${rowTypes.toString} colNames=${colNames.toString} colPositions=${colPositions.toString}")
+
       this
     }
 
@@ -343,7 +354,8 @@ object FitsBintableLib {
       *   StructField will be used later to build the schema of the DataFrame.
       *
       */
-    def readMyType(name : String, fitstype : String, isNullable : Boolean = true): StructField = {
+    def readMyType(name : String, fitstype : String,
+        isNullable : Boolean = true): StructField = {
       fitstype match {
         case x if fitstype.contains("I") => StructField(name, ShortType, isNullable)
         case x if fitstype.contains("J") => StructField(name, IntegerType, isNullable)
@@ -353,7 +365,8 @@ object FitsBintableLib {
         case x if fitstype.contains("L") => StructField(name, BooleanType, isNullable)
         case x if fitstype.contains("A") => StructField(name, StringType, isNullable)
         case _ => {
-          println(s"""FitsBintable.readMyType> Cannot infer type $fitstype from the header!
+          println(s"""
+            FitsBintable.readMyType> Cannot infer type $fitstype from the header!
             See com.sparkfits.FitsSchema.scala
             """)
           StructField(name, StringType, isNullable)

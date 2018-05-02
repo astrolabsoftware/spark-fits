@@ -173,12 +173,12 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     assert(el == "NGC0000001")
   }
 
-  val fB1 = new FitsBlock(file, conf, 1)
-  val header = fB1.blockHeader
-  val keyValue = FitsLib.parseHeader(header)
-  val coltypes = fB1.infos.getColTypes(keyValue)
-  val s = FitsLib.shortStringValue(coltypes(0))
-  test(s"shortStringValue> coltypes(0)=${coltypes(0)} => $s"){}
+  // val fB1 = new FitsBlock(file, conf, 1)
+  // val header = fB1.blockHeader
+  // val keyValues = FitsLib.parseHeader(header)
+  // val coltypes = fB1.infos.getColTypes(keyValues)
+  // val s = FitsLib.shortStringValue(coltypes(0))
+  // test(s"shortStringValue> coltypes(0)=${coltypes(0)} => $s"){}
 
   // Check the column type conversion
   test("FitsLib test: Can you guess the column types?") {
@@ -186,31 +186,31 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
     // Read the header
     val header = fB1.blockHeader
-    val keyValue = FitsLib.parseHeader(header)
+    val keyValues = FitsLib.parseHeader(header)
 
     // Grab the column type (FITS standard)
-    val coltypes = fB1.infos.getColTypes(keyValue)
+    val coltypes = fB1.infos.getColTypes(keyValues)
 
     assert(coltypes(0) == "10A" && coltypes(1) == "E" && coltypes(2) == "D" &&
       coltypes(3) == "K" && coltypes(4) == "J")
 
   }
 
-  test("FitsLib test: what is the recordLength for an image ") {
-    // val file = "src/test/resources/toTest/tst0009.fits"
-    // val hdu = 2
-    val file = "hdfs://134.158.75.222:8020//lsst/images/a.fits"
-    val hdu = 1
-    val fB1 = new FitsBlock(new Path(file), conf, hdu)
-    val header = fB1.blockHeader
-    val keyValue = FitsLib.parseHeader(header)
-    val rowSize = fB1.infos.getSizeRowBytes(keyValue)
-    val nrows = fB1.infos.getNRows(keyValue)
-
-    val startstop = fB1.getBlockBoundaries
-
-    assert(null == s"rowSize=$rowSize nrows=$nrows startstop=${startstop}")
-  }
+  // test("FitsLib test: what is the recordLength for an image ") {
+  //   // val file = "src/test/resources/toTest/tst0009.fits"
+  //   // val hdu = 2
+  //   val file = "hdfs://134.158.75.222:8020//lsst/images/a.fits"
+  //   val hdu = 1
+  //   val fB1 = new FitsBlock(new Path(file), conf, hdu)
+  //   val header = fB1.blockHeader
+  //   val keyValue = FitsLib.parseHeader(header)
+  //   val rowSize = fB1.infos.getSizeRowBytes(keyValue)
+  //   val nrows = fB1.infos.getNRows(keyValue)
+  //
+  //   val startstop = fB1.getBlockBoundaries
+  //
+  //   assert(null == s"rowSize=$rowSize nrows=$nrows startstop=${startstop}")
+  // }
 
   // Check the header keywords conversion
   test("FitsLib test: Can you grab the keywords of the header?") {
@@ -220,9 +220,10 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header = fB1.blockHeader
 
     // Grab the keywords
-    val keys = fB1.getHeaderKeywords(header)
+    // val keys = fB1.getHeaderKeywords(header)
+    val keyValues = FitsLib.parseHeader(header)
 
-    assert(keys(0).contains("XTENSION"))
+    assert(keyValues.contains("XTENSION"))
   }
 
   // Check the value conversion
@@ -266,10 +267,10 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header = fB1.blockHeader
 
     // Grab the names as map(keywords/names)
-    val comments = fB1.getHeaderComments(header)
+    val keyValues = fB1.getHeaderComments(header)
 
     // Check an entry with a comment (XTENSION).
-    assert(comments("XTENSION") == "binary table extension")
+    assert(keyValues("XTENSION") == "binary table extension")
   }
 
   // Check the reader for the number of rows
