@@ -22,7 +22,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.types._
 
-import scala.util.{Try, Success, Failure}
+import scala.util.Try
 
 /**
   * This is the beginning of a FITS library in Scala.
@@ -44,21 +44,6 @@ object FitsLib {
 
   // Separator used for values from blockBoundaries
   val separator = ";;"
-
-  /**
-    * Return the (key,values) of the header.
-    *
-    * @param header : (Array[String])
-    *   The header of the HDU.
-    * @return (Map[String, String]), map array with (keys, values).
-    *
-    */
-  def parseHeader(header : Array[String]) : Map[String, String] = {
-    header.map(x => x.split("="))
-      .filter(x => x.size > 1)
-      .map(x => (x(0).trim(), x(1).split("/")(0).trim()))
-      .toMap
-  }
 
   /**
     * Class to hold block boundaries. These values are computed at first
@@ -92,10 +77,12 @@ object FitsLib {
     }
 
     /**
-      * Set starting byte to last byte (empty block).
+      * Check whether the data block is empty based on start/end indices.
+      *
+      * @return (Boolean) True if the data block has zero size. False otherwise.
       *
       */
-    def empty = {
+    def empty: Boolean = {
       dataStart == dataStop
     }
 
@@ -117,47 +104,137 @@ object FitsLib {
   trait HDU {
 
     /**
-      * Whether the HDU is implemented in the library.
+      * Check whether the HDU is implemented in the library.
+      * Must be set for all extensions of HDU trait.
+      *
       * @return (Boolean)
       */
     def implemented: Boolean
 
-    /** Geometrical informations about the HDU (size, element types, etc) */
+    /**
+      * Generic method to return the number of rows from the header information.
+      * To be implemented in specific HDU.
+      *
+      * @param keyValues : (Map[String, String])
+      *   (Key, Values) from the header (see parseHeader)
+      * @return (Long) Number of rows in the data HDU.
+      *
+      */
     def getNRows(keyValues: Map[String, String]) : Long
+
+    /**
+      * Generic method to get the size of one row (bytes) from the header
+      * information.
+      * Must be implemented for all HDU extensions.
+      *
+      * @param keyValues : (Map[String, String])
+      *   (Key, Values) from the header (see parseHeader)
+      * @return (Long) Size in bytes of one row.
+      *
+      */
     def getSizeRowBytes(keyValues: Map[String, String]) : Int
+
+    /**
+      * Generic method to get the number of columns from the header information.
+      * Must be implemented for all extensions of HDU.
+      *
+      * @param keyValues : (Map[String, String])
+      *   (Key, Values) from the header (see parseHeader)
+      * @return (Long) Number of columns in the data HDU.
+      *
+      */
     def getNCols(keyValues : Map[String, String]) : Long
+
+    /**
+      * Generic method to get the types of column elements from the header
+      * information.
+      * Must be implemented for all extensions of HDU.
+      *
+      * @param keyValues : (Map[String, String])
+      *   (Key, Values) from the header (see parseHeader)
+      * @return (List[String]) Types of elements of columns.
+      *
+      */
     def getColTypes(keyValues : Map[String, String]): List[String]
 
-    // Useful to convert the Header into a DF schema.
+    /**
+      * Generic method to convert header information into StructField used to
+      * build the DataFrame schema.
+      * Must be implemented for all extensions of HDU.
+      *
+      * @return (List[StructField]) List of StructField containing name and
+      *   types of columns.
+      */
     def listOfStruct : List[StructField]
 
-    // Methods to access the elements of the data block.
+    /**
+      * Generic method to decode the rows of the data block.
+      * Must be implemented for all extensions of HDU.
+      *
+      * @param buf : (Array[Bytes])
+      *   Array of Bytes describing one row.
+      * @return (List[Any]) The decoded row containing primitives.
+      *
+      */
     def getRow(buf: Array[Byte]): List[Any]
+
+    /**
+      * Generic method to decode one row element of the data block.
+      * Must be implemented for all extensions of HDU.
+      *
+      * @param subbuf : (Array[Bytes])
+      *   Array of Bytes describing one element.
+      * @return (Any) The element decoded.
+      *
+      */
     def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any
+
   }
 
   /**
-    *
     * Generic class extending Infos concerning dummy HDU (e.g. not implemented).
     * Set all variables and methods to null/0/false.
     */
-  case class AnyHDU(hduType: String) extends HDU {
+  case class AnyHDU() extends HDU {
 
-    // Not implemented
+    /** Empty HDU not implemented. */
     def implemented: Boolean = {false}
 
-    // Zero-size, null type elements
+    /** Return no row */
     def getNRows(keyValues: Map[String, String]) : Long = {0L}
+
+    /** Rows have size zero */
     def getSizeRowBytes(keyValues: Map[String, String]) : Int = {0}
+
+    /** Return no columns */
     def getNCols(keyValues : Map[String, String]) : Long = {0L}
+
+    /** Elements have no types */
     def getColTypes(keyValues : Map[String, String]): List[String] = {null}
 
-    // Null schema
+    /** Return no schema structure */
     def listOfStruct : List[StructField] = {null}
 
-    // No elements to return
+    /** Return null row */
     def getRow(buf: Array[Byte]): List[Any] = {null}
+
+    /** Return null element */
     def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {null}
+  }
+
+  /**
+    * Decompose each line of the header into (key, value).
+    *
+    * @param header : (Array[String])
+    *   The header of the HDU.
+    * @return (Map[String, String]), map array with (keys, values).
+    *
+    */
+  def parseHeader(header : Array[String]) : Map[String, String] = {
+    header.map(x => x.split("="))
+      .filter(x => x.size > 1)
+      .map(x => (x(0).trim(), x(1).split("/")(0).trim()))
+      .toMap
   }
 
   /**
@@ -222,7 +299,7 @@ object FitsLib {
       getBlockBoundaries
     }
 
-    // Initialise the HDU
+    // Initialise the HDU: is it empty>
     val empty_hdu = blockBoundaries.empty
 
     // Get the header and set the cursor to its start.
@@ -234,35 +311,40 @@ object FitsLib {
     // Check whether we know the HDU type.
     val hduType = getHduType
     val hdu: HDU = hduType match {
-      case "BINTABLE" => handleBintable(blockHeader, hduType)
-      case "TABLE" => handleTable(blockHeader, hduType)
-      case "IMAGE" => handleImage(blockHeader, hduType)
-      case "EMPTY" => AnyHDU(hduType)
+      case "BINTABLE" => handleBintable
+      case "TABLE" => handleTable
+      case "IMAGE" => handleImage
+      case "EMPTY" => AnyHDU()
       case _ => throw new AssertionError(s"""
         $hduType HDU not yet implemented!
         """)
     }
 
     /**
-      *
       * Return the informations concerning a Table HDU.
       *
-      * @param blockHeader : (Array[String])
-      *   Header of the HDU.
       * @return (TableHDU) informations concerning the Table.
       *
       */
-    def handleTable(blockHeader: Array[String], hduType: String) = {
+    def handleTable = {
       println(s"handleTable> blockHeader=${blockHeader.toString}")
       FitsTableLib.TableHDU()
     }
 
-    def handleImage(blockHeader: Array[String], hduType: String) = {
-
+    /**
+      * Return the informations concerning a Image HDU.
+      *
+      * @return (ImageHDU) informations concerning the Image.
+      *
+      */
+    def handleImage = {
+      // Initialise the key/value from the header.
       val kv = parseHeader(blockHeader)
 
+      // Compute the dimension of the image
       val pixelSize = (kv("BITPIX").toInt)/8
       val dimensions = kv("NAXIS").toInt
+
       val axisBuilder = Array.newBuilder[Long]
       for (d <- 1 to dimensions){
         axisBuilder += kv("NAXIS" + d.toString).toLong
@@ -270,22 +352,36 @@ object FitsLib {
       val axis = axisBuilder.result
       val axisStr = axis.mkString(",")
 
+      // Return an Image HDU
+      // /!\ implementation and call of the method initialise is missing! /!\
+      // /!\ See handleBintable                                           /!\
       FitsImageLib.ImageHDU(pixelSize, axis)
     }
 
-    // Get informations on element types and number of columns.
-    def handleBintable(blockHeader: Array[String], hduType: String) = {
-
+    /**
+      * Return the informations concerning a BinTable HDU.
+      *
+      * @return (BintableHDU) informations concerning the Bintable.
+      *
+      */
+    def handleBintable = {
+      // Grab only columns specified by the user
       val selectedColNames = if (conf.get("columns") != null) {
         conf.getStrings("columns").deep.toList.asInstanceOf[List[String]]
-      } else {
-        null
-      }
+      } else null
 
       val localHDU = FitsBintableLib.BintableHDU()
       localHDU.initialize(empty_hdu, blockHeader, selectedColNames)
     }
 
+    /**
+      * Compute the indices of the first and last bytes of the HDU:
+      * hdu_start=header_start, data_start, data_stop, hdu_stop
+      *
+      * @return (FitsBlockBoundaries), Instance of FitsBlockBoundaries
+      *   initialised with the boundaries of the FITS HDU (header+data).
+      *
+      */
     def getBlockBoundaries: FitsBlockBoundaries = {
 
       // Initialise the cursor position at the beginning of the file
@@ -298,14 +394,10 @@ object FitsLib {
       var dataStop : Long = 0
       var blockStop : Long = 0
 
-      // println(s"====== getBlockBoundaries> data.getPos=${data.getPos}")
-
       // Loop over HDUs, and stop at the desired one.
       do {
         // Initialise the offset to the header position
         headerStart = data.getPos
-
-        // println(s"getBlockBoundaries-1) data.getPos=${data.getPos}")
 
         val localHeader = readFullHeaderBlocks
 
@@ -313,8 +405,6 @@ object FitsLib {
         dataStart = data.getPos
 
         val keyValues = parseHeader(localHeader)
-
-        // println(s"keyValues=${keyValues.mkString("\n")}")
 
         // Size of the data block in Bytes.
         // Skip Data if None (typically HDU=0)
@@ -346,7 +436,8 @@ object FitsLib {
       // Return boundaries (included):
       // hdu_start=headerStart, dataStart, dataStop, hdu_stop
       val fb = FitsBlockBoundaries(headerStart, dataStart, dataStop, blockStop)
-      // println(s"getBlockBoundaries-END> $fb")
+
+      // Return the instance
       fb
     }
 
@@ -388,23 +479,23 @@ object FitsLib {
     /**
       * Compute the size of a data block.
       *
-      * @param values : (Map[String, String])
+      * @param keyValues : (Map[String, String])
       *   Values from the header (see parseHeader)
       * @return (Long) Size of the corresponding data block
       *
       */
-    def getDataLen(values: Map[String, String]): Long = {
+    def getDataLen(keyValues: Map[String, String]): Long = {
       // Initialise the data size
       var dataSize = 0L
 
       // Number of dimensions
-      val naxis = values("NAXIS").toInt
+      val naxis = keyValues("NAXIS").toInt
 
       // Accumulate the size dimension-by-dimension
       if (naxis > 0) {
-        dataSize = values("BITPIX").toLong / 8L
+        dataSize = keyValues("BITPIX").toLong / 8L
         for (a <- 1 to naxis) {
-          val axis = values(s"NAXIS${a}").toLong
+          val axis = keyValues(s"NAXIS${a}").toLong
           dataSize = dataSize * axis
         }
       }
@@ -414,7 +505,7 @@ object FitsLib {
     }
 
     /**
-      * Return the number of HDUs in the file.
+      * Return the number of HDUs in the FITS file.
       *
       * @return (Int) the number of HDU.
       *
@@ -425,14 +516,11 @@ object FitsLib {
       data.seek(0)
       var currentHduIndex = 0
 
-      var hasData : Boolean = true
+      var hasData : Boolean = false
       var datalen = 0L
 
       // Loop over all HDU, and exit.
       do {
-        // println(s"\ngetNHDU-1) hdu=$currentHduIndex data.getPos=${data.getPos}")
-
-        hasData = false
         val localHeader = readFullHeaderBlocks
 
         // If the header cannot be read,
@@ -445,8 +533,6 @@ object FitsLib {
             getDataLen(parseHeader(localHeader))
           }.getOrElse(0L)
 
-          // println(s"getNHDU-2) header=${localHeader.size} datalen=$datalen data.getPos=${data.getPos}")
-
           // Store the offset to the next HDU
           // FITS is made of blocks of size 2880 bytes, both for the headers and for the data
           // if datalen is not null, it must be justified to an integer number of blocks
@@ -457,20 +543,16 @@ object FitsLib {
             datalen + FITSBLOCK_SIZE_BYTES - (datalen % FITSBLOCK_SIZE_BYTES)
           }
 
-          // println(s"getNHDU-3) header=${localHeader.size} data.getPos=${data.getPos} datalen=$datalen skipBytes=$skipBytes")
-
           data.seek(data.getPos + skipBytes)
 
           // Move to the another HDU if needed
           currentHduIndex = currentHduIndex + 1
         }
         else {
-          // println(s"getNHDU-4) has no data")
+          hasData = false
         }
 
       } while (hasData)
-
-      // println(s"getNHDU-END) data.getPos=${data.getPos} currentHduIndex=$currentHduIndex")
 
       // Return the number of HDU.
       currentHduIndex
@@ -505,30 +587,28 @@ object FitsLib {
       data.seek(position)
     }
 
-    /**
-      * Read a header at a given position
-      *
-      * @param position : (Long)
-      *   The byte index to seek in the file. Need to correspond to a valid
-      *   header position. Use in combination with BlockBoundaries.headerStart
-      *   for example.
-      * @return (Array[String) the header is an array of Strings, each String
-      *   being one line of the header.
-      */
-    def readHeader(position : Long) : Array[String] = {
-      setCursor(position)
-      readHeader
-    }
+    // /**
+    //   * Read a header at a given position
+    //   *
+    //   * @param position : (Long)
+    //   *   The byte index to seek in the file. Need to correspond to a valid
+    //   *   header position. Use in combination with BlockBoundaries.headerStart
+    //   *   for example.
+    //   * @return (Array[String) the header is an array of Strings, each String
+    //   *   being one line of the header.
+    //   */
+    // def readHeader(position : Long) : Array[String] = {
+    //   setCursor(position)
+    //   readHeader
+    // }
 
     def readFullHeaderBlocks : Array[String] = {
-      // println(s"readFullHeaderBlocks> data.getPos=${data.getPos}")
       var header = Array.newBuilder[String]
       var ending = false
       var blockNumber = 0
       do {
         val block = readHeaderBlock
         ending = block.size == 0
-        // println(s"readFullHeaderBlocks> block.size=${block.size}")
 
         if (!ending)
           {
@@ -552,12 +632,10 @@ object FitsLib {
                 last = line
                 header += line
               }
-            // println(s"$s ... $last")
           } else {
-            // println("readFullHeaderBlocks> ending")
+            ending = true
           }
 
-        // println(s"readFullHeaderBlocks-$blockNumber) fullHeader=${header.result.size} END=${ending}")
         blockNumber += 1
       } while (!ending)
       header.result
@@ -566,8 +644,6 @@ object FitsLib {
     def readHeaderBlock : Array[String] = {
       // Initialise a line of the header
       var buffer = new Array[Byte](FITSBLOCK_SIZE_BYTES)
-
-      // println(s"readHeaderBlock> data.getPos=${data.getPos}")
 
       val header = Array.newBuilder[String]
 
@@ -578,13 +654,6 @@ object FitsLib {
       }
 
       if (len > 0) {
-        /*
-        val window = 80
-        val begining = new String(buffer.slice(0, window), StandardCharsets.UTF_8)
-        val trailer = new String(buffer.slice(len-window, len), StandardCharsets.UTF_8)
-        println(s"readHeaderBlock> data.getPos=${data.getPos} len=$len buffer=\n[${begining}\n...\n${trailer}]")
-        */
-
         val maxLines = FITSBLOCK_SIZE_BYTES / FITS_HEADER_CARD_SIZE
 
         var inBlock = true
@@ -594,18 +663,13 @@ object FitsLib {
         for {
           i <- 0 to maxLines-1
           if inBlock} {
-          val line = new String(buffer.slice(pos, pos + FITS_HEADER_CARD_SIZE), StandardCharsets.UTF_8)
+          val line = new String(
+            buffer.slice(pos, pos + FITS_HEADER_CARD_SIZE),
+            StandardCharsets.UTF_8)
 
-          // println(s"=== $i $line")
-          /*
-          if (line.trim != "" && !line.startsWith("COMMENT")) {
-            header += line
-          }
-          */
           header += line
 
           if (line.trim() == "END") {
-            // println(s"readHeaderBlock-END> pos=$pos getPos=${data.getPos} modulo=${data.getPos % FITSBLOCK_SIZE_BYTES} block=${data.getPos/FITSBLOCK_SIZE_BYTES}")
             inBlock = false
           }
           pos += FITS_HEADER_CARD_SIZE
@@ -615,53 +679,53 @@ object FitsLib {
       header.result
     }
 
-    /**
-      * Read the header of a HDU. The cursor needs to be at the start of
-      * the header. We assume that each header row has a standard
-      * size of 80 Bytes, and the total size of the header is 2880 Bytes.
-      *
-      * @return (Array[String) the header is an array of Strings, each String
-      *   being one line of the header.
-      */
-    def readHeader : Array[String] = {
-
-      // Initialise a line of the header
-      var buffer = new Array[Byte](FITS_HEADER_CARD_SIZE)
-
-      val header = buildHeader(buffer).toArray
-      val newOffset = if (data.getPos % FITSBLOCK_SIZE_BYTES == 0) {
-        data.getPos
-      } else {
-        data.getPos + FITSBLOCK_SIZE_BYTES -  data.getPos % FITSBLOCK_SIZE_BYTES
-      }
-
-      // Place the cursor at the end of the last header block
-      // that is at the beginning of the first data block
-      data.seek(newOffset)
-
-      header
-    }
-
-    def buildHeader(buffer: Array[Byte], prevline: String="") : List[String] = {
-      if (prevline.trim() == "END") {
-        Nil
-      } else {
-        // Read a line of the header
-        val len = data.read(buffer, 0, FITS_HEADER_CARD_SIZE)
-
-        // EOF
-        val isEmpty = (len <= 0)
-        isEmpty match {
-          case true => throw new EOFException("nothing to read left")
-          case false => isEmpty
-        }
-
-        // Decode the line of the header
-        val line = new String(buffer, StandardCharsets.UTF_8)
-
-        line :: buildHeader(buffer, line)
-      }
-    }
+    // /**
+    //   * Read the header of a HDU. The cursor needs to be at the start of
+    //   * the header. We assume that each header row has a standard
+    //   * size of 80 Bytes, and the total size of the header is 2880 Bytes.
+    //   *
+    //   * @return (Array[String) the header is an array of Strings, each String
+    //   *   being one line of the header.
+    //   */
+    // def readHeader : Array[String] = {
+    //
+    //   // Initialise a line of the header
+    //   var buffer = new Array[Byte](FITS_HEADER_CARD_SIZE)
+    //
+    //   val header = buildHeader(buffer).toArray
+    //   val newOffset = if (data.getPos % FITSBLOCK_SIZE_BYTES == 0) {
+    //     data.getPos
+    //   } else {
+    //     data.getPos + FITSBLOCK_SIZE_BYTES -  data.getPos % FITSBLOCK_SIZE_BYTES
+    //   }
+    //
+    //   // Place the cursor at the end of the last header block
+    //   // that is at the beginning of the first data block
+    //   data.seek(newOffset)
+    //
+    //   header
+    // }
+    //
+    // def buildHeader(buffer: Array[Byte], prevline: String="") : List[String] = {
+    //   if (prevline.trim() == "END") {
+    //     Nil
+    //   } else {
+    //     // Read a line of the header
+    //     val len = data.read(buffer, 0, FITS_HEADER_CARD_SIZE)
+    //
+    //     // EOF
+    //     val isEmpty = (len <= 0)
+    //     isEmpty match {
+    //       case true => throw new EOFException("nothing to read left")
+    //       case false => isEmpty
+    //     }
+    //
+    //     // Decode the line of the header
+    //     val line = new String(buffer, StandardCharsets.UTF_8)
+    //
+    //     line :: buildHeader(buffer, line)
+    //   }
+    // }
 
     /**
       * Register the header in the Hadoop configuration.
