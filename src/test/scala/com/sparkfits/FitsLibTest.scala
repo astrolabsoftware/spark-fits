@@ -24,6 +24,8 @@ import org.apache.spark.sql.types._
 
 import com.sparkfits.FitsLib._
 import com.sparkfits.FitsSchema._
+import com.sparkfits.FitsBintableLib._
+import com.sparkfits.FitsImageLib._
 
 /**
   * Test class for the FitsSchema object.
@@ -51,15 +53,15 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
   // Check that the HDU asked is below the max HDU index.
   test("FitsLib test: Can you initialise correctly an empty HDU?") {
     val fB1 = new FitsBlock(file, conf, 0)
-    val s = fB1.BlockBoundaries
-    assert(fB1.empty_hdu && s._1 == 0 && s._2 == 2880 && s._3 == 2880 && s._4 == 2880)
+    val s = fB1.blockBoundaries
+    assert(fB1.empty_hdu && s.headerStart == 0 && s.dataStart == 2880 && s.dataStop == 2880 && s.blockStop == 2880)
   }
 
   // Check that the HDU asked is below the max HDU index.
   test("FitsLib test: Can you compute correctly the boundaries of a HDU?") {
     val fB1 = new FitsBlock(file, conf, 1)
-    val s = fB1.BlockBoundaries
-    assert(s._1 == 2880 && s._2 == 5760 && s._3 == 685760 && s._4 == 688320)
+    val s = fB1.blockBoundaries
+    assert(s.headerStart == 2880 && s.dataStart == 5760 && s.dataStop == 685760 && s.blockStop == 688320)
   }
 
   // Check the total number of HDU
@@ -118,9 +120,10 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
     // Read the header and set the cursor at the beginning of the data block
     val header = fB1.blockHeader
+    val keyValues = FitsLib.parseHeader(header)
 
     // Define a row and read data from the file
-    val bufferSize = fB1.getSizeRowBytes(header).toInt
+    val bufferSize = fB1.infos.getSizeRowBytes(keyValues).toInt
     val buffer = new Array[Byte](bufferSize)
     fB1.resetCursorAtData
     fB1.data.readFully(buffer, 0, bufferSize)
@@ -137,9 +140,10 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
     // Read the header and set the cursor at the beginning of the data block
     val header = fB1.blockHeader
+    val keyValues = FitsLib.parseHeader(header)
     fB1.resetCursorAtData
 
-    val splitLocations = fB1.splitLocations
+    val splitLocations = fB1.infos.asInstanceOf[BintableInfos].splitLocations
     val ncols = splitLocations.size - 1
 
     var bufferSize: Int = 0
@@ -148,12 +152,14 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
     for (pos <- 0 to ncols - 1) {
       // Define an element and read data from the file
-      bufferSize = splitLocations(pos+1) - splitLocations(pos)
+      val col = pos + 1
+      bufferSize = splitLocations(pos + 1) - splitLocations(pos)
       buffer = new Array[Byte](bufferSize)
       fB1.data.readFully(buffer, 0, bufferSize)
 
       // Convert from binary to primitive
-      el = fB1.getElementFromBuffer(buffer, fB1.rowTypes(pos))
+      // shortStringValue(keyValues("TFORM" + (col + 1).toString))
+      el = fB1.infos.getElementFromBuffer(buffer, shortStringValue(keyValues("TFORM" + (pos + 1).toString)))
     }
 
     // The next one should be the beginning of the next row
@@ -162,10 +168,17 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     fB1.data.readFully(buffer, 0, bufferSize)
 
     // Convert from binary to primitive
-    el = fB1.getElementFromBuffer(buffer, fB1.rowTypes(0))
+    el = fB1.infos.getElementFromBuffer(buffer, shortStringValue(keyValues("TFORM" + (1).toString)))
 
     assert(el == "NGC0000001")
   }
+
+  val fB1 = new FitsBlock(file, conf, 1)
+  val header = fB1.blockHeader
+  val keyValue = FitsLib.parseHeader(header)
+  val coltypes = fB1.infos.getColTypes(keyValue)
+  val s = FitsLib.shortStringValue(coltypes(0))
+  test(s"shortStringValue> coltypes(0)=${coltypes(0)} => $s"){}
 
   // Check the column type conversion
   test("FitsLib test: Can you guess the column types?") {
@@ -173,13 +186,30 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
     // Read the header
     val header = fB1.blockHeader
+    val keyValue = FitsLib.parseHeader(header)
 
     // Grab the column type (FITS standard)
-    val coltypes = fB1.getColTypes(header)
+    val coltypes = fB1.infos.getColTypes(keyValue)
 
     assert(coltypes(0) == "10A" && coltypes(1) == "E" && coltypes(2) == "D" &&
       coltypes(3) == "K" && coltypes(4) == "J")
 
+  }
+
+  test("FitsLib test: what is the recordLength for an image ") {
+    // val file = "src/test/resources/toTest/tst0009.fits"
+    // val hdu = 2
+    val file = "hdfs://134.158.75.222:8020//lsst/images/a.fits"
+    val hdu = 1
+    val fB1 = new FitsBlock(new Path(file), conf, hdu)
+    val header = fB1.blockHeader
+    val keyValue = FitsLib.parseHeader(header)
+    val rowSize = fB1.infos.getSizeRowBytes(keyValue)
+    val nrows = fB1.infos.getNRows(keyValue)
+
+    val startstop = fB1.getBlockBoundaries
+
+    assert(null == s"rowSize=$rowSize nrows=$nrows startstop=${startstop}")
   }
 
   // Check the header keywords conversion
@@ -203,11 +233,11 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header = fB1.blockHeader
 
     // Grab the values as map(keywords/values)
-    val values = fB1.getHeaderValues(header)
+    val keyValues = FitsLib.parseHeader(header)
 
     // Check an entry with a value (BITPIX), and one without.
     // By default, header line without value gets a default value of 0.
-    assert(values("BITPIX").toInt == 8)
+    assert(keyValues("BITPIX").toInt == 8)
   }
 
   // Check the name conversion
@@ -218,11 +248,14 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header = fB1.blockHeader
 
     // Grab the names as map(keywords/names)
-    val names = fB1.getHeaderNames(header)
+    val keyValues = FitsLib.parseHeader(header)
+
+    val v = keyValues.
+      filter(x => x._2.contains("'"))
 
     // Check an entry with a name (TTYPE1), and one without.
     // By default, header line without name are not taken.
-    assert(names("TTYPE1") == "target" && !names.contains("NAXIS1"))
+    assert(FitsLib.shortStringValue(keyValues("TTYPE1")) == "target" && !v.contains("NAXIS1"))
   }
 
   // Check the comment conversion
@@ -249,8 +282,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header2 = fB2.blockHeader
 
     // Grab the number of rows
-    val nrows1 = fB1.getNRows(header1)
-    val nrows2 = fB2.getNRows(header2)
+    val nrows1 = fB1.infos.getNRows(FitsLib.parseHeader(header1))
+    val nrows2 = fB2.infos.getNRows(FitsLib.parseHeader(header2))
 
     assert(nrows1 == 20000 && nrows2 == 20000)
   }
@@ -265,8 +298,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header2 = fB2.blockHeader
 
     // Grab the number of rows
-    val ncols1 = fB1.getNCols(header1)
-    val ncols2 = fB2.getNCols(header2)
+    val ncols1 = fB1.infos.getNCols(FitsLib.parseHeader(header1))
+    val ncols2 = fB2.infos.getNCols(FitsLib.parseHeader(header2))
 
     assert(ncols1 == 5 && ncols2 == 3)
   }
@@ -281,8 +314,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val header2 = fB2.blockHeader
 
     // Grab the number of rows
-    val rowSize1 = fB1.getSizeRowBytes(header1)
-    val rowSize2 = fB2.getSizeRowBytes(header2)
+    val rowSize1 = fB1.infos.getSizeRowBytes(FitsLib.parseHeader(header1))
+    val rowSize2 = fB2.infos.getSizeRowBytes(FitsLib.parseHeader(header2))
 
     assert(rowSize1 == 34 && rowSize2 == 25)
   }

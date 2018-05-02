@@ -49,8 +49,7 @@ object FitsSchema {
       case x if fitstype.contains("L") => StructField(name, BooleanType, isNullable)
       case x if fitstype.contains("A") => StructField(name, StringType, isNullable)
       case _ => {
-        println(s"""
-            Cannot infer type $fitstype from the header!
+        println(s"""FitsSchema.ReadMyType> Cannot infer type $fitstype from the header!
             See com.sparkfits.FitsSchema.scala
             """)
         StructField(name, StringType, isNullable)
@@ -74,17 +73,14 @@ object FitsSchema {
 
     // Read the header
     val header = fB.blockHeader
-    checkBintableHeader(header)
+    checkAnyHeader(header)
 
-    // Grab max number of column
-    val colmax = fB.getNCols(header)
-
-    // Get the list of StructField.
-    val lStruct = List.newBuilder[StructField]
-    for (col <- fB.colPositions) {
-      lStruct += ReadMyType(fB.getColumnName(header, col), fB.getColumnType(header, col))
+    if (fB.infos.implemented){
+      fB.infos.listOfStruct
     }
-    lStruct.result
+    else {
+      List[StructField]()
+    }
   }
 
   /**
@@ -113,34 +109,21 @@ object FitsSchema {
   }
 
   /**
-    * A few checks on the header for bintable.
-    * Careful, it will throw errors for image!
+    * A few checks on the header for any header type
     *
     * @param header : (Array[String])
     *   The header of the HDU.
     */
-  def checkBintableHeader(header : Array[String]) : Unit = {
+  def checkAnyHeader(header : Array[String]) : Unit = {
 
     // Check that we have an extension
     val keysHasXtension = header(0).contains("XTENSION")
     keysHasXtension match {
       case true => keysHasXtension
       case false => throw new AssertionError("""
-        Are you really trying to read a BINTABLE?
         Your header has no keywords called XTENSION.
         Check that the HDU number you want to
         access is correct: spark.readfits.option("HDU", <Int>).
-        """)
-    }
-
-    // Check that we read a bintable
-    val headerStart = header(0).contains("BINTABLE")
-    val headerStartElement = header(0)
-    headerStart match {
-      case true => headerStart
-      case false => throw new AssertionError(s"""
-        Are you really trying to read a BINTABLE? Your header says that
-        the XTENSION is $headerStartElement
         """)
     }
 
