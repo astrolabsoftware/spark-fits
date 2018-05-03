@@ -18,11 +18,13 @@ package com.sparkfits
 import java.io.EOFException
 import java.nio.charset.StandardCharsets
 
+import scala.util.Try
+
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.types._
 
-import scala.util.Try
+import com.sparkfits.FitsHdu._
 
 /**
   * This is the beginning of a FITS library in Scala.
@@ -93,133 +95,6 @@ object FitsLib {
     override def toString: String = {
       s"[headerStart=$headerStart dataStart=$dataStart dataStop=$dataStop blockStop=$blockStop]"
     }
-  }
-
-  /**
-    * Trait containing generic informations concerning HDU informations.
-    * This includes for example number of rows, size of a row,
-    * number of columns, types of elements, and methods to access elements.
-    *
-    */
-  trait HDU {
-
-    /**
-      * Check whether the HDU is implemented in the library.
-      * Must be set for all extensions of HDU trait.
-      *
-      * @return (Boolean)
-      */
-    def implemented: Boolean
-
-    /**
-      * Generic method to return the number of rows from the header information.
-      * To be implemented in specific HDU.
-      *
-      * @param keyValues : (Map[String, String])
-      *   (Key, Values) from the header (see parseHeader)
-      * @return (Long) Number of rows in the data HDU.
-      *
-      */
-    def getNRows(keyValues: Map[String, String]) : Long
-
-    /**
-      * Generic method to get the size of one row (bytes) from the header
-      * information.
-      * Must be implemented for all HDU extensions.
-      *
-      * @param keyValues : (Map[String, String])
-      *   (Key, Values) from the header (see parseHeader)
-      * @return (Long) Size in bytes of one row.
-      *
-      */
-    def getSizeRowBytes(keyValues: Map[String, String]) : Int
-
-    /**
-      * Generic method to get the number of columns from the header information.
-      * Must be implemented for all extensions of HDU.
-      *
-      * @param keyValues : (Map[String, String])
-      *   (Key, Values) from the header (see parseHeader)
-      * @return (Long) Number of columns in the data HDU.
-      *
-      */
-    def getNCols(keyValues : Map[String, String]) : Long
-
-    /**
-      * Generic method to get the types of column elements from the header
-      * information.
-      * Must be implemented for all extensions of HDU.
-      *
-      * @param keyValues : (Map[String, String])
-      *   (Key, Values) from the header (see parseHeader)
-      * @return (List[String]) Types of elements of columns.
-      *
-      */
-    def getColTypes(keyValues : Map[String, String]): List[String]
-
-    /**
-      * Generic method to convert header information into StructField used to
-      * build the DataFrame schema.
-      * Must be implemented for all extensions of HDU.
-      *
-      * @return (List[StructField]) List of StructField containing name and
-      *   types of columns.
-      */
-    def listOfStruct : List[StructField]
-
-    /**
-      * Generic method to decode the rows of the data block.
-      * Must be implemented for all extensions of HDU.
-      *
-      * @param buf : (Array[Bytes])
-      *   Array of Bytes describing one row.
-      * @return (List[Any]) The decoded row containing primitives.
-      *
-      */
-    def getRow(buf: Array[Byte]): List[Any]
-
-    /**
-      * Generic method to decode one row element of the data block.
-      * Must be implemented for all extensions of HDU.
-      *
-      * @param subbuf : (Array[Bytes])
-      *   Array of Bytes describing one element.
-      * @return (Any) The element decoded.
-      *
-      */
-    def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any
-
-  }
-
-  /**
-    * Generic class extending Infos concerning dummy HDU (e.g. not implemented).
-    * Set all variables and methods to null/0/false.
-    */
-  case class AnyHDU() extends HDU {
-
-    /** Empty HDU not implemented. */
-    def implemented: Boolean = {false}
-
-    /** Return no row */
-    def getNRows(keyValues: Map[String, String]) : Long = {0L}
-
-    /** Rows have size zero */
-    def getSizeRowBytes(keyValues: Map[String, String]) : Int = {0}
-
-    /** Return no columns */
-    def getNCols(keyValues : Map[String, String]) : Long = {0L}
-
-    /** Elements have no types */
-    def getColTypes(keyValues : Map[String, String]): List[String] = {null}
-
-    /** Return no schema structure */
-    def listOfStruct : List[StructField] = {null}
-
-    /** Return null row */
-    def getRow(buf: Array[Byte]): List[Any] = {null}
-
-    /** Return null element */
-    def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {null}
   }
 
   /**
@@ -304,7 +179,7 @@ object FitsLib {
 
     // Get the header and set the cursor to its start.
     val blockHeader = if (conf.get(hdfsPath + "header") != null) {
-      retrieveHeader()
+      retrieveHeader
     } else readFullHeaderBlocks
     resetCursorAtHeader
 
@@ -339,15 +214,15 @@ object FitsLib {
       */
     def handleImage = {
       // Initialise the key/value from the header.
-      val kv = parseHeader(blockHeader)
+      val keyValues = parseHeader(blockHeader)
 
       // Compute the dimension of the image
-      val pixelSize = (kv("BITPIX").toInt)/8
-      val dimensions = kv("NAXIS").toInt
+      val pixelSize = (keyValues("BITPIX").toInt)/8
+      val dimensions = keyValues("NAXIS").toInt
 
       val axisBuilder = Array.newBuilder[Long]
       for (d <- 1 to dimensions){
-        axisBuilder += kv("NAXIS" + d.toString).toLong
+        axisBuilder += keyValues("NAXIS" + d.toString).toLong
       }
       val axis = axisBuilder.result
       val axisStr = axis.mkString(",")
@@ -587,26 +462,25 @@ object FitsLib {
       data.seek(position)
     }
 
-    // /**
-    //   * Read a header at a given position
-    //   *
-    //   * @param position : (Long)
-    //   *   The byte index to seek in the file. Need to correspond to a valid
-    //   *   header position. Use in combination with BlockBoundaries.headerStart
-    //   *   for example.
-    //   * @return (Array[String) the header is an array of Strings, each String
-    //   *   being one line of the header.
-    //   */
-    // def readHeader(position : Long) : Array[String] = {
-    //   setCursor(position)
-    //   readHeader
-    // }
-
+    /**
+      * Read all header blocks of a HDU. The cursor needs to be at the start of
+      * the header.
+      *
+      * @return (Array[String) the header is an array of Strings, each String
+      *   being one line of the header.
+      */
     def readFullHeaderBlocks : Array[String] = {
+      // Initialise the header
       var header = Array.newBuilder[String]
       var ending = false
+
+      // Counter for the number of blocks (multiple of 2880 bytes)
       var blockNumber = 0
+
+      // Loop until we reach the end of the header
       do {
+
+        // Read one block
         val block = readHeaderBlock
         ending = block.size == 0
 
@@ -614,7 +488,6 @@ object FitsLib {
           {
             var first = true
             var last = ""
-            var s = s"readFullHeaderBlocks> add lines \n"
 
             for
               {
@@ -625,7 +498,6 @@ object FitsLib {
 
                 if (first)
                 {
-                  s += s"$line"
                   first = false
                 }
 
@@ -641,18 +513,29 @@ object FitsLib {
       header.result
     }
 
+    /**
+      * Read one header block of a HDU. The cursor needs to be at the start of
+      * the block. We assume that each header row has a standard
+      * size of 80 Bytes, and the total size of the header is 2880 Bytes.
+      *
+      * @return (Array[String) the header block is an array of Strings,
+      *   each String being one line of the header.
+      */
     def readHeaderBlock : Array[String] = {
       // Initialise a line of the header
       var buffer = new Array[Byte](FITSBLOCK_SIZE_BYTES)
 
+      // Initialise the block
       val header = Array.newBuilder[String]
 
+      // Catch end of the file if necessary
       val len = try {
         data.read(buffer, 0, FITSBLOCK_SIZE_BYTES)
       } catch {
         case e : Exception => { e.printStackTrace; 0}
       }
 
+      // Decode the header block
       if (len > 0) {
         val maxLines = FITSBLOCK_SIZE_BYTES / FITS_HEADER_CARD_SIZE
 
@@ -669,6 +552,7 @@ object FitsLib {
 
           header += line
 
+          // Header ends with the String END
           if (line.trim() == "END") {
             inBlock = false
           }
@@ -679,54 +563,6 @@ object FitsLib {
       header.result
     }
 
-    // /**
-    //   * Read the header of a HDU. The cursor needs to be at the start of
-    //   * the header. We assume that each header row has a standard
-    //   * size of 80 Bytes, and the total size of the header is 2880 Bytes.
-    //   *
-    //   * @return (Array[String) the header is an array of Strings, each String
-    //   *   being one line of the header.
-    //   */
-    // def readHeader : Array[String] = {
-    //
-    //   // Initialise a line of the header
-    //   var buffer = new Array[Byte](FITS_HEADER_CARD_SIZE)
-    //
-    //   val header = buildHeader(buffer).toArray
-    //   val newOffset = if (data.getPos % FITSBLOCK_SIZE_BYTES == 0) {
-    //     data.getPos
-    //   } else {
-    //     data.getPos + FITSBLOCK_SIZE_BYTES -  data.getPos % FITSBLOCK_SIZE_BYTES
-    //   }
-    //
-    //   // Place the cursor at the end of the last header block
-    //   // that is at the beginning of the first data block
-    //   data.seek(newOffset)
-    //
-    //   header
-    // }
-    //
-    // def buildHeader(buffer: Array[Byte], prevline: String="") : List[String] = {
-    //   if (prevline.trim() == "END") {
-    //     Nil
-    //   } else {
-    //     // Read a line of the header
-    //     val len = data.read(buffer, 0, FITS_HEADER_CARD_SIZE)
-    //
-    //     // EOF
-    //     val isEmpty = (len <= 0)
-    //     isEmpty match {
-    //       case true => throw new EOFException("nothing to read left")
-    //       case false => isEmpty
-    //     }
-    //
-    //     // Decode the line of the header
-    //     val line = new String(buffer, StandardCharsets.UTF_8)
-    //
-    //     line :: buildHeader(buffer, line)
-    //   }
-    // }
-
     /**
       * Register the header in the Hadoop configuration.
       * By doing this, we broadcast the header to the executors.
@@ -734,26 +570,21 @@ object FitsLib {
       * afterwards using retrieveHeader. Make sure you use the same
       * separators.
       *
-      * @param sep : (String)
-      *   Line separator used to form the String. Default is ;;
-      *
       */
-    def registerHeader(sep : String=";;") {
-      conf.set(hdfsPath+"header", blockHeader.mkString(sep))
+    def registerHeader : Unit = {
+      conf.set(hdfsPath+"header", blockHeader.mkString(separator))
     }
 
     /**
       * Retrieve the header from the Hadoop configuration.
       * Make sure you use the same separators as in registerHeader.
       *
-      * @param sep : (String)
-      *   Line separator used to split the String. Default is ;;
       * @return the header as Array[String]. See readHeader.
       *
       */
-    def retrieveHeader(sep : String=";;"): Array[String] = {
+    def retrieveHeader : Array[String] = {
 
-      conf.get(hdfsPath+"header").split(sep)
+      conf.get(hdfsPath+"header").split(separator)
     }
 
     /**
@@ -771,16 +602,15 @@ object FitsLib {
       * }}}
       *
       * @param buf : (Array[Byte])
-      *   Row of byte read from the data block.
+      *   Row of bytes read from the data block.
       * @return (List[_]) The row as list of elements (float, int, string, etc.)
-      *   as given by the header.
+      *   with types as given by the header.
       *
       */
     def readLineFromBuffer(buf : Array[Byte]): List[_] = {
       if (hdu.implemented) {
         hdu.getRow(buf)
-      }
-      else null
+      } else null
     }
 
     /**

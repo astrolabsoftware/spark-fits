@@ -17,13 +17,15 @@ package com.sparkfits
 
 import org.apache.spark.sql.types._
 
+import com.sparkfits.FitsHdu._
+
 /**
   * This is the beginning of a FITS library in Scala.
   * You will find a large number of methodes to manipulate Binary Table HDUs.
   * There is no support for image HDU for the moment.
   */
 object FitsTableLib {
-  case class TableHDU() extends FitsLib.HDU {
+  case class TableHDU() extends HDU {
 
     /** Not yet implemented */
     def implemented: Boolean = {false}

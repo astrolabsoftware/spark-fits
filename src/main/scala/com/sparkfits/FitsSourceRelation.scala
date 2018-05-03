@@ -332,7 +332,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     val fB = new FitsBlock(path, conf, indexHDU)
 
     // Register header and block boundaries in the Hadoop configuration
-    fB.registerHeader()
+    fB.registerHeader
     fB.blockBoundaries.register(path, conf)
 
     // Check the header if needed
@@ -389,7 +389,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
       val fB = new FitsBlock(pathFS, conf, conf.get("hdu").toInt)
       // Register header and block boundaries
       // in the Hadoop configuration for later re-use
-      fB.registerHeader()
+      fB.registerHeader
       fB.blockBoundaries.register(pathFS, conf)
       getSchema(fB)
     }

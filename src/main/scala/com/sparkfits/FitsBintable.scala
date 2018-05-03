@@ -20,6 +20,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import org.apache.spark.sql.types._
 
+import com.sparkfits.FitsHdu._
 
 /**
   * This is the beginning of a FITS library in Scala.
@@ -27,7 +28,7 @@ import org.apache.spark.sql.types._
   * There is no support for image HDU for the moment.
   */
 object FitsBintableLib {
-  case class BintableHDU() extends FitsLib.HDU {
+  case class BintableHDU() extends HDU {
 
     /** Bintables are implemented */
     def implemented: Boolean = {true}

@@ -5,9 +5,11 @@ import java.nio.ByteBuffer
 import java.io.EOFException
 import java.nio.charset.StandardCharsets
 
+import scala.util.Random
+
 import org.apache.spark.sql.types._
 
-import scala.util.Random
+import com.sparkfits.FitsHdu._
 
 /**
   * This is the beginning of a FITS library in Scala.
@@ -15,7 +17,7 @@ import scala.util.Random
   * There is no support for image HDU for the moment.
   */
 object FitsImageLib {
-  case class ImageHDU(pixelSize: Int, axis: Array[Long]) extends FitsLib.HDU {
+  case class ImageHDU(pixelSize: Int, axis: Array[Long]) extends HDU {
 
     def implemented: Boolean = {true}
 
