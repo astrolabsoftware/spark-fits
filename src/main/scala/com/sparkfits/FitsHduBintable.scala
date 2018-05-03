@@ -15,9 +15,11 @@
  */
 package com.sparkfits
 
-import scala.util.Try
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+
+import scala.util.Try
+
 import org.apache.spark.sql.types.StructField
 
 import com.sparkfits.FitsHdu._

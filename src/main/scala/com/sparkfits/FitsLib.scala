@@ -15,14 +15,12 @@
  */
 package com.sparkfits
 
-import java.io.EOFException
 import java.nio.charset.StandardCharsets
 
 import scala.util.Try
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.sql.types._
 
 import com.sparkfits.FitsHdu._
 

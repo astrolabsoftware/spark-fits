@@ -15,7 +15,7 @@
  */
 package com.sparkfits
 
-import scala.util.{Try, Success, Failure}
+import scala.util.Try
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable

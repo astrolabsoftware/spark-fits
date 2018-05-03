@@ -15,12 +15,8 @@
  */
 package com.sparkfits
 
-// Java dependencies
-import java.io.IOException
-import java.nio.ByteBuffer
-
 // Scala dependencies
-import scala.util.{Try, Success, Failure}
+import scala.util.Try
 import scala.collection.mutable
 
 // Hadoop dependencies
