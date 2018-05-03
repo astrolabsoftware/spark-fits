@@ -33,9 +33,9 @@ class FitsSchemaTest extends FunSuite with BeforeAndAfterAll {
   // Open the test fits file and get meta info
   val file = new Path("src/test/resources/test_file.fits")
   val conf = new Configuration()
-  val fB1 = new FitsBlock(file, conf, 1)
+  val fB1 = new Fits(file, conf, 1)
   val header1 = fB1.blockHeader
-  val fB2 = new FitsBlock(file, conf, 2)
+  val fB2 = new Fits(file, conf, 2)
   val header2 = fB2.blockHeader
 
   test("Schema test: can you convert the type Float for a column?") {

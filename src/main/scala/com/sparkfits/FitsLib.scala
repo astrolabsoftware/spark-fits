@@ -143,7 +143,7 @@ object FitsLib {
     *   Index of the HDU to read (zero-based).
     *
     */
-  class FitsBlock(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
+  class Fits(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
 
     // Open the data
     val fs = hdfsPath.getFileSystem(conf)

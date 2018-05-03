@@ -38,63 +38,63 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   // Easy
   test("FitsLib test: Can you initialise a FITS HDU?") {
-    val fB1 = new FitsBlock(file, conf, 1)
-    assert(fB1.isInstanceOf[FitsBlock])
+    val fB1 = new Fits(file, conf, 1)
+    assert(fB1.isInstanceOf[Fits])
   }
 
   // Check that the HDU asked is below the max HDU index.
   test("FitsLib test: Can you detect wrong HDU index?") {
     val exception = intercept[AssertionError] {
-      new FitsBlock(file, conf, 16)
+      new Fits(file, conf, 16)
     }
     assert(exception.getMessage.contains("HDU number"))
   }
 
   // Check that the HDU asked is below the max HDU index.
   test("FitsLib test: Can you initialise correctly an empty HDU?") {
-    val fB1 = new FitsBlock(file, conf, 0)
+    val fB1 = new Fits(file, conf, 0)
     val s = fB1.blockBoundaries
     assert(fB1.empty_hdu && s.headerStart == 0 && s.dataStart == 2880 && s.dataStop == 2880 && s.blockStop == 2880)
   }
 
   // Check that the HDU asked is below the max HDU index.
   test("FitsLib test: Can you compute correctly the boundaries of a HDU?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
     val s = fB1.blockBoundaries
     assert(s.headerStart == 2880 && s.dataStart == 5760 && s.dataStop == 685760 && s.blockStop == 688320)
   }
 
   // Check the total number of HDU
   test("FitsLib test: Can you get the total number of HDU?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
     val n = fB1.getNHDU
     assert(n == 3)
   }
 
   // Check custom cursors
   test("FitsLib test: Can you play with the cursor (header)?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
     fB1.resetCursorAtHeader
     assert(fB1.data.getPos == 2880)
   }
 
   // Check custom cursors
   test("FitsLib test: Can you play with the cursor (data)?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
     val n = fB1.resetCursorAtData
     assert(fB1.data.getPos == 5760)
   }
 
   // Check custom cursors
   test("FitsLib test: Can you play with the cursor (general)?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
     val n = fB1.setCursor(589)
     assert(fB1.data.getPos == 589)
   }
 
   // Check the header
   test("FitsLib test: Can you read a short header?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
     val header = fB1.blockHeader
     assert(header.size <= 36)
   }
@@ -102,21 +102,21 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
   // Check the header
   test("FitsLib test: Can you read a long header (> 2880 bytes)?") {
     val lFile = new Path("src/test/resources/test_longheader_file.fits")
-    val fB1 = new FitsBlock(lFile, conf, 1)
+    val fB1 = new Fits(lFile, conf, 1)
     val header = fB1.blockHeader
     assert(header.size == 89)
   }
 
   // Check the header
   test("FitsLib test: The header stops by END?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
     val header = fB1.blockHeader
     assert(header.reverse(0).contains("END"))
   }
 
   // Check the reader
   test("FitsLib test: Can you read a line of the data block?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
 
     // Read the header and set the cursor at the beginning of the data block
     val header = fB1.blockHeader
@@ -136,7 +136,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   // Check the reader (element-by-element)
   test("FitsLib test: Can you read different element types?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
 
     // Read the header and set the cursor at the beginning of the data block
     val header = fB1.blockHeader
@@ -173,7 +173,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     assert(el == "NGC0000001")
   }
 
-  // val fB1 = new FitsBlock(file, conf, 1)
+  // val fB1 = new Fits(file, conf, 1)
   // val header = fB1.blockHeader
   // val keyValues = FitsLib.parseHeader(header)
   // val coltypes = fB1.hdu.getColTypes(keyValues)
@@ -182,7 +182,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   // Check the column type conversion
   test("FitsLib test: Can you guess the column types?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
 
     // Read the header
     val header = fB1.blockHeader
@@ -201,7 +201,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
   //   // val hdu = 2
   //   val file = "hdfs://134.158.75.222:8020//lsst/images/a.fits"
   //   val hdu = 1
-  //   val fB1 = new FitsBlock(new Path(file), conf, hdu)
+  //   val fB1 = new Fits(new Path(file), conf, hdu)
   //   val header = fB1.blockHeader
   //   val keyValue = FitsLib.parseHeader(header)
   //   val rowSize = fB1.hdu.getSizeRowBytes(keyValue)
@@ -214,7 +214,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   // Check the header keywords conversion
   test("FitsLib test: Can you grab the keywords of the header?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
 
     // Read the header
     val header = fB1.blockHeader
@@ -228,7 +228,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   // Check the value conversion
   test("FitsLib test: Can you grab the values of the header?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
 
     // Read the header
     val header = fB1.blockHeader
@@ -243,7 +243,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   // Check the name conversion
   test("FitsLib test: Can you grab the names of the header?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
 
     // Read the header
     val header = fB1.blockHeader
@@ -261,7 +261,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   // Check the comment conversion
   test("FitsLib test: Can you grab the comments of the header?") {
-    val fB1 = new FitsBlock(file, conf, 1)
+    val fB1 = new Fits(file, conf, 1)
 
     // Read the header
     val header = fB1.blockHeader
@@ -275,8 +275,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   // Check the reader for the number of rows
   test("FitsLib test: Can you read the number of rows?") {
-    val fB1 = new FitsBlock(file, conf, 1)
-    val fB2 = new FitsBlock(file, conf, 2)
+    val fB1 = new Fits(file, conf, 1)
+    val fB2 = new Fits(file, conf, 2)
 
     // Read the header
     val header1 = fB1.blockHeader
@@ -291,8 +291,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   // Check the reader for the number of columns
   test("FitsLib test: Can you read the number of columns?") {
-    val fB1 = new FitsBlock(file, conf, 1)
-    val fB2 = new FitsBlock(file, conf, 2)
+    val fB1 = new Fits(file, conf, 1)
+    val fB2 = new Fits(file, conf, 2)
 
     // Read the header
     val header1 = fB1.blockHeader
@@ -307,8 +307,8 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
 
   // Check the reader for the size of a row
   test("FitsLib test: Can you read the size (byte) of a row?") {
-    val fB1 = new FitsBlock(file, conf, 1)
-    val fB2 = new FitsBlock(file, conf, 2)
+    val fB1 = new Fits(file, conf, 1)
+    val fB2 = new Fits(file, conf, 2)
 
     // Read the header
     val header1 = fB1.blockHeader

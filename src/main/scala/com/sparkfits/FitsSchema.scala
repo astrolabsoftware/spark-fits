@@ -17,7 +17,7 @@ package com.sparkfits
 
 import org.apache.spark.sql.types._
 
-import com.sparkfits.FitsLib.FitsBlock
+import com.sparkfits.FitsLib.Fits
 
 /**
   * Object to handle the conversion from a HDU header to a DataFrame Schema.
@@ -61,13 +61,13 @@ object FitsSchema {
     * Construct a list of `StructField` to be used to construct a DataFrame Schema.
     * This routine is recursive. By default it includes all columns.
     *
-    * @param fB : (FitsBlock)
+    * @param fB : (Fits)
     *   The object describing the HDU.
     * @param col : (Int)
     *   The index of the column used for the recursion. Should be left at 0.
     * @return a `List[StructField]` with informations about name and type for all columns.
     */
-  def ListOfStruct(fB : FitsBlock, col : Int = 0) : List[StructField] = {
+  def ListOfStruct(fB : Fits, col : Int = 0) : List[StructField] = {
     // Reset the cursor at header
     fB.resetCursorAtHeader
 
@@ -86,13 +86,13 @@ object FitsSchema {
   /**
     * Retrieve DataFrame Schema from HDU header.
     *
-    * @param fB : (FitsBlock)
+    * @param fB : (Fits)
     *   The object describing the HDU.
     * @return Return a `StructType` which contain a list of `StructField`
     *   with informations about name and type for all columns.
     *
     */
-  def getSchema(fB : FitsBlock) : StructType = {
+  def getSchema(fB : Fits) : StructType = {
     // Construct the schema from the header.
     StructType(ListOfStruct(fB))
   }
