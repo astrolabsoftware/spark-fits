@@ -15,7 +15,7 @@
  */
 package com.sparkfits
 
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.StructField
 
 object FitsHdu {
 
@@ -122,27 +122,27 @@ object FitsHdu {
   case class AnyHDU() extends HDU {
 
     /** Empty HDU not implemented. */
-    def implemented: Boolean = {false}
+    override def implemented: Boolean = {false}
 
     /** Return no row */
-    def getNRows(keyValues: Map[String, String]) : Long = {0L}
+    override def getNRows(keyValues: Map[String, String]) : Long = {0L}
 
     /** Rows have size zero */
-    def getSizeRowBytes(keyValues: Map[String, String]) : Int = {0}
+    override def getSizeRowBytes(keyValues: Map[String, String]) : Int = {0}
 
     /** Return no columns */
-    def getNCols(keyValues : Map[String, String]) : Long = {0L}
+    override def getNCols(keyValues : Map[String, String]) : Long = {0L}
 
     /** Elements have no types */
-    def getColTypes(keyValues : Map[String, String]): List[String] = {null}
+    override def getColTypes(keyValues : Map[String, String]): List[String] = {null}
 
     /** Return no schema structure */
-    def listOfStruct : List[StructField] = {null}
+    override def listOfStruct : List[StructField] = {null}
 
     /** Return null row */
-    def getRow(buf: Array[Byte]): List[Any] = {null}
+    override def getRow(buf: Array[Byte]): List[Any] = {null}
 
     /** Return null element */
-    def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {null}
+    override def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {null}
   }
 }

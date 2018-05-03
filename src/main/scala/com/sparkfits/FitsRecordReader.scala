@@ -81,7 +81,6 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
   // Intermediate variable to store binary data
   private var recordValueBytes: Array[Byte] = null
-  // private var recordValueBytes: ByteBuffer = null
 
   /**
     * Close the file after reading it.
@@ -144,7 +143,6 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     */
   override def initialize(inputSplit: InputSplit, context: TaskAttemptContext) {
 
-    // println(s"FitsRecordReader.initialize> ")
     // Hadoop description of the input file (Path, split, start/stop indices).
     val fileSplit = inputSplit.asInstanceOf[FileSplit]
 
@@ -174,8 +172,6 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     nrowsLong = fits.hdu.getNRows(keyValues)
     rowSizeInt = fits.hdu.getSizeRowBytes(keyValues)
     rowSizeLong = rowSizeInt.toLong
-
-    // println(s"FitsRecordReader.initialize> nrowsLong=$nrowsLong rowSizeInt=$rowSizeInt")
 
     // What Hadoop gave us
     val start_theo = fileSplit.getStart
@@ -240,8 +236,6 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       // Return offseted starting index
       splitStart_tmp + tmp_byte
     } else splitStart_tmp
-
-    // println(s"BLOCK: Start: $splitStart, Stop: $splitEnd")
 
     // Get the record length in Bytes (get integer!). First look if the user
     // specify a size for the recordLength. If not, set it to 1 Ko.

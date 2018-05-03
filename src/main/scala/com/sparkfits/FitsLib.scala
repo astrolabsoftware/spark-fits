@@ -174,7 +174,7 @@ object FitsLib {
       getBlockBoundaries
     }
 
-    // Initialise the HDU: is it empty>
+    // Initialise the HDU: is it empty?
     val empty_hdu = blockBoundaries.empty
 
     // Get the header and set the cursor to its start.
@@ -196,23 +196,23 @@ object FitsLib {
     }
 
     /**
-      * Return the informations concerning a Table HDU.
+      * Give access to methods concerning Table HDU.
       *
-      * @return (TableHDU) informations concerning the Table.
+      * @return (TableHDU)
       *
       */
-    def handleTable = {
+    def handleTable : FitsHduTable.TableHDU = {
       println(s"handleTable> blockHeader=${blockHeader.toString}")
       FitsHduTable.TableHDU()
     }
 
     /**
-      * Return the informations concerning a Image HDU.
+      * Give access to methods concerning Image HDU.
       *
-      * @return (ImageHDU) informations concerning the Image.
+      * @return (ImageHDU)
       *
       */
-    def handleImage = {
+    def handleImage : FitsHduImage.ImageHDU = {
       // Initialise the key/value from the header.
       val keyValues = parseHeader(blockHeader)
 
@@ -234,12 +234,12 @@ object FitsLib {
     }
 
     /**
-      * Return the informations concerning a BinTable HDU.
+      * Give access to methods concerning BinTable HDU.
       *
-      * @return (BintableHDU) informations concerning the Bintable.
+      * @return (BintableHDU)
       *
       */
-    def handleBintable = {
+    def handleBintable : FitsHduBintable.BintableHDU = {
       // Grab only columns specified by the user
       val selectedColNames = if (conf.get("columns") != null) {
         conf.getStrings("columns").deep.toList.asInstanceOf[List[String]]
@@ -321,7 +321,7 @@ object FitsLib {
       * If not registered, returns NOT UNDERSTOOD.
       * Note: Not working if an image is stored in a primary HDU... TBD.
       *
-      * @return (String) The type of the HDU data.
+      * @return (String) The kind of HDU data.
       */
     def getHduType : String = {
 
@@ -437,7 +437,7 @@ object FitsLib {
       * Place the cursor at the beginning of the header of the block
       *
       */
-    def resetCursorAtHeader = {
+    def resetCursorAtHeader : Unit = {
       // Place the cursor at the beginning of the block
       data.seek(blockBoundaries.headerStart)
     }
@@ -446,7 +446,7 @@ object FitsLib {
       * Place the cursor at the beginning of the data of the block
       *
       */
-    def resetCursorAtData = {
+    def resetCursorAtData : Unit = {
       // Place the cursor at the beginning of the block
       data.seek(blockBoundaries.dataStart)
     }

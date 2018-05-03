@@ -1,25 +1,32 @@
+/*
+ * Copyright 2018 Julien Peloton
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.sparkfits
-
-import java.io.IOError
-import java.nio.ByteBuffer
-import java.io.EOFException
-import java.nio.charset.StandardCharsets
-
-import scala.util.Random
 
 import org.apache.spark.sql.types._
 
 import com.sparkfits.FitsHdu._
 
 /**
-  * This is the beginning of a FITS library in Scala.
-  * You will find a large number of methodes to manipulate Binary Table HDUs.
-  * There is no support for image HDU for the moment.
+  * Contain class and methods to manipulate Image HDU.
   */
 object FitsHduImage {
   case class ImageHDU(pixelSize: Int, axis: Array[Long]) extends HDU {
 
-    def implemented: Boolean = {true}
+    /** Image HDU are implemented */
+    override def implemented: Boolean = {true}
 
     /**
       * Get the number of row of a HDU.
@@ -31,7 +38,7 @@ object FitsHduImage {
       * @return (Long), the number of rows as written in KEYWORD=NAXIS2.
       *
       */
-    def getNRows(keyValues: Map[String, String]) : Long = {
+    override def getNRows(keyValues: Map[String, String]) : Long = {
       val totalBytes = axis.reduce(_ * _) * pixelSize
       val rowBytes = getSizeRowBytes(keyValues)
 
@@ -42,12 +49,12 @@ object FitsHduImage {
         ((totalBytes / rowBytes) + 1).toLong
       }
 
-      println(s"FitsImageLib.ImageHDU.getNRows> result=$result")
+      // println(s"FitsImageLib.ImageHDU.getNRows> result=$result")
 
       result
     }
 
-    def getSizeRowBytes(keyValues: Map[String, String]) : Int = {
+    override def getSizeRowBytes(keyValues: Map[String, String]) : Int = {
       // println(s"FitsImageLib.ImageHDU.getSizeRowBytes> ")
       var size = (pixelSize * axis(0)).toInt
       // Try and get the integer division factor until size becomes lower than 1024
@@ -63,8 +70,7 @@ object FitsHduImage {
       size
     }
 
-    def getNCols(keyValues : Map[String, String]) : Long = {
-      // println(s"FitsImageLib.ImageHDU.getNCols> ")
+    override def getNCols(keyValues : Map[String, String]) : Long = {
       1L
     }
 
@@ -77,33 +83,27 @@ object FitsHduImage {
       *   as given by the header.
       *
       */
-    def getColTypes(keyValues : Map[String, String]): List[String] = {
-      // println(s"FitsImageLib.ImageHDU.getColTypes> ")
+    override def getColTypes(keyValues : Map[String, String]): List[String] = {
       // Get the names of the Columns
-
       val colTypes = List.newBuilder[String]
       colTypes += "Image"
       colTypes.result
     }
 
-    def listOfStruct : List[StructField] = {
-      // println(s"FitsImageLib.ImageHDU.listOfStruct> ")
+    override def listOfStruct : List[StructField] = {
       // Get the list of StructField.
-
       val lStruct = List.newBuilder[StructField]
       lStruct += StructField("Image", ArrayType(ByteType, true))
       lStruct.result
     }
 
-    def getRow(buf: Array[Byte]): List[Any] = {
+    override def getRow(buf: Array[Byte]): List[Any] = {
       val row = List.newBuilder[Any]
       row += buf
       row.result
     }
 
-    def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {
-      // println(s"FitsImageLib.ImageHDU.getElementFromBuffer> ")
-
+    override def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {
       subbuf
     }
   }

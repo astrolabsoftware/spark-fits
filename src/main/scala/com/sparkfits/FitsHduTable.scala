@@ -15,29 +15,27 @@
  */
 package com.sparkfits
 
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.StructField
 
 import com.sparkfits.FitsHdu._
 
 /**
-  * This is the beginning of a FITS library in Scala.
-  * You will find a large number of methodes to manipulate Binary Table HDUs.
-  * There is no support for image HDU for the moment.
+  * Contain class and methods to manipulate Table HDU.
   */
 object FitsHduTable {
   case class TableHDU() extends HDU {
 
     /** Not yet implemented */
-    def implemented: Boolean = {false}
+    override def implemented: Boolean = {false}
 
     /** Zero-type, null type elements */
-    def getNRows(keyValues: Map[String, String]) : Long = {0L}
-    def getSizeRowBytes(keyValues: Map[String, String]) : Int = {0}
-    def getNCols(keyValues : Map[String, String]) : Long = {0L}
-    def getColTypes(keyValues : Map[String, String]): List[String] = {null}
+    override def getNRows(keyValues: Map[String, String]) : Long = {0L}
+    override def getSizeRowBytes(keyValues: Map[String, String]) : Int = {0}
+    override def getNCols(keyValues : Map[String, String]) : Long = {0L}
+    override def getColTypes(keyValues : Map[String, String]): List[String] = {null}
 
     /** Empty schema. */
-    def listOfStruct : List[StructField] = {
+    override def listOfStruct : List[StructField] = {
       // Get the list of StructField.
       val lStruct = List.newBuilder[StructField]
       /*
@@ -49,40 +47,13 @@ object FitsHduTable {
     }
 
     /** Return empty row */
-    def getRow(buf: Array[Byte]): List[Any] = {
+    override def getRow(buf: Array[Byte]): List[Any] = {
       var row = List.newBuilder[Any]
 
       row.result
     }
 
     /** Return null elements */
-    def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {null}
-
-    /**
-      * Return DF schema-compatible structure according to Header informations.
-      * Currently returning only String.
-      *
-      * @param name : (String)
-      *   Name of the column
-      * @param fitstype : (String)
-      *   Type of the column elements according to the FITS header.
-      * @param isNullable : (Boolean)
-      *   Whether the DF entry is nullable. Default is True.
-      *
-      * @return (StructField) StructField containing column information. This
-      *   StructField will be used later to build the schema of the DataFrame.
-      *
-      */
-    def readMyType(name : String, fitstype : String, isNullable : Boolean = true): StructField = {
-      fitstype match {
-        case x if fitstype.contains("A") => StructField(name, StringType, isNullable)
-        case _ => {
-          println(s"""FitsTable.readMyType> Cannot infer type $fitstype from the header!
-            See com.sparkfits.FitsSchema.scala
-            """)
-          StructField(name, StringType, isNullable)
-        }
-      }
-    }
+    override def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {null}
   }
 }

@@ -15,24 +15,33 @@
  */
 package com.sparkfits
 
-import scala.util.{Try, Success, Failure}
+import scala.util.Try
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.StructField
 
 import com.sparkfits.FitsHdu._
 import com.sparkfits.FitsSchema.ReadMyType
 
 /**
-  * This is the beginning of a FITS library in Scala.
-  * You will find a large number of methodes to manipulate Binary Table HDUs.
-  * There is no support for image HDU for the moment.
+  * Contain class and methods to manipulate Bintable HDU.
   */
 object FitsHduBintable {
+
+  /**
+    * Main class for Bintable HDU
+    */
   case class BintableHDU() extends HDU {
 
+    // Declare useful vars for later
+    var rowTypes: List[String] = List()
+    var colNames: Map[String, String] = Map()
+    var selectedColNames: List[String] = List()
+    var colPositions: List[Int] = List()
+    var splitLocations: List[Int] = List()
+
     /** Bintables are implemented */
-    def implemented: Boolean = {true}
+    override def implemented: Boolean = {true}
 
     /**
       * Get the number of row of a HDU.
@@ -44,7 +53,7 @@ object FitsHduBintable {
       * @return (Long), the number of rows as written in KEYWORD=NAXIS2.
       *
       */
-    def getNRows(keyValues : Map[String, String]) : Long = {
+    override def getNRows(keyValues : Map[String, String]) : Long = {
       keyValues("NAXIS2").toLong
     }
 
@@ -58,7 +67,7 @@ object FitsHduBintable {
       * @return (Int), the size (bytes) of one row as written in KEYWORD=NAXIS1.
       *
       */
-    def getSizeRowBytes(keyValues: Map[String, String]) : Int = {
+    override def getSizeRowBytes(keyValues: Map[String, String]) : Int = {
       keyValues("NAXIS1").toInt
     }
 
@@ -72,7 +81,7 @@ object FitsHduBintable {
       * @return (Long), the number of rows as written in KEYWORD=TFIELDS.
       *
       */
-    def getNCols(keyValues : Map[String, String]) : Long = {
+    override def getNCols(keyValues : Map[String, String]) : Long = {
       if (keyValues.contains("TFIELDS")) {
         keyValues("TFIELDS").toLong
       } else 0L
@@ -87,15 +96,30 @@ object FitsHduBintable {
       *   as given by the header.
       *
       */
-    def getColTypes(keyValues: Map[String, String]): List[String] = {
+    override def getColTypes(keyValues: Map[String, String]): List[String] = {
       val colTypes = List.newBuilder[String]
 
       val ncols = getNCols(keyValues).toInt
 
       for (col <- 0 to ncols-1) {
-        colTypes += getColumnType(keyValues, col)
+        colTypes += getColType(keyValues, col)
       }
       colTypes.result
+    }
+
+    /**
+      * Get the type of the elements of a column with index `colIndex` of a HDU.
+      *
+      * @param keyValues : (Map[String, String])
+      *   The header of the HDU.
+      * @param colIndex : (Int)
+      *   Index (zero-based) of a column.
+      * @return (String), the type (FITS convention) of the elements of the column.
+      *
+      */
+    def getColType(keyValues : Map[String, String], colIndex : Int) : String = {
+      // Zero-based index
+      FitsLib.shortStringValue(keyValues("TFORM" + (colIndex + 1).toString))
     }
 
     /**
@@ -107,7 +131,7 @@ object FitsHduBintable {
       *   column type, and whether the column is nullable.
       *
       */
-    def listOfStruct : List[StructField] = {
+    override def listOfStruct : List[StructField] = {
       // Initialise the list of StructField.
       val lStruct = List.newBuilder[StructField]
 
@@ -129,7 +153,7 @@ object FitsHduBintable {
       * Convert a bintable row elements from binary to primitives.
       *
       */
-    def getRow(buf: Array[Byte]): List[Any] = {
+    override def getRow(buf: Array[Byte]): List[Any] = {
       var row = List.newBuilder[Any]
 
       for (col <- colPositions) {
@@ -150,7 +174,8 @@ object FitsHduBintable {
       * @return the table element converted from binary.
       *
       */
-    def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {
+    override def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {
+      // Grab the type of the element
       val shortType = FitsLib.shortStringValue{fitstype}
 
       shortType match {
@@ -193,12 +218,6 @@ object FitsHduBintable {
         }
       }
     }
-
-    var rowTypes: List[String] = List()
-    var colNames: Map[String, String] = Map()
-    var selectedColNames: List[String] = List()
-    var colPositions: List[Int] = List()
-    var splitLocations: List[Int] = List()
 
     /**
       * Description of a row in terms of bytes indices.
@@ -287,22 +306,18 @@ object FitsHduBintable {
     }
 
     /**
-      * Get the type of the elements of a column with index `colIndex` of a HDU.
+      * Initialisation of the Bintable HDU.
       *
+      * @param empty_hdu : (Boolean)
+      *   Whether the HDU data block is empty.
       * @param header : (Array[String])
-      *   The header of the HDU.
-      * @param colIndex : (Int)
-      *   Index (zero-based) of a column.
-      * @return (String), the type (FITS convention) of the elements of the column.
+      *   Header of the HDU.
+      * @param selectedColumns : (List[String])
+      *   User can specify which columns to load. Default is all.
       *
       */
-    def getColumnType(keyValues : Map[String, String], colIndex : Int) : String = {
-      // Zero-based index
-      FitsLib.shortStringValue(keyValues("TFORM" + (colIndex + 1).toString))
-    }
-
     def initialize(empty_hdu: Boolean, header : Array[String],
-        selectedColumns: List[String] = null) = {
+        selectedColumns: List[String] = null): BintableHDU = {
 
       val keyValues = FitsLib.parseHeader(header)
 

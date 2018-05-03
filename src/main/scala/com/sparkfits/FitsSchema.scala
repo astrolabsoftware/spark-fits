@@ -61,22 +61,22 @@ object FitsSchema {
     * Construct a list of `StructField` to be used to construct a DataFrame Schema.
     * This routine is recursive. By default it includes all columns.
     *
-    * @param fB : (Fits)
-    *   The object describing the HDU.
+    * @param fits : (Fits)
+    *   Fits instance.
     * @param col : (Int)
     *   The index of the column used for the recursion. Should be left at 0.
     * @return a `List[StructField]` with informations about name and type for all columns.
     */
-  def ListOfStruct(fB : Fits, col : Int = 0) : List[StructField] = {
+  def ListOfStruct(fits : Fits, col : Int = 0) : List[StructField] = {
     // Reset the cursor at header
-    fB.resetCursorAtHeader
+    fits.resetCursorAtHeader
 
     // Read the header
-    val header = fB.blockHeader
+    val header = fits.blockHeader
     checkAnyHeader(header)
 
-    if (fB.hdu.implemented){
-      fB.hdu.listOfStruct
+    if (fits.hdu.implemented){
+      fits.hdu.listOfStruct
     }
     else {
       List[StructField]()
@@ -86,15 +86,15 @@ object FitsSchema {
   /**
     * Retrieve DataFrame Schema from HDU header.
     *
-    * @param fB : (Fits)
-    *   The object describing the HDU.
+    * @param fits : (Fits)
+    *   Fits instance
     * @return Return a `StructType` which contain a list of `StructField`
     *   with informations about name and type for all columns.
     *
     */
-  def getSchema(fB : Fits) : StructType = {
+  def getSchema(fits : Fits) : StructType = {
     // Construct the schema from the header.
-    StructType(ListOfStruct(fB))
+    StructType(ListOfStruct(fits))
   }
 
   /**
