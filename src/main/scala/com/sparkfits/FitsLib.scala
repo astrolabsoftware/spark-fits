@@ -203,7 +203,7 @@ object FitsLib {
       */
     def handleTable = {
       println(s"handleTable> blockHeader=${blockHeader.toString}")
-      FitsTableLib.TableHDU()
+      FitsHduTable.TableHDU()
     }
 
     /**
@@ -230,7 +230,7 @@ object FitsLib {
       // Return an Image HDU
       // /!\ implementation and call of the method initialise is missing! /!\
       // /!\ See handleBintable                                           /!\
-      FitsImageLib.ImageHDU(pixelSize, axis)
+      FitsHduImage.ImageHDU(pixelSize, axis)
     }
 
     /**
@@ -245,7 +245,7 @@ object FitsLib {
         conf.getStrings("columns").deep.toList.asInstanceOf[List[String]]
       } else null
 
-      val localHDU = FitsBintableLib.BintableHDU()
+      val localHDU = FitsHduBintable.BintableHDU()
       localHDU.initialize(empty_hdu, blockHeader, selectedColNames)
     }
 

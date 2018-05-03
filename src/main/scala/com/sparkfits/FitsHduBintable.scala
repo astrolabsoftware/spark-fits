@@ -27,7 +27,7 @@ import com.sparkfits.FitsHdu._
   * You will find a large number of methodes to manipulate Binary Table HDUs.
   * There is no support for image HDU for the moment.
   */
-object FitsBintableLib {
+object FitsHduBintable {
   case class BintableHDU() extends HDU {
 
     /** Bintables are implemented */

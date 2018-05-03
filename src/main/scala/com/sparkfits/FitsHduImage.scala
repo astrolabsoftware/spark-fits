@@ -16,7 +16,7 @@ import com.sparkfits.FitsHdu._
   * You will find a large number of methodes to manipulate Binary Table HDUs.
   * There is no support for image HDU for the moment.
   */
-object FitsImageLib {
+object FitsHduImage {
   case class ImageHDU(pixelSize: Int, axis: Array[Long]) extends HDU {
 
     def implemented: Boolean = {true}

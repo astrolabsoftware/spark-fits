@@ -24,8 +24,8 @@ import org.apache.hadoop.conf.Configuration
 
 import com.sparkfits.FitsLib._
 import com.sparkfits.FitsSchema._
-import com.sparkfits.FitsBintableLib._
-import com.sparkfits.FitsImageLib._
+import com.sparkfits.FitsHduBintable._
+import com.sparkfits.FitsHduImage._
 
 /**
   * Test class for the FitsSchema object.
