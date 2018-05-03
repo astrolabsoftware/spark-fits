@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets
 import org.apache.spark.sql.types._
 
 import com.sparkfits.FitsHdu._
+import com.sparkfits.FitsSchema.ReadMyType
 
 /**
   * This is the beginning of a FITS library in Scala.
@@ -117,7 +118,7 @@ object FitsHduBintable {
           colNames("TTYPE" + (colIndex + 1).toString))
 
         // Full structure
-        lStruct += readMyType(colName, rowTypes(colIndex))
+        lStruct += ReadMyType(colName, rowTypes(colIndex))
       }
 
       // Return the result
@@ -316,8 +317,6 @@ object FitsHduBintable {
         this.colNames.values.toList.asInstanceOf[List[String]]
       }
 
-      // println(s"Selected columns = ${selectedColNames.toString}")
-
       this.colPositions = selectedColNames.map(
         x => getColumnPos(keyValues, x)).toList.sorted
 
@@ -325,8 +324,6 @@ object FitsHduBintable {
         List[String]()
       } else getColTypes(keyValues)
       val ncols = rowTypes.size
-
-      // println(s"rowTypes = ${rowTypes.toString}")
 
       // splitLocations is an array containing the location of elements
       // (byte index) in a row. Example if we have a row with [20A, E, E], one
@@ -339,40 +336,6 @@ object FitsHduBintable {
       }
 
       this
-    }
-
-    /**
-      * Return DF schema-compatible structure according to Header informations.
-      *
-      * @param name : (String)
-      *   Name of the column
-      * @param fitstype : (String)
-      *   Type of the column elements according to the FITS header.
-      * @param isNullable : (Boolean)
-      *   Whether the DF entry is nullable. Default is True.
-      *
-      * @return (StructField) StructField containing column information. This
-      *   StructField will be used later to build the schema of the DataFrame.
-      *
-      */
-    def readMyType(name : String, fitstype : String,
-        isNullable : Boolean = true): StructField = {
-      fitstype match {
-        case x if fitstype.contains("I") => StructField(name, ShortType, isNullable)
-        case x if fitstype.contains("J") => StructField(name, IntegerType, isNullable)
-        case x if fitstype.contains("K") => StructField(name, LongType, isNullable)
-        case x if fitstype.contains("E") => StructField(name, FloatType, isNullable)
-        case x if fitstype.contains("D") => StructField(name, DoubleType, isNullable)
-        case x if fitstype.contains("L") => StructField(name, BooleanType, isNullable)
-        case x if fitstype.contains("A") => StructField(name, StringType, isNullable)
-        case _ => {
-          println(s"""
-            FitsBintable.readMyType> Cannot infer type $fitstype from the header!
-            See com.sparkfits.FitsSchema.scala
-            """)
-          StructField(name, StringType, isNullable)
-        }
-      }
     }
   }
 }
