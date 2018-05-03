@@ -49,8 +49,6 @@ object FitsHduImage {
         ((totalBytes / rowBytes) + 1).toLong
       }
 
-      // println(s"FitsImageLib.ImageHDU.getNRows> result=$result")
-
       result
     }
 

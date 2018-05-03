@@ -20,8 +20,6 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.conf.Configuration
 
-// import org.apache.spark.sql.types._
-
 import com.sparkfits.FitsLib._
 import com.sparkfits.FitsSchema._
 import com.sparkfits.FitsHduBintable._

@@ -117,7 +117,9 @@ object FitsSchema {
   def checkAnyHeader(header : Array[String]) : Unit = {
 
     // Check that we have an extension
-    val keysHasXtension = header(0).contains("XTENSION")
+    // Do not raise an exception for primary header (containing SIMPLE but
+    // no XTENSION).
+    val keysHasXtension = header(0).contains("XTENSION") | header(0).contains("SIMPLE")
     keysHasXtension match {
       case true => keysHasXtension
       case false => throw new AssertionError("""

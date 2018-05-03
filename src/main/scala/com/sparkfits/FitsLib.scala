@@ -73,7 +73,7 @@ object FitsLib {
     def register(hdfsPath: Path, conf: Configuration) = {
       val str = this.productIterator.toArray.mkString(separator)
 
-      conf.set(hdfsPath + "blockboundaries", str)
+      conf.set(hdfsPath + "_blockboundaries", str)
     }
 
     /**
@@ -176,7 +176,7 @@ object FitsLib {
     val empty_hdu = blockBoundaries.empty
 
     // Get the header and set the cursor to its start.
-    val blockHeader = if (conf.get(hdfsPath + "header") != null) {
+    val blockHeader = if (conf.get(hdfsPath + "_header") != null) {
       retrieveHeader
     } else readFullHeaderBlocks
     resetCursorAtHeader
@@ -570,7 +570,7 @@ object FitsLib {
       *
       */
     def registerHeader : Unit = {
-      conf.set(hdfsPath+"header", blockHeader.mkString(separator))
+      conf.set(hdfsPath + "_header", blockHeader.mkString(separator))
     }
 
     /**
@@ -582,7 +582,7 @@ object FitsLib {
       */
     def retrieveHeader : Array[String] = {
 
-      conf.get(hdfsPath+"header").split(separator)
+      conf.get(hdfsPath+"_header").split(separator)
     }
 
     /**
