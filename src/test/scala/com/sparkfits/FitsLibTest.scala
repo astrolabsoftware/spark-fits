@@ -129,7 +129,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     fB1.data.readFully(buffer, 0, bufferSize)
 
     // Convert from binary to primitive
-    val row = fB1.readLineFromBuffer(buffer)
+    val row = fB1.getRow(buffer)
 
     assert(row(0) == "NGC0000000")
   }

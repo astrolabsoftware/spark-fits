@@ -598,7 +598,7 @@ object FitsLib {
       * // Read the first binary row into buffer
       * data.read(buffer, 0, size_of_one_row_in_bytes)
       * // Convert buffer
-      * val myrow = readLineFromBuffer(buffer)
+      * val myrow = getRow(buffer)
       * }}}
       *
       * @param buf : (Array[Byte])
@@ -607,7 +607,7 @@ object FitsLib {
       *   with types as given by the header.
       *
       */
-    def readLineFromBuffer(buf : Array[Byte]): List[_] = {
+    def getRow(buf : Array[Byte]): List[_] = {
       if (hdu.implemented) {
         hdu.getRow(buf)
       } else null

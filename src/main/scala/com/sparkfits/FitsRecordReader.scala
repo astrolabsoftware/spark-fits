@@ -350,7 +350,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       // 1 task: 32 MB @ 2s
       val tmp = Seq.newBuilder[Row]
       for (i <- 0 to recordLength / rowSizeLong.toInt - 1) {
-        tmp += Row.fromSeq(fits.readLineFromBuffer(
+        tmp += Row.fromSeq(fits.getRow(
             recordValueBytes.slice(
               rowSizeInt*i, rowSizeInt*(i+1))))
       }
