@@ -42,6 +42,9 @@ object FitsLib {
   // Size of KEYWORD (KEYS) in FITS (bytes)
   val MAX_KEYWORD_LENGTH = 8
 
+  // 8 bits in one byte
+  val BYTE_SIZE = 8
+
   // Separator used for values from blockBoundaries
   val separator = ";;"
 
@@ -200,7 +203,6 @@ object FitsLib {
       *
       */
     def handleTable : FitsHduTable.TableHDU = {
-      println(s"handleTable> blockHeader=${blockHeader.toString}")
       FitsHduTable.TableHDU()
     }
 
@@ -211,24 +213,8 @@ object FitsLib {
       *
       */
     def handleImage : FitsHduImage.ImageHDU = {
-      // Initialise the key/value from the header.
-      val keyValues = parseHeader(blockHeader)
-
-      // Compute the dimension of the image
-      val pixelSize = (keyValues("BITPIX").toInt)/8
-      val dimensions = keyValues("NAXIS").toInt
-
-      val axisBuilder = Array.newBuilder[Long]
-      for (d <- 1 to dimensions){
-        axisBuilder += keyValues("NAXIS" + d.toString).toLong
-      }
-      val axis = axisBuilder.result
-      val axisStr = axis.mkString(",")
-
       // Return an Image HDU
-      // /!\ implementation and call of the method initialise is missing! /!\
-      // /!\ See handleBintable                                           /!\
-      FitsHduImage.ImageHDU(pixelSize, axis)
+      FitsHduImage.ImageHDU(blockHeader)
     }
 
     /**
@@ -243,8 +229,7 @@ object FitsLib {
         conf.getStrings("columns").deep.toList.asInstanceOf[List[String]]
       } else null
 
-      val localHDU = FitsHduBintable.BintableHDU()
-      localHDU.initialize(empty_hdu, blockHeader, selectedColNames)
+      FitsHduBintable.BintableHDU(blockHeader, selectedColNames)
     }
 
     /**

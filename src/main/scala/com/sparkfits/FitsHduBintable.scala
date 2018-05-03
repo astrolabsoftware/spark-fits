@@ -33,14 +33,41 @@ object FitsHduBintable {
   /**
     * Main class for Bintable HDU
     */
-  case class BintableHDU() extends HDU {
+  case class BintableHDU(header : Array[String],
+    selectedColumns: List[String] = null) extends HDU {
 
-    // Declare useful vars for later
-    var rowTypes: List[String] = List()
-    var colNames: Map[String, String] = Map()
-    var selectedColNames: List[String] = List()
-    var colPositions: List[Int] = List()
-    var splitLocations: List[Int] = List()
+    val keyValues = FitsLib.parseHeader(header)
+
+    // Check if the user specifies columns to select
+    val colNames = keyValues.
+      filter(x => x._1.contains("TTYPE")).
+      map(x => (x._1, x._2.split("'")(1).trim()))
+
+    val selectedColNames = if (selectedColumns != null) {
+      selectedColumns
+    } else {
+      colNames.values.toList.asInstanceOf[List[String]]
+    }
+
+    val colPositions = selectedColNames.map(
+      x => getColumnPos(keyValues, x)).toList.sorted
+
+    val rowTypes = getColTypes(keyValues)
+
+    val ncols = rowTypes.size
+
+    // splitLocations is an array containing the location of elements
+    // (byte index) in a row. Example if we have a row with [20A, E, E], one
+    // will have splitLocations = [0, 20, 24, 28] that is a string on 20 Bytes,
+    // followed by 2 floats on 4 bytes each.
+    val splitLocations = (0 :: rowSplitLocations(rowTypes, 0)).scan(0)(_ +_).tail
+
+    // // Declare useful vars for later
+    // var rowTypes: List[String] = List()
+    // var colNames: Map[String, String] = Map()
+    // var selectedColNames: List[String] = List()
+    // var colPositions: List[Int] = List()
+    // var splitLocations: List[Int] = List()
 
     /** Bintables are implemented */
     override def implemented: Boolean = {true}
@@ -307,52 +334,54 @@ object FitsHduBintable {
       pos - 1
     }
 
-    /**
-      * Initialisation of the Bintable HDU.
-      *
-      * @param empty_hdu : (Boolean)
-      *   Whether the HDU data block is empty.
-      * @param header : (Array[String])
-      *   Header of the HDU.
-      * @param selectedColumns : (List[String])
-      *   User can specify which columns to load. Default is all.
-      *
-      */
-    def initialize(empty_hdu: Boolean, header : Array[String],
-        selectedColumns: List[String] = null): BintableHDU = {
-
-      val keyValues = FitsLib.parseHeader(header)
-
-      // Check if the user specifies columns to select
-      this.colNames = keyValues.
-        filter(x => x._1.contains("TTYPE")).
-        map(x => (x._1, x._2.split("'")(1).trim()))
-
-      this.selectedColNames = if (selectedColumns != null) {
-        selectedColumns
-      } else {
-        this.colNames.values.toList.asInstanceOf[List[String]]
-      }
-
-      this.colPositions = selectedColNames.map(
-        x => getColumnPos(keyValues, x)).toList.sorted
-
-      this.rowTypes = if (empty_hdu) {
-        List[String]()
-      } else getColTypes(keyValues)
-      val ncols = rowTypes.size
-
-      // splitLocations is an array containing the location of elements
-      // (byte index) in a row. Example if we have a row with [20A, E, E], one
-      // will have splitLocations = [0, 20, 24, 28] that is a string on 20 Bytes,
-      // followed by 2 floats on 4 bytes each.
-      this.splitLocations = if (empty_hdu) {
-        List[Int]()
-      } else {
-        (0 :: rowSplitLocations(rowTypes, 0)).scan(0)(_ +_).tail
-      }
-
-      this
-    }
+    // /**
+    //   * Initialisation of the Bintable HDU.
+    //   *
+    //   * @param empty_hdu : (Boolean)
+    //   *   Whether the HDU data block is empty.
+    //   * @param header : (Array[String])
+    //   *   Header of the HDU.
+    //   * @param selectedColumns : (List[String])
+    //   *   User can specify which columns to load. Default is all.
+    //   *
+    //   */
+    // def initialize(empty_hdu: Boolean, header : Array[String],
+    //     selectedColumns: List[String] = null): BintableHDU = {
+    //
+    //   val keyValues = FitsLib.parseHeader(header)
+    //
+    //   // Check if the user specifies columns to select
+    //   this.colNames = keyValues.
+    //     filter(x => x._1.contains("TTYPE")).
+    //     map(x => (x._1, x._2.split("'")(1).trim()))
+    //
+    //   this.selectedColNames = if (selectedColumns != null) {
+    //     selectedColumns
+    //   } else {
+    //     this.colNames.values.toList.asInstanceOf[List[String]]
+    //   }
+    //
+    //   this.colPositions = selectedColNames.map(
+    //     x => getColumnPos(keyValues, x)).toList.sorted
+    //
+    //   this.rowTypes = getColTypes(keyValues)
+    //   // this.rowTypes = if (empty_hdu) {
+    //   //   List[String]()
+    //   // } else getColTypes(keyValues)
+    //   val ncols = rowTypes.size
+    //
+    //   // splitLocations is an array containing the location of elements
+    //   // (byte index) in a row. Example if we have a row with [20A, E, E], one
+    //   // will have splitLocations = [0, 20, 24, 28] that is a string on 20 Bytes,
+    //   // followed by 2 floats on 4 bytes each.
+    //   this.splitLocations = (0 :: rowSplitLocations(rowTypes, 0)).scan(0)(_ +_).tail
+    //   // this.splitLocations = if (empty_hdu) {
+    //   //   List[Int]()
+    //   // } else {
+    //   //   (0 :: rowSplitLocations(rowTypes, 0)).scan(0)(_ +_).tail
+    //   // }
+    //
+    //   this
+    // }
   }
 }
