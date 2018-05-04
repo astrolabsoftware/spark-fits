@@ -55,6 +55,37 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     assert(fB1.empty_hdu && s.headerStart == 0 && s.dataStart == 2880 && s.dataStop == 2880 && s.blockStop == 2880)
   }
 
+  test("FitsLib test: Can you initialise correctly methods of an empty HDU?") {
+    val fB1 = new Fits(file, conf, 0)
+    val keyValue = FitsLib.parseHeader(fB1.blockHeader)
+    assert(
+      fB1.hdu.implemented == false &&
+      fB1.hdu.getNRows(keyValue) == 0L &&
+      fB1.hdu.getSizeRowBytes(keyValue) == 0 &&
+      fB1.hdu.getNCols(keyValue) == 0L &&
+      fB1.hdu.getColTypes(keyValue) == null &&
+      fB1.hdu.listOfStruct == null &&
+      fB1.hdu.getRow(Array(0)) == null &&
+      fB1.hdu.getElementFromBuffer(Array(0), "") == null
+    )
+  }
+
+  test("FitsLib test: Can you initialise correctly methods of a Table HDU?") {
+    val tablefile = new Path("src/test/resources/toTest/tst0009.fits")
+    val fB1 = new Fits(tablefile, conf, 1)
+    val keyValue = FitsLib.parseHeader(fB1.blockHeader)
+    assert(
+      fB1.hdu.implemented == false &&
+      fB1.hdu.getNRows(keyValue) == 0L &&
+      fB1.hdu.getSizeRowBytes(keyValue) == 0 &&
+      fB1.hdu.getNCols(keyValue) == 0L &&
+      fB1.hdu.getColTypes(keyValue) == null &&
+      fB1.hdu.listOfStruct == null &&
+      fB1.hdu.getRow(Array(0)) == null &&
+      fB1.hdu.getElementFromBuffer(Array(0), "") == null
+    )
+  }
+
   // Check that the HDU asked is below the max HDU index.
   test("FitsLib test: Can you compute correctly the boundaries of a HDU?") {
     val fB1 = new Fits(file, conf, 1)
@@ -171,13 +202,6 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     assert(el == "NGC0000001")
   }
 
-  // val fB1 = new Fits(file, conf, 1)
-  // val header = fB1.blockHeader
-  // val keyValues = FitsLib.parseHeader(header)
-  // val coltypes = fB1.hdu.getColTypes(keyValues)
-  // val s = FitsLib.shortStringValue(coltypes(0))
-  // test(s"shortStringValue> coltypes(0)=${coltypes(0)} => $s"){}
-
   // Check the column type conversion
   test("FitsLib test: Can you guess the column types?") {
     val fB1 = new Fits(file, conf, 1)
@@ -193,22 +217,6 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
       coltypes(3) == "K" && coltypes(4) == "J")
 
   }
-
-  // test("FitsLib test: what is the recordLength for an image ") {
-  //   // val file = "src/test/resources/toTest/tst0009.fits"
-  //   // val hdu = 2
-  //   val file = "hdfs://134.158.75.222:8020//lsst/images/a.fits"
-  //   val hdu = 1
-  //   val fB1 = new Fits(new Path(file), conf, hdu)
-  //   val header = fB1.blockHeader
-  //   val keyValue = FitsLib.parseHeader(header)
-  //   val rowSize = fB1.hdu.getSizeRowBytes(keyValue)
-  //   val nrows = fB1.hdu.getNRows(keyValue)
-  //
-  //   val startstop = fB1.getBlockBoundaries
-  //
-  //   assert(null == s"rowSize=$rowSize nrows=$nrows startstop=${startstop}")
-  // }
 
   // Check the header keywords conversion
   test("FitsLib test: Can you grab the keywords of the header?") {

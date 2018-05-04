@@ -75,13 +75,11 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
     assert(exception.getMessage.contains("HDU"))
   }
 
-  // Test if the user provides the data type in the HDU
   test("HDU type test: Return an empty DataFrame if HDU is empty?") {
     val results = spark.read.format("com.sparkfits").option("hdu", 0).load(fn)
     assert(results.collect().size == 0)
   }
 
-  // Test if the user provides the data type in the HDU
   test("HDU type test: Return the proper record count if HDU is an image?") {
     val fn_image = "src/test/resources/toTest/tst0009.fits"
     val results = spark.read.format("com.sparkfits")

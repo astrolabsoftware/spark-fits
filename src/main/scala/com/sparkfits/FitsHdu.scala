@@ -15,7 +15,12 @@
  */
 package com.sparkfits
 
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+
 import org.apache.spark.sql.types.StructField
+
+import com.sparkfits.FitsLib.shortStringValue
 
 object FitsHdu {
 
@@ -26,6 +31,9 @@ object FitsHdu {
     *
     */
   trait HDU {
+
+    // 8 bits in one byte
+    val BYTE_SIZE = 8
 
     /**
       * Check whether the HDU is implemented in the library.
@@ -103,16 +111,64 @@ object FitsHdu {
     def getRow(buf: Array[Byte]): List[Any]
 
     /**
-      * Generic method to decode one row element of the data block.
-      * Must be implemented for all extensions of HDU.
+      * Convert one array of bytes corresponding to one element of
+      * the table into its primitive type.
       *
-      * @param subbuf : (Array[Bytes])
-      *   Array of Bytes describing one element.
-      * @return (Any) The element decoded.
+      * @param subbuf : (Array[Byte])
+      *   Array of byte describing one element of the table.
+      * @param fitstype : (String)
+      *   The type of this table element according to the header.
+      * @return the table element converted from binary.
       *
       */
-    def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any
+    def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {
+      // Grab the type of the element
+      val shortType = shortStringValue{fitstype}
 
+      shortType match {
+        // 16-bit Integer
+        case x if shortType.contains("I") => {
+          ByteBuffer.wrap(subbuf, 0, 2).getShort()
+        }
+        // 32-bit Integer
+        case x if shortType.contains("J") => {
+          ByteBuffer.wrap(subbuf, 0, 4).getInt()
+        }
+        // 64-bit Integer
+        case x if shortType.contains("K") => {
+          ByteBuffer.wrap(subbuf, 0, 8).getLong()
+        }
+        // Single precision floating-point
+        case x if shortType.contains("E") => {
+          ByteBuffer.wrap(subbuf, 0, 4).getFloat()
+        }
+        // Double precision floating-point
+        case x if shortType.contains("D") => {
+          ByteBuffer.wrap(subbuf, 0, 8).getDouble()
+        }
+        // Boolean
+        case x if shortType.contains("L") => {
+          // 1 Byte containing the ASCII char T(rue) or F(alse).
+          subbuf(0).toChar == 'T'
+        }
+        // Number of bits
+        case x if shortType.endsWith("X") => {
+          List(subbuf)
+        }
+        // Chain of characters
+        case x if shortType.endsWith("A") => {
+          // Example 20A means string on 20 bytes
+          new String(subbuf, StandardCharsets.UTF_8).trim()
+        }
+        case _ => {
+          println(s"""
+            FitsLib.getElementFromBuffer> Cannot infer size of type
+            $shortType from the header! See getElementFromBuffer
+              """)
+          0
+        }
+      }
+    }
   }
 
   /**

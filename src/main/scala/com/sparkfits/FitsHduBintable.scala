@@ -15,9 +15,6 @@
  */
 package com.sparkfits
 
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
-
 import scala.util.Try
 
 import org.apache.spark.sql.types.StructField
@@ -179,7 +176,11 @@ object FitsHduBintable {
     }
 
     /**
-      * Convert a bintable row elements from binary to primitives.
+      * Convert a bintable row from binary to primitives.
+      *
+      * @param buf : (Array[Byte])
+      *   Array of bytes.
+      * @return (List[Any]) : Decoded row as a list of primitives.
       *
       */
     override def getRow(buf: Array[Byte]): List[Any] = {
@@ -190,62 +191,6 @@ object FitsHduBintable {
           buf.slice(splitLocations(col), splitLocations(col+1)), rowTypes(col))
       }
       row.result
-    }
-
-    /**
-      * Companion to readLineFromBuffer. Convert one array of bytes
-      * corresponding to one element of the table into its primitive type.
-      *
-      * @param subbuf : (Array[Byte])
-      *   Array of byte describing one element of the table.
-      * @param fitstype : (String)
-      *   The type of this table element according to the header.
-      * @return the table element converted from binary.
-      *
-      */
-    override def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {
-      // Grab the type of the element
-      val shortType = FitsLib.shortStringValue{fitstype}
-
-      shortType match {
-        // 16-bit Integer
-        case x if shortType.contains("I") => {
-          ByteBuffer.wrap(subbuf, 0, 2).getShort()
-        }
-        // 32-bit Integer
-        case x if shortType.contains("J") => {
-          ByteBuffer.wrap(subbuf, 0, 4).getInt()
-        }
-        // 64-bit Integer
-        case x if shortType.contains("K") => {
-          ByteBuffer.wrap(subbuf, 0, 8).getLong()
-        }
-        // Single precision floating-point
-        case x if shortType.contains("E") => {
-          ByteBuffer.wrap(subbuf, 0, 4).getFloat()
-        }
-        // Double precision floating-point
-        case x if shortType.contains("D") => {
-          ByteBuffer.wrap(subbuf, 0, 8).getDouble()
-        }
-        // Boolean
-        case x if shortType.contains("L") => {
-          // 1 Byte containing the ASCII char T(rue) or F(alse).
-          subbuf(0).toChar == 'T'
-        }
-        // Chain of characters
-        case x if shortType.endsWith("A") => {
-          // Example 20A means string on 20 bytes
-          new String(subbuf, StandardCharsets.UTF_8).trim()
-        }
-        case _ => {
-          println(s"""
-            FitsLib.getElementFromBuffer> Cannot infer size of type
-            $shortType from the header! See getElementFromBuffer
-              """)
-          0
-        }
-      }
     }
 
     /**
@@ -289,6 +234,10 @@ object FitsHduBintable {
         case x if shortType.contains("E") => 4
         case x if shortType.contains("D") => 8
         case x if shortType.contains("L") => 1
+        case x if shortType.endsWith("X") => {
+          // Example 16X means 2 bytes
+          x.slice(0, x.length - 1).toInt / BYTE_SIZE
+        }
         case x if shortType.endsWith("A") => {
           // Example 20A means string on 20 bytes
           x.slice(0, x.length - 1).toInt

@@ -166,9 +166,6 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     // Get the number of rows and the size (B) of one row.
     // this is dependent on the HDU type
     nrowsLong = fits.hdu.getNRows(keyValues)
-    if (fits.hduType == "IMAGE") {
-      println("NROWS", nrowsLong)
-    }
     rowSizeInt = fits.hdu.getSizeRowBytes(keyValues)
     rowSizeLong = rowSizeInt.toLong
 
@@ -238,16 +235,18 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
     // Get the record length in Bytes (get integer!). First look if the user
     // specify a size for the recordLength. If not, set it to 1 Ko.
+    // If the HDU is an image, the recordLength is the row size (NAXIS1 * nbytes)
     val recordLengthFromUser = Try{conf.get("recordlength").toInt}
-      .getOrElse((1 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt)
+      .getOrElse{
+        if (fits.hduType == "IMAGE") {
+          rowSizeLong.toInt
+        } else {
+          (1 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt
+        }
+      }
 
-    // Seek for a round number of lines for the record
+    // For Table, seek for a round number of lines for the record
     recordLength = (recordLengthFromUser / rowSizeLong.toInt) * rowSizeLong.toInt
-    if (fits.hduType == "IMAGE") {
-      println("RecordReader HERE!")
-      recordLength = rowSizeLong.toInt
-    }
-
 
     // Make sure that the recordLength is not bigger than the block size!
     // This is a guard for small files.
@@ -347,19 +346,12 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       // Convert each row
       // 1 task: 32 MB @ 2s
       val tmp = Seq.newBuilder[Row]
-      // if (fits.hduType == "IMAGE") {
-      //   println("LEN: ", recordLength / rowSizeLong.toInt - 1, recordLength, rowSizeLong.toInt)
-      // }
       for (i <- 0 to recordLength / rowSizeLong.toInt - 1) {
         tmp += Row.fromSeq(fits.getRow(
             recordValueBytes.slice(
               rowSizeInt*i, rowSizeInt*(i+1))))
       }
       recordValue = tmp.result
-      // if (fits.hduType == "IMAGE") {
-      //   println("recordValue", recordValue)
-      //   println("bounds", currentPosition, splitStart, splitEnd)
-      // }
 
       // update our current position
       currentPosition = currentPosition + recordLength

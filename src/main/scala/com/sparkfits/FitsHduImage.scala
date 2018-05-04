@@ -15,9 +15,6 @@
  */
 package com.sparkfits
 
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
-
 import org.apache.spark.sql.types._
 
 import com.sparkfits.FitsHdu._
@@ -28,9 +25,6 @@ import com.sparkfits.FitsSchema.ReadMyType
   */
 object FitsHduImage {
   case class ImageHDU(header : Array[String]) extends HDU {
-
-    // 8 bits in one byte
-    val BYTE_SIZE = 8
 
     // Initialise the key/value from the header.
     val keyValues = FitsLib.parseHeader(header)
@@ -141,58 +135,26 @@ object FitsHduImage {
     }
 
     /**
+      * Convert an image row from binary to primitives.
+      *
+      * @param buf : (Array[Byte])
+      *   Array of bytes.
+      * @return (List[List[Any]]) : Decoded row as a list of one list of primitives.
       *
       */
     override def getRow(buf: Array[Byte]): List[List[Any]] = {
+      // Number of primitives to decode
       val nelements_per_row = buf.size / elementSize
+
+      // Loop over elements
       val row = List.newBuilder[Any]
       for (pos <- 0 to nelements_per_row - 1) {
         row += getElementFromBuffer(
           buf.slice(pos * elementSize, (pos+1)*elementSize), elementType(0))
       }
-      List(row.result)
-    }
 
-    override def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {
-      fitstype match {
-        // 16-bit Integer
-        case x if fitstype.contains("I") => {
-          ByteBuffer.wrap(subbuf, 0, 2).getShort()
-        }
-        // 32-bit Integer
-        case x if fitstype.contains("J") => {
-          ByteBuffer.wrap(subbuf, 0, 4).getInt()
-        }
-        // 64-bit Integer
-        case x if fitstype.contains("K") => {
-          ByteBuffer.wrap(subbuf, 0, 8).getLong()
-        }
-        // Single precision floating-point
-        case x if fitstype.contains("E") => {
-          ByteBuffer.wrap(subbuf, 0, 4).getFloat()
-        }
-        // Double precision floating-point
-        case x if fitstype.contains("D") => {
-          ByteBuffer.wrap(subbuf, 0, 8).getDouble()
-        }
-        // Boolean
-        case x if fitstype.contains("L") => {
-          // 1 Byte containing the ASCII char T(rue) or F(alse).
-          subbuf(0).toChar == 'T'
-        }
-        // Chain of characters
-        case x if fitstype.endsWith("A") => {
-          // Example 20A means string on 20 bytes
-          new String(subbuf, StandardCharsets.UTF_8).trim()
-        }
-        case _ => {
-          println(s"""
-            FitsLib.getElementFromBuffer> Cannot infer size of type
-            $fitstype from the header! See getElementFromBuffer
-              """)
-          0
-        }
-      }
+      // Return a List of List
+      List(row.result)
     }
   }
 }

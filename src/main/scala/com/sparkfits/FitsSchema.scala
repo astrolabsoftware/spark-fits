@@ -47,6 +47,8 @@ object FitsSchema {
       case x if fitstype.contains("E") => StructField(name, FloatType, isNullable)
       case x if fitstype.contains("D") => StructField(name, DoubleType, isNullable)
       case x if fitstype.contains("L") => StructField(name, BooleanType, isNullable)
+      case x if fitstype.contains("B") => StructField(name, ByteType, isNullable)
+      case x if fitstype.contains("X") => StructField(name, ArrayType(BinaryType), isNullable)
       case x if fitstype.contains("A") => StructField(name, StringType, isNullable)
       case _ => {
         println(s"""FitsSchema.ReadMyType> Cannot infer type $fitstype from the header!

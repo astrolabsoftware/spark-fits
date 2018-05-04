@@ -38,8 +38,7 @@ object ReadImage {
       val df = spark.read
         .format("com.sparkfits")
         .option("hdu", hdu)                 // Index of the HDU
-        // .option("verbose", true)            // pretty print
-        .option("recordlength", 1 * 1024)   // 1 KB per record
+        .option("verbose", true)            // pretty print
         .load(args(0).toString)             // File to load
 
       val count = df.count()

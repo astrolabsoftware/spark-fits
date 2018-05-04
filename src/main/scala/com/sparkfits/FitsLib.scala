@@ -88,14 +88,6 @@ object FitsLib {
     def empty: Boolean = {
       dataStart == dataStop
     }
-
-    /**
-      * Override the method toString to print block boundaries info.
-      * Useful for debugging.
-      */
-    override def toString: String = {
-      s"[headerStart=$headerStart dataStart=$dataStart dataStop=$dataStop blockStop=$blockStop]"
-    }
   }
 
   /**
@@ -188,22 +180,12 @@ object FitsLib {
     val hduType = getHduType
     val hdu: HDU = hduType match {
       case "BINTABLE" => handleBintable
-      case "TABLE" => handleTable
       case "IMAGE" => handleImage
+      case "TABLE" => AnyHDU()
       case "EMPTY" => AnyHDU()
       case _ => throw new AssertionError(s"""
         $hduType HDU not yet implemented!
         """)
-    }
-
-    /**
-      * Give access to methods concerning Table HDU.
-      *
-      * @return (TableHDU)
-      *
-      */
-    def handleTable : FitsHduTable.TableHDU = {
-      FitsHduTable.TableHDU()
     }
 
     /**
