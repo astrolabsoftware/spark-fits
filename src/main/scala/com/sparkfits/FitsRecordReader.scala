@@ -166,6 +166,9 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     // Get the number of rows and the size (B) of one row.
     // this is dependent on the HDU type
     nrowsLong = fits.hdu.getNRows(keyValues)
+    if (fits.hduType == "IMAGE") {
+      println("NROWS", nrowsLong)
+    }
     rowSizeInt = fits.hdu.getSizeRowBytes(keyValues)
     rowSizeLong = rowSizeInt.toLong
 
@@ -240,6 +243,11 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
     // Seek for a round number of lines for the record
     recordLength = (recordLengthFromUser / rowSizeLong.toInt) * rowSizeLong.toInt
+    if (fits.hduType == "IMAGE") {
+      println("RecordReader HERE!")
+      recordLength = rowSizeLong.toInt
+    }
+
 
     // Make sure that the recordLength is not bigger than the block size!
     // This is a guard for small files.
@@ -339,12 +347,19 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       // Convert each row
       // 1 task: 32 MB @ 2s
       val tmp = Seq.newBuilder[Row]
+      // if (fits.hduType == "IMAGE") {
+      //   println("LEN: ", recordLength / rowSizeLong.toInt - 1, recordLength, rowSizeLong.toInt)
+      // }
       for (i <- 0 to recordLength / rowSizeLong.toInt - 1) {
         tmp += Row.fromSeq(fits.getRow(
             recordValueBytes.slice(
               rowSizeInt*i, rowSizeInt*(i+1))))
       }
       recordValue = tmp.result
+      // if (fits.hduType == "IMAGE") {
+      //   println("recordValue", recordValue)
+      //   println("bounds", currentPosition, splitStart, splitEnd)
+      // }
 
       // update our current position
       currentPosition = currentPosition + recordLength

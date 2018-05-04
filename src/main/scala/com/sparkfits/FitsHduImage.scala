@@ -36,9 +36,14 @@ object FitsHduImage {
     val keyValues = FitsLib.parseHeader(header)
 
     // Compute the dimension of the image
-    val elementSize = (keyValues("BITPIX").toInt) / BYTE_SIZE
+    // BITPIX is positive for short/int/long and negative for float/double
+    val elementSize = math.abs((keyValues("BITPIX").toInt) / BYTE_SIZE)
     val dimensions = keyValues("NAXIS").toInt
 
+    // NAXIS1  = x dimension
+    // NAXIS2  = y dimension
+    // NAXIS3  = z dimension
+    // NAXIS...  = ... dimension
     val axisBuilder = Array.newBuilder[Long]
     for (d <- 1 to dimensions){
       axisBuilder += keyValues("NAXIS" + d.toString).toLong
@@ -52,68 +57,69 @@ object FitsHduImage {
     override def implemented: Boolean = {true}
 
     /**
-      * Get the number of row of a HDU.
-      * We rely on what's written in the header, meaning
+      * Get the number of row of a image HDU, that is the product of NAXISn
+      * for n>1. We rely on what's written in the header, meaning
       * here we do not access the data directly.
       *
-      * @param header : (Array[String])
-      *   The header of the HDU.
-      * @return (Long), the number of rows as written in KEYWORD=NAXIS2.
+      * @param keyValues : (Map[String, String])
+      *   Key/Value from the header of the HDU.
+      * @return (Long), the number of rows as PI_{n>1}(NAXISn)
       *
       */
     override def getNRows(keyValues: Map[String, String]) : Long = {
-      val totalBytes = axis.reduce(_ * _) * elementSize
-      val rowBytes = getSizeRowBytes(keyValues)
-
-      val result = if (totalBytes % rowBytes == 0) {
-        (totalBytes / rowBytes / elementSize).toLong
-      }
-      else {
-        ((totalBytes / rowBytes / elementSize) + 1).toLong
-      }
-
-      result
+      axis.reduce(_ * _) / axis(0)
     }
 
+    /**
+      * Return the size in bytes of one image row.
+      * This is given by NAXIS1 in the FITS header.
+      *
+      * @param keyValues : (Map[String, String])
+      *  Key/Values from the Fits header (see parseHeader)
+      * @return (Int) the size in bytes of one image row.
+      *
+      */
     override def getSizeRowBytes(keyValues: Map[String, String]) : Int = {
-      // // println(s"FitsImageLib.ImageHDU.getSizeRowBytes> ")
-      var size = (elementSize * axis(0)).toInt
-      // Try and get the integer division factor until size becomes lower than 1024
-      var factor = 2
-      do {
-        if (size % factor == 0) {
-          size /= factor
-        }
-        else {
-          factor += 1
-        }
-      } while (size > 1024)
-      println(size)
-      size
+      println("Row size in Bytes: ", axis(0).toInt * elementSize)
+      axis(0).toInt * elementSize
     }
 
+    /**
+      * Number of columns for image is set by default to one.
+      *
+      * @return (Long) : 1L
+      */
     override def getNCols(keyValues : Map[String, String]) : Long = {
+      // Could be the number of images in the z dimension?
+      // axis(2)
       1L
     }
 
     /**
       * Return the type of image elements.
+      * BITPIX is positive for short/int/long and negative for float/double.
       *
       * @param keyValues : (Map[String, String])
-      *   Key/Value pairs from the header (see parseHeader)
+      *   Key/Value pairs from the Fits header (see parseHeader)
       * @return (List[String]), list of one element containing the type.
       *
       */
     override def getColTypes(keyValues : Map[String, String]): List[String] = {
 
-      // Weird, image header does not have information on the type??
-      // Just the number of bits is written...
-      // So the following is just a guess, nothing serious
+      // BITPIX is positive for short/int/long and negative for float/double
       val bitpix = keyValues("BITPIX").toInt / BYTE_SIZE
       bitpix match {
+        case 1 => List("L")
         case 2 => List("I")
-        case 4 => List("E")
-        case 8 => List("D")
+        case 4 => List("J")
+        case 8 => List("K")
+        case -4 => List("E")
+        case -8 => List("D")
+        case _ => println(s"""
+          FitsHduImage.getColTypes> Cannot infer size of data
+          from the header!
+            """)
+        List("")
       }
     }
 
@@ -129,25 +135,22 @@ object FitsHduImage {
     override def listOfStruct : List[StructField] = {
       // Get the list of StructField.
       val lStruct = List.newBuilder[StructField]
-      // lStruct += StructField("Image", ArrayType(ByteType, true))
       val tmp = ReadMyType("Image", elementType(0), true)
       lStruct += tmp.copy(tmp.name, ArrayType(tmp.dataType))
-      println(lStruct.result)
       lStruct.result
     }
 
     /**
       *
       */
-    override def getRow(buf: Array[Byte]): List[Any] = {
+    override def getRow(buf: Array[Byte]): List[List[Any]] = {
       val nelements_per_row = buf.size / elementSize
       val row = List.newBuilder[Any]
       for (pos <- 0 to nelements_per_row - 1) {
         row += getElementFromBuffer(
           buf.slice(pos * elementSize, (pos+1)*elementSize), elementType(0))
       }
-      println(nelements_per_row, row.result)
-      row.result
+      List(row.result)
     }
 
     override def getElementFromBuffer(subbuf : Array[Byte], fitstype : String) : Any = {
