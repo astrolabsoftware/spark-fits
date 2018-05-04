@@ -298,7 +298,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
 
     // Initialise
     var rdd = if (implemented) {
-      loadOneTable(fns(0))
+      loadOneHDU(fns(0))
     } else {
       loadOneEmpty
     }
@@ -306,7 +306,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     // Union if more than one file
     for ((file, index) <- fns.slice(1, nFiles).zipWithIndex) {
       rdd = if (implemented) {
-        rdd.union(loadOneTable(file))
+        rdd.union(loadOneHDU(file))
       } else {
         rdd.union(loadOneEmpty)
       }
@@ -320,7 +320,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   Path + filename of the fits file to be read.
     * @return : RDD[Row] made from one single HDU.
     */
-  def loadOneTable(fn : String): RDD[Row] = {
+  def loadOneHDU(fn : String): RDD[Row] = {
 
     // Open one file
     val path = new Path(fn)
