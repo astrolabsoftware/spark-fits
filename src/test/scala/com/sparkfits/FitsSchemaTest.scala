@@ -33,9 +33,9 @@ class FitsSchemaTest extends FunSuite with BeforeAndAfterAll {
   // Open the test fits file and get meta info
   val file = new Path("src/test/resources/test_file.fits")
   val conf = new Configuration()
-  val fB1 = new FitsBlock(file, conf, 1)
+  val fB1 = new Fits(file, conf, 1)
   val header1 = fB1.blockHeader
-  val fB2 = new FitsBlock(file, conf, 2)
+  val fB2 = new Fits(file, conf, 2)
   val header2 = fB2.blockHeader
 
   test("Schema test: can you convert the type Float for a column?") {
@@ -86,8 +86,11 @@ class FitsSchemaTest extends FunSuite with BeforeAndAfterAll {
     assert(col.name == "toto")
   }
 
+  // val keyValues = FitsLib.parseHeader(header1)
+  // test(s"getNCols> keyValues=${keyValues.toString} tfields=${keyValues("TFIELDS")}"){}
+
   test("Schema test: can you generate a list for all columns?") {
-    val ncols = fB1.getNCols(header1)
+    val ncols = fB1.hdu.getNCols(FitsLib.parseHeader(header1))
     val myList = ListOfStruct(fB1)
 
     assert(myList.size == ncols)

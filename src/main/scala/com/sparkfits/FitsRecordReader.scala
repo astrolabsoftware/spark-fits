@@ -15,12 +15,8 @@
  */
 package com.sparkfits
 
-// Java dependencies
-import java.io.IOException
-import java.nio.ByteBuffer
-
 // Scala dependencies
-import scala.util.{Try, Success, Failure}
+import scala.util.Try
 import scala.collection.mutable
 
 // Hadoop dependencies
@@ -34,7 +30,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.spark.sql.Row
 
 // Internal dependencies
-import com.sparkfits.FitsLib.FitsBlock
+import com.sparkfits.FitsLib.Fits
 
 /**
   * Class to handle the relationship between executors & HDFS when reading a
@@ -67,12 +63,12 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
   private var recordLength: Int = 0
 
   // Object to manipulate the fits file
-  private var fB: FitsBlock = null
+  private var fits: Fits = null
   private var header: Array[String] = null
   private var nrowsLong : Long = 0L
   private var rowSizeInt : Int = 0
   private var rowSizeLong : Long = 0L
-  private var startstop : (Long, Long, Long, Long) = (0L, 0L, 0L, 0L)
+  private var startstop: FitsLib.FitsBlockBoundaries = FitsLib.FitsBlockBoundaries()
   private var notValid : Boolean = false
 
   // The (key, value) used to create the RDD
@@ -81,14 +77,13 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
   // Intermediate variable to store binary data
   private var recordValueBytes: Array[Byte] = null
-  // private var recordValueBytes: ByteBuffer = null
 
   /**
     * Close the file after reading it.
     */
   override def close() {
-    if (fB.data != null) {
-      fB.data.close()
+    if (fits.data != null) {
+      fits.data.close()
     }
   }
 
@@ -158,19 +153,20 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     val conf = context.getConfiguration
 
     // Initialise our block (header + data)
-    fB = new FitsBlock(file, conf, conf.get("hdu").toInt)
-    // fB = new FitsBlock(file, conf, 1)
+    fits = new Fits(file, conf, conf.get("hdu").toInt)
 
     // Define the bytes indices of our block
-    // hdu_start=header_start, data_start, data_stop, hdu_stop
-    startstop = fB.blockBoundaries
+    // hdu_start=header_start, dataStart, dataStop, hdu_stop
+    startstop = fits.blockBoundaries
 
     // Get the header
-    header = fB.blockHeader
+    header = fits.blockHeader
+    val keyValues = FitsLib.parseHeader(header)
 
     // Get the number of rows and the size (B) of one row.
-    nrowsLong = fB.getNRows(header)
-    rowSizeInt = fB.getSizeRowBytes(header)
+    // this is dependent on the HDU type
+    nrowsLong = fits.hdu.getNRows(keyValues)
+    rowSizeInt = fits.hdu.getSizeRowBytes(keyValues)
     rowSizeLong = rowSizeInt.toLong
 
     // What Hadoop gave us
@@ -178,32 +174,32 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     val stop_theo = fileSplit.getStart + fileSplit.getLength
 
     // Reject this mapper if the HDFS block is below the targeted HDU
-    notValid = if((start_theo < startstop._2) && (stop_theo < startstop._2)) {
+    notValid = if((start_theo < startstop.dataStart) && (stop_theo < startstop.dataStart)) {
       true
-    } else if ((start_theo >= startstop._3) && (stop_theo >= startstop._3)) {
+    } else if ((start_theo >= startstop.dataStop) && (stop_theo >= startstop.dataStop)) {
       true
     } else {
       false
     }
 
-    val splitStart_tmp = if(start_theo <= startstop._2 && !notValid) {
+    val splitStart_tmp = if(start_theo <= startstop.dataStart && !notValid) {
       // Valid block: starting index.
       // We are just before the targeted HDU, therefore
       // we jump at the beginning of the data block
-      startstop._2
+      startstop.dataStart
     } else {
       start_theo
     }
 
-    splitEnd = if(stop_theo <= startstop._3 && !notValid) {
+    splitEnd = if(stop_theo <= startstop.dataStop && !notValid) {
       // Valid block: ending index (start/end inside)
       // We are inside the targeted HDU
       stop_theo
-    } else if (stop_theo > startstop._3 && !notValid) {
+    } else if (stop_theo > startstop.dataStop && !notValid) {
       // Valid block: ending index (start inside, end outside)
       // The block start in the targeted HDU, but ends outside.
       // We just move back the final cursor.
-      startstop._3
+      startstop.dataStop
     } else {
       // Not valid anyway
       stop_theo
@@ -224,7 +220,8 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     // Summary: Add last row if we start the block at the middle of a row.
     // We assume that fileSplit.getStart starts at the
     // beginning of the data block for the first valid block.
-    splitStart = if((splitStart_tmp) % rowSizeLong != startstop._2 && splitStart_tmp != startstop._2 && splitStart_tmp != 0) {
+    splitStart = if((splitStart_tmp) % rowSizeLong != startstop.dataStart &&
+      splitStart_tmp != startstop.dataStart && splitStart_tmp != 0) {
 
       // Decrement the starting index to fully catch the line we are sitting on
       var tmp_byte = 0
@@ -236,14 +233,19 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       splitStart_tmp + tmp_byte
     } else splitStart_tmp
 
-    // println(s"BLOCK: Start: $splitStart, Stop: $splitEnd")
-
     // Get the record length in Bytes (get integer!). First look if the user
     // specify a size for the recordLength. If not, set it to 1 Ko.
+    // If the HDU is an image, the recordLength is the row size (NAXIS1 * nbytes)
     val recordLengthFromUser = Try{conf.get("recordlength").toInt}
-      .getOrElse((1 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt)
+      .getOrElse{
+        if (fits.hduType == "IMAGE") {
+          rowSizeLong.toInt
+        } else {
+          (1 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt
+        }
+      }
 
-    // Seek for a round number of lines for the record
+    // For Table, seek for a round number of lines for the record
     recordLength = (recordLengthFromUser / rowSizeLong.toInt) * rowSizeLong.toInt
 
     // Make sure that the recordLength is not bigger than the block size!
@@ -257,7 +259,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     }
 
     // Move to the starting binary index
-    fB.data.seek(splitStart)
+    fits.data.seek(splitStart)
 
     // Set our starting block position
     currentPosition = splitStart
@@ -274,14 +276,14 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
     // Close the file if mapper is outside the HDU
     if (notValid) {
-      fB.data.close()
+      fits.data.close()
       return false
     }
 
     // Close the file if we went outside the block!
     // This means we sent all our records.
-    if (fB.data.getPos >= startstop._3) {
-      fB.data.close()
+    if (fits.data.getPos >= startstop.dataStop) {
+      fits.data.close()
       return false
     }
 
@@ -298,8 +300,8 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     // So if recordLength goes above the end of the data block, cut it.
 
     // If (getPos + recordLength) goes above splitEnd
-    recordLength = if ((startstop._3 - fB.data.getPos) < recordLength.toLong) {
-        (startstop._3 - fB.data.getPos).toInt
+    recordLength = if ((startstop.dataStop - fits.data.getPos) < recordLength.toLong) {
+        (startstop.dataStop - fits.data.getPos).toInt
     } else {
         recordLength
     }
@@ -329,7 +331,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     // If recordLength is below the size of a row
     // skip and leave this row for the next block
     if (recordLength < rowSizeLong) {
-      fB.data.close()
+      fits.data.close()
       return false
     }
 
@@ -339,13 +341,13 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     // read a record if the currentPosition is less than the split end
     if (currentPosition < splitEnd) {
       // Read a record of length `0 to recordLength - 1`
-      fB.data.readFully(recordValueBytes, 0, recordLength)
+      fits.data.readFully(recordValueBytes, 0, recordLength)
 
       // Convert each row
       // 1 task: 32 MB @ 2s
       val tmp = Seq.newBuilder[Row]
       for (i <- 0 to recordLength / rowSizeLong.toInt - 1) {
-        tmp += Row.fromSeq(fB.readLineFromBuffer(
+        tmp += Row.fromSeq(fits.getRow(
             recordValueBytes.slice(
               rowSizeInt*i, rowSizeInt*(i+1))))
       }

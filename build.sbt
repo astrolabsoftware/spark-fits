@@ -36,7 +36,7 @@ lazy val root = (project in file(".")).
    // Do not publish artifact in test
    publishArtifact in Test := false,
    // Exclude runner class for the coverage
-   coverageExcludedPackages := "<empty>;com.sparkfits.ReadFits*",
+   coverageExcludedPackages := "<empty>;com.sparkfits.ReadFits*;com.sparkfits.ReadImage*",
    // Excluding Scala library JARs that are included in the binary Scala distribution
    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
    // Shading to avoid conflicts with pre-installed nom.tam.fits library

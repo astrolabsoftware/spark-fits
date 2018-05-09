@@ -17,7 +17,7 @@ package com.sparkfits
 
 import org.apache.spark.sql.types._
 
-import com.sparkfits.FitsLib.FitsBlock
+import com.sparkfits.FitsLib.Fits
 
 /**
   * Object to handle the conversion from a HDU header to a DataFrame Schema.
@@ -47,10 +47,11 @@ object FitsSchema {
       case x if fitstype.contains("E") => StructField(name, FloatType, isNullable)
       case x if fitstype.contains("D") => StructField(name, DoubleType, isNullable)
       case x if fitstype.contains("L") => StructField(name, BooleanType, isNullable)
+      case x if fitstype.contains("B") => StructField(name, ByteType, isNullable)
+      case x if fitstype.contains("X") => StructField(name, ArrayType(BinaryType), isNullable)
       case x if fitstype.contains("A") => StructField(name, StringType, isNullable)
       case _ => {
-        println(s"""
-            Cannot infer type $fitstype from the header!
+        println(s"""FitsSchema.ReadMyType> Cannot infer type $fitstype from the header!
             See com.sparkfits.FitsSchema.scala
             """)
         StructField(name, StringType, isNullable)
@@ -62,43 +63,40 @@ object FitsSchema {
     * Construct a list of `StructField` to be used to construct a DataFrame Schema.
     * This routine is recursive. By default it includes all columns.
     *
-    * @param fB : (FitsBlock)
-    *   The object describing the HDU.
+    * @param fits : (Fits)
+    *   Fits instance.
     * @param col : (Int)
     *   The index of the column used for the recursion. Should be left at 0.
     * @return a `List[StructField]` with informations about name and type for all columns.
     */
-  def ListOfStruct(fB : FitsBlock, col : Int = 0) : List[StructField] = {
+  def ListOfStruct(fits : Fits, col : Int = 0) : List[StructField] = {
     // Reset the cursor at header
-    fB.resetCursorAtHeader
+    fits.resetCursorAtHeader
 
     // Read the header
-    val header = fB.blockHeader
-    checkBintableHeader(header)
+    val header = fits.blockHeader
+    checkAnyHeader(header)
 
-    // Grab max number of column
-    val colmax = fB.getNCols(header)
-
-    // Get the list of StructField.
-    val lStruct = List.newBuilder[StructField]
-    for (col <- fB.colPositions) {
-      lStruct += ReadMyType(fB.getColumnName(header, col), fB.getColumnType(header, col))
+    if (fits.hdu.implemented){
+      fits.hdu.listOfStruct
     }
-    lStruct.result
+    else {
+      List[StructField]()
+    }
   }
 
   /**
     * Retrieve DataFrame Schema from HDU header.
     *
-    * @param fB : (FitsBlock)
-    *   The object describing the HDU.
+    * @param fits : (Fits)
+    *   Fits instance
     * @return Return a `StructType` which contain a list of `StructField`
     *   with informations about name and type for all columns.
     *
     */
-  def getSchema(fB : FitsBlock) : StructType = {
+  def getSchema(fits : Fits) : StructType = {
     // Construct the schema from the header.
-    StructType(ListOfStruct(fB))
+    StructType(ListOfStruct(fits))
   }
 
   /**
@@ -113,34 +111,23 @@ object FitsSchema {
   }
 
   /**
-    * A few checks on the header for bintable.
-    * Careful, it will throw errors for image!
+    * A few checks on the header for any header type
     *
     * @param header : (Array[String])
     *   The header of the HDU.
     */
-  def checkBintableHeader(header : Array[String]) : Unit = {
+  def checkAnyHeader(header : Array[String]) : Unit = {
 
     // Check that we have an extension
-    val keysHasXtension = header(0).contains("XTENSION")
+    // Do not raise an exception for primary header (containing SIMPLE but
+    // no XTENSION).
+    val keysHasXtension = header(0).contains("XTENSION") | header(0).contains("SIMPLE")
     keysHasXtension match {
       case true => keysHasXtension
       case false => throw new AssertionError("""
-        Are you really trying to read a BINTABLE?
         Your header has no keywords called XTENSION.
         Check that the HDU number you want to
         access is correct: spark.readfits.option("HDU", <Int>).
-        """)
-    }
-
-    // Check that we read a bintable
-    val headerStart = header(0).contains("BINTABLE")
-    val headerStartElement = header(0)
-    headerStart match {
-      case true => headerStart
-      case false => throw new AssertionError(s"""
-        Are you really trying to read a BINTABLE? Your header says that
-        the XTENSION is $headerStartElement
         """)
     }
 

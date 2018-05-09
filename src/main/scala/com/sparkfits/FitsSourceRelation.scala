@@ -15,7 +15,7 @@
  */
 package com.sparkfits
 
-import scala.util.{Try, Success, Failure}
+import scala.util.Try
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
@@ -26,12 +26,11 @@ import org.apache.hadoop.fs.LocatedFileStatus
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.SparkException
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.sources.TableScan
 import org.apache.spark.sql.sources.BaseRelation
 
-import com.sparkfits.FitsLib.FitsBlock
+import com.sparkfits.FitsLib.Fits
 import com.sparkfits.FitsSchema.getSchema
 import com.sparkfits.FitsFileInputFormat._
 
@@ -118,7 +117,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     case None => sys.error("'path' must be specified.")
   }
 
-  val hdu = parameters.get("hdu") match {
+  val indexHDU = parameters.get("hdu") match {
     case Some(x) => x
     case None => throw new NoSuchElementException("""
     You need to specify the HDU to be read!
@@ -145,6 +144,8 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     val isDir = fs.isDirectory(path)
     val isFile = fs.isFile(path)
 
+    // println(s"isDir=$isDir isFile=$isFile path=$path")
+
     // List all the files
     val listOfFitsFiles : List[String] = if (isDir) {
       val it = fs.listFiles(path, true)
@@ -158,7 +159,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     // Check that we have at least one file
     listOfFitsFiles.size match {
       case x if x > 0 => if (verbosity) {
-        println("Found " + listOfFitsFiles.size.toString + " file(s):")
+        println("FitsRelation.searchFitsFile> Found " + listOfFitsFiles.size.toString + " file(s):")
         listOfFitsFiles.foreach(println)
       }
       case x if x <= 0 => throw new NullPointerException(s"""
@@ -201,33 +202,29 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   NOT UNDERSTOOD if not registered.
     *
     */
-  def checkSchemaAndReturnType(listOfFitsFiles : List[String]): String = {
-    // Wanted HDU
+  def checkSchemaAndReturnType(listOfFitsFiles : List[String]): Boolean = {
+    // Targeted HDU
     val indexHDU = conf.get("hdu").toInt
 
     // Initialise
     val path_init = new Path(listOfFitsFiles(0))
 
-    val fB_init = new FitsBlock(path_init, conf, indexHDU)
-    val fitstype = fB_init.hduType
+    val fits_init = new Fits(path_init, conf, indexHDU)
 
-    val check = if (fitstype == "BINTABLE") {
-      val schema_init = getSchema(fB_init)
-      fB_init.data.close()
+    if (fits_init.hdu.implemented) {
+      val schema_init = getSchema(fits_init)
+      fits_init.data.close()
 
       for (file <- listOfFitsFiles.slice(1, listOfFitsFiles.size)) {
         var path = new Path(file)
-        val fB = new FitsBlock(path, conf, indexHDU)
-        val schema = getSchema(fB)
+        val fits = new Fits(path, conf, indexHDU)
+        val schema = getSchema(fits)
         val isOk = schema_init == schema
         isOk match {
           case true => isOk
           case false => {
-            println(listOfFitsFiles(0))
-            println("----> ",  schema_init)
-            println(file)
-            println("----> ",  schema)
-            throw new AssertionError("""
+            throw new AssertionError(
+              """
             You are trying to add HDU data with different structures!
             Check that the number of columns, names of columns and element
             types are the same. re-run with .option("verbose", true) to
@@ -235,15 +232,15 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
           """)
           }
         }
-        fB.data.close()
+        fits.data.close()
       }
+      true
     } else {
       println(s"""
-        FITS type $fitstype not supported yet.
+        FITS type ${fits_init.hduType} not supported yet.
         An empty DataFrame will be returned.""")
+      false
     }
-    // internalSchema = schema
-    fitstype
   }
 
   /**
@@ -258,7 +255,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   - (HDFS)  hdfs://<IP>:<PORT>//path/to/data
     *
     *
-    * If the HDU type is not a BINTABLE, return an empty RDD[Row].
+    * If the HDU type is not "implemented", return an empty RDD[Row].
     *
     * @param fn : (String)
     *   Filename of the fits file to be read, or a directory containing FITS files
@@ -274,10 +271,10 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
 
     // Check that all the files have the same Schema
     // in order to perform the union. Return the HDU type.
-    val fitstype = checkSchemaAndReturnType(listOfFitsFiles)
+    val implemented = checkSchemaAndReturnType(listOfFitsFiles)
 
     // Load one or all the FITS files found
-    load(listOfFitsFiles, fitstype)
+    load(listOfFitsFiles, implemented)
   }
 
   /**
@@ -285,7 +282,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     * The structure of the HDU must be the same, that is contain the
     * same number of columns with the same name and element types.
     *
-    * If the HDU type is not a BINTABLE, return an empty RDD[Row].
+    * If the HDU type is not "implemented", return an empty RDD[Row].
     *
     * @param fns : (List[String])
     *   List of filenames with the same structure.
@@ -294,22 +291,22 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   Empty if the HDU type is not a BINTABLE.
     *
     */
-  def load(fns : List[String], fitstype: String): RDD[Row] = {
+  def load(fns : List[String], implemented: Boolean): RDD[Row] = {
 
     // Number of files
     val nFiles = fns.size
 
     // Initialise
-    var rdd = if (fitstype == "BINTABLE") {
-      loadOneTable(fns(0))
+    var rdd = if (implemented) {
+      loadOneHDU(fns(0))
     } else {
       loadOneEmpty
     }
 
     // Union if more than one file
     for ((file, index) <- fns.slice(1, nFiles).zipWithIndex) {
-      rdd = if (fitstype == "BINTABLE") {
-        rdd.union(loadOneTable(file))
+      rdd = if (implemented) {
+        rdd.union(loadOneHDU(file))
       } else {
         rdd.union(loadOneEmpty)
       }
@@ -317,34 +314,34 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     rdd
   }
 
-  /** Load a BinaryTableHDU data contained in one HDU as a RDD[Row].
+  /** Load a xxx FITS data contained in one HDU as a RDD[Row].
     *
     * @param fn : (String)
     *   Path + filename of the fits file to be read.
     * @return : RDD[Row] made from one single HDU.
     */
-  def loadOneTable(fn : String): RDD[Row] = {
+  def loadOneHDU(fn : String): RDD[Row] = {
 
     // Open one file
     val path = new Path(fn)
     val indexHDU = conf.get("hdu").toInt
-    val fB = new FitsBlock(path, conf, indexHDU)
+    val fits = new Fits(path, conf, indexHDU)
 
     // Register header and block boundaries in the Hadoop configuration
-    fB.registerHeader()
-    fB.registerBlockBoundaries()
+    fits.registerHeader
+    fits.blockBoundaries.register(path, conf)
 
     // Check the header if needed
     if (verbosity) {
       println(s"+------ FILE $fn ------+")
       println(s"+------ HEADER (HDU=$indexHDU) ------+")
-      fB.blockHeader.foreach(println)
+      fits.blockHeader.foreach(println)
       println("+----------------------------+")
     }
 
     // We do not need the data on the driver at this point.
     // The executors will re-open it later on.
-    fB.data.close()
+    fits.data.close()
 
     // Distribute the table data
     sqlContext.sparkContext.newAPIHadoopFile(fn,
@@ -385,12 +382,12 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
       val listOfFitsFiles = searchFitsFile(filePath)
 
       val pathFS = new Path(listOfFitsFiles(0))
-      val fB = new FitsBlock(pathFS, conf, hdu.toInt)
+      val fits = new Fits(pathFS, conf, conf.get("hdu").toInt)
       // Register header and block boundaries
       // in the Hadoop configuration for later re-use
-      fB.registerHeader()
-      fB.registerBlockBoundaries()
-      getSchema(fB)
+      fits.registerHeader
+      fits.blockBoundaries.register(pathFS, conf)
+      getSchema(fits)
     }
   }
 
