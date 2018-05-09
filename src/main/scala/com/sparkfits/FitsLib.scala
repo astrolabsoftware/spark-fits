@@ -138,6 +138,9 @@ object FitsLib {
     */
   class Fits(hdfsPath : Path, conf : Configuration, hduIndex : Int) {
 
+    // Memory of the pointers during HDU initialization
+    val pointers = Array.newBuilder[(String, Long)]
+
     // Open the data
     val fs = hdfsPath.getFileSystem(conf)
     val data = fs.open(hdfsPath)
@@ -179,6 +182,7 @@ object FitsLib {
     // Check whether we know the HDU type.
     val hduType = getHduType
     val hdu: HDU = hduType match {
+      case "ZIMAGE" => handleZImage
       case "BINTABLE" => handleBintable
       case "IMAGE" => handleImage
       case "TABLE" => AnyHDU()
@@ -197,6 +201,17 @@ object FitsLib {
     def handleImage : FitsHduImage.ImageHDU = {
       // Return an Image HDU
       FitsHduImage.ImageHDU(blockHeader)
+    }
+
+    /**
+      * Give access to methods concerning ZImage HDU.
+      *
+      * @return (ZImageHDU)
+      *
+      */
+    def handleZImage : FitsHduZImage.ZImageHDU = {
+      // Grab only columns specified by the user
+      FitsHduZImage.ZImageHDU(blockHeader)
     }
 
     /**
@@ -291,18 +306,22 @@ object FitsLib {
     def getHduType : String = {
 
       // Get the header NAMES
-      val colNames = parseHeader(blockHeader)
+      val keyValues = parseHeader(blockHeader)
 
-      // Check if the HDU is empty, a table or an image
-      val isBintable = colNames.filter(
+      // Check if the HDU is empty, or some specific Fits type
+      val isZImage = keyValues.filter(
+        x=>x._1.contains("ZIMAGE") && (x._2.trim == "T")).values.toList.size > 0
+      val isBintable = keyValues.filter(
         x=>x._2.contains("BINTABLE")).values.toList.size > 0
-      val isTable = colNames.filter(
+      val isTable = keyValues.filter(
         x=>x._2.contains("TABLE")).values.toList.size > 0
-      val isImage = colNames.filter(
+      val isImage = keyValues.filter(
         x=>x._2.contains("IMAGE")).values.toList.size > 0
       val isEmpty = empty_hdu
 
-      val fitstype = if (isBintable) {
+      val fitstype = if (isZImage) {
+        "ZIMAGE"
+      } else if (isBintable) {
         "BINTABLE"
       } else if (isTable) {
         "TABLE"
@@ -359,18 +378,29 @@ object FitsLib {
       var hasData : Boolean = false
       var datalen = 0L
 
+      var last_pointer = 0L
+
       // Loop over all HDU, and exit.
       do {
+        pointers += s"absstart$currentHduIndex" -> (data.getPos)
+        pointers += s"headerstart$currentHduIndex" -> (data.getPos - last_pointer)
+        last_pointer = data.getPos
+
         val localHeader = readFullHeaderBlocks
 
-        // If the header cannot be read,
+        // Test if the header cannot be read,
         if (localHeader.size > 0) {
           hasData = true
 
           // Size of the data block in Bytes.
           // Skip Data if None (typically HDU=0)
           datalen = Try {
-            getDataLen(parseHeader(localHeader))
+            val keyValues = parseHeader(localHeader)
+            if (keyValues.contains("PCOUNT")){
+              // pointers += keyValues("PCOUNT").toLong + (keyValues("NAXIS").toLong * keyValues("NAXIS1").toLong * keyValues("NAXIS2").toLong)
+              pointers += s"PCOUNT$currentHduIndex" -> keyValues("PCOUNT").toLong
+            }
+            getDataLen(keyValues)
           }.getOrElse(0L)
 
           // Store the offset to the next HDU
@@ -382,6 +412,12 @@ object FitsLib {
           else {
             datalen + FITSBLOCK_SIZE_BYTES - (datalen % FITSBLOCK_SIZE_BYTES)
           }
+
+          val n = data.getPos - last_pointer
+          pointers += s"absdatastart$currentHduIndex" -> data.getPos
+          pointers += s"datastart$currentHduIndex" -> n
+          pointers += s"data$currentHduIndex" -> skipBytes
+          last_pointer = data.getPos
 
           data.seek(data.getPos + skipBytes)
 
