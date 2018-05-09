@@ -86,6 +86,40 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     )
   }
 
+
+  test("FitsLib test: Can you initialise correctly methods of a Image HDU?") {
+    val tablefile = new Path("src/test/resources/toTest/tst0009.fits")
+    val fB1 = new Fits(tablefile, conf, 2)
+    val p = fB1.pointers.result.size
+    val keyValue = FitsLib.parseHeader(fB1.blockHeader)
+    assert(
+      fB1.hdu.implemented == true &&
+        fB1.pointers.result.size == s"p=$p"
+    )
+  }
+
+
+  test("FitsLib test: Can you initialise correctly methods of a ZImage HDU?") {
+    val file = new Path("hdfs://134.158.75.222:8020//lsst/images/a.fits.fz")
+    val fB1 = new Fits(file, conf, 1)
+    val p = fB1.pointers.result.size
+
+    val keyValue = FitsLib.parseHeader(fB1.blockHeader)
+    assert(
+      fB1.hdu.implemented == true &&
+        fB1.hdu.getNRows(keyValue) == 1024L &&
+        fB1.hdu.getSizeRowBytes(keyValue) == 1024 &&
+        /*
+        fB1.hdu.getNCols(keyValue) == 1L &&
+        fB1.hdu.getColTypes(keyValue) == null &&
+        fB1.hdu.listOfStruct != null &&
+        fB1.hdu.getRow(Array(0)) != null &&
+        fB1.hdu.getElementFromBuffer(Array(0), "") != null &&
+        */
+        fB1.pointers.result.size == s"p=$p"
+    )
+  }
+
   // Check that the HDU asked is below the max HDU index.
   test("FitsLib test: Can you compute correctly the boundaries of a HDU?") {
     val fB1 = new Fits(file, conf, 1)

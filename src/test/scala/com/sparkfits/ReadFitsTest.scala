@@ -89,6 +89,15 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
     assert(count == 155)
   }
 
+  test("HDU type test: test if HDU is an zimage?") {
+    val fn_image = "hdfs://134.158.75.222:8020//lsst/images/a.fits.fz"
+    val results = spark.read.format("com.sparkfits")
+      .option("hdu", 1)
+      .load(fn_image)
+    val count = results.count()
+    assert(count == 36)
+  }
+
   // Test if the user provides the data type in the HDU
   test("HDU type test: Return an empty DF if the HDU is a Table? (not implemented yet)") {
     val fn_table = "src/test/resources/toTest/tst0009.fits"
