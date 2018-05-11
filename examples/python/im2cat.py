@@ -27,7 +27,7 @@ from photutils import CircularAperture
 import argparse
 
 def addargs(parser):
-    """ Parse command line arguments for readfits """
+    """ Parse command line arguments for im2cat """
 
     ## Arguments
     parser.add_argument(
@@ -63,6 +63,17 @@ def reshape_image(im):
     """
     By default, Spark shapes images into (nx, 1, ny).
     This routine reshapes images into (nx, ny)
+
+    Parameters
+    ----------
+    im : 3D array
+        Original image with shape (nx, 1, ny)
+
+    Returns
+    ----------
+    im_reshaped : 2D array
+        Original image with shape (nx, ny)
+
     """
     shape = np.shape(im)
     return im.reshape((shape[0], shape[2]))
@@ -107,6 +118,19 @@ def get_stat(data, sigma=3.0, iters=3):
 
 def aggregate_ccd(args):
     """
+    Load image data from HDUs specified by hdustart and hdustop,
+    and store the data into one single RDD. Image shapes are (nrow, ncol).
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        User options
+
+    Returns
+    ----------
+    imRDD : RDD
+        RDD containing all image data from HDU[hdustart] to
+        HDU[hdustop] included.
     """
     df_init = spark.read\
         .format("com.sparkfits")\
@@ -147,11 +171,14 @@ def quiet_logs(sc, log_level="ERROR"):
 
 if __name__ == "__main__":
     """
-    Read the data from a FITS file using Spark,
-    and show the first rows and the schema.
+    Distribute image data from a FITS file using Spark,
+    and build a source catalog for each image.
     """
     parser = argparse.ArgumentParser(
-        description='Distribute the data of a FITS file.')
+        description="""
+        Distribute image data from a FITS file using Spark,
+        and build a source catalog for each image.
+        """)
     addargs(parser)
     args = parser.parse_args(None)
 
@@ -162,6 +189,7 @@ if __name__ == "__main__":
     ## Set logs to be quiet
     quiet_logs(spark.sparkContext, log_level=args.log_level)
 
+    ## Load all data
     imRDD = aggregate_ccd(args)
 
     ## Source detection: build the catalogs for each CCD in parallel
