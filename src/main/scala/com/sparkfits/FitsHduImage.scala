@@ -74,7 +74,6 @@ object FitsHduImage {
       *
       */
     override def getSizeRowBytes(keyValues: Map[String, String]) : Int = {
-      println("Row size in Bytes: ", axis(0).toInt * elementSize)
       axis(0).toInt * elementSize
     }
 
