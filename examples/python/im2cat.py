@@ -212,7 +212,7 @@ if __name__ == "__main__":
     print(final_cat)
 
     ## Loop over CCD catalogs
-    for hdu in range(1, args.hdustop + 1):
+    for hdu in range(args.hdustart, args.hdustop + 1):
         ## Grab initial data for plot
         data = fits.open(args.inputpath)
         data = data[hdu].data
