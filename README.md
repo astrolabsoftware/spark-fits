@@ -237,8 +237,9 @@ Local launch
 
 See the two shell scripts at the root of the package
 
-    ./run_scala.sh  # Scala
-    ./run_python.sh # Python
+    ./run_scala.sh  # Scala (bintable HDU)
+    ./run_python.sh # Python (bintable HDU)
+    ./run_image python.sh # Python (image HDU)
 
 Just make sure that you set up correctly the paths and the different
 variables.
