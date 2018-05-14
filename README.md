@@ -20,7 +20,8 @@ data sources (CSV, JSON, Avro, Parquet, etc).
 Currently available:
 
 -   Read fits file and organize the HDU data into DataFrames.
--   Automatically distribute the bintable of a FITS HDU over machines.
+-   Automatically distribute bintable rows over machines.
+-   Automatically distribute image rows over machines. **new**
 -   Automatically infer DataFrame schema from the HDU header.
 
 Requirements
@@ -308,7 +309,6 @@ TODO list
 
 -   Make the docker file
 -   Define custom Hadoop InputFile.
--   Allow image HDU manipulation.
 -   Test other Spark version?
 -   Publish the doc.
 
