@@ -2,7 +2,7 @@
   ------------------------------------------------------------------------------------------------------------------
 [![Build Status](https://travis-ci.org/JulienPeloton/spark-fits.svg?branch=master)](https://travis-ci.org/JulienPeloton/spark-fits)
 [![codecov](https://codecov.io/gh/JulienPeloton/spark-fits/branch/master/graph/badge.svg?style=platic)](https://codecov.io/gh/JulienPeloton/spark-fits)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11)
 [![Arxiv](http://img.shields.io/badge/arXiv-1804.07501-yellow.svg?style=platic)](https://arxiv.org/abs/1804.07501)
 
 <!-- .. contents:: **Table of Contents**
