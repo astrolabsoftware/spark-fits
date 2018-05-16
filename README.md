@@ -92,7 +92,7 @@ small files written the same way as one.
 
 You can specify which columns you want to load in the DataFrame, using
 the option `columns`. Example,
-`.option("columns", List("target,Index"))` will load all the data, but
+`.option("columns", "target,Index")` will load all the data, but
 will decode only these two columns. If not specified, all columns will
 be loaded in the DataFrame (and you can select columns manually later).
 
