@@ -185,7 +185,7 @@ DataFrame df = spark.read()
   .load(<String>);
 ```
 
-Included examples
+Included examples (BINTABLE + IMAGE)
 ====
 
 Example scripts in Scala and Python, plus a Jupyter notebook in python
@@ -232,6 +232,12 @@ See
 for more options for pyspark. To build the JAR, just run
 `sbt ++{SBT_VERSION} package` from the root of the package (see
 `run_*.sh` scripts). Here is an example in the spark-shell:
+
+Using with Jupyter Notebook
+------------
+
+We provide notebooks (pyspark) in the section [example](https://github.com/JulienPeloton/spark-fits/tree/master/examples/jupyter).
+For notebook in Scala/Spark (using the Toree kernel), see the [spark3d](https://github.com/JulienPeloton/spark3D/tree/master/examples/jupyter) examples.
 
 Local launch
 ------------
