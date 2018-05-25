@@ -18,7 +18,7 @@ SBT_VERSION=2.11.8
 SBT_VERSION_SPARK=2.11
 
 ## Package version
-VERSION=0.3.0
+VERSION=0.4.0
 
 # Package it
 sbt ++${SBT_VERSION} package
@@ -32,5 +32,3 @@ fitsfn="hdfs://134.158.75.222:8020//lsst/images/a.fits"
 cmd="spark-submit --master spark://134.158.75.222:7077 --driver-memory 4g --executor-memory 18g --class com.sparkfits.ReadImage target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar $fitsfn"
 
 $cmd
-
-# --executor-cores 17 --total-executor-cores 102 \

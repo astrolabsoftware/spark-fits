@@ -298,6 +298,8 @@ object FitsLib {
         x=>x._2.contains("BINTABLE")).values.toList.size > 0
       val isTable = colNames.filter(
         x=>x._2.contains("TABLE")).values.toList.size > 0
+      // TODO: The case where the primary header is an image is
+      // not handled here! Need to be fixed.
       val isImage = colNames.filter(
         x=>x._2.contains("IMAGE")).values.toList.size > 0
       val isEmpty = empty_hdu
@@ -333,7 +335,7 @@ object FitsLib {
 
       // Accumulate the size dimension-by-dimension
       if (naxis > 0) {
-        dataSize = keyValues("BITPIX").toLong / 8L
+        dataSize = math.abs(keyValues("BITPIX").toLong) / 8L
         for (a <- 1 to naxis) {
           val axis = keyValues(s"NAXIS${a}").toLong
           dataSize = dataSize * axis

@@ -22,7 +22,7 @@ Currently available:
 
 -   Read fits file and organize the HDU data into DataFrames.
 -   Automatically distribute bintable rows over machines.
--   Automatically distribute image rows over machines. **new**
+-   Automatically distribute image rows over machines. **new in 0.4.0**
 -   Automatically infer DataFrame schema from the HDU header.
 
 Requirements
@@ -49,10 +49,10 @@ coordinates in your `build.sbt`:
 
 ```scala
 // %% will automatically set the Scala version needed for spark-fits
-libraryDependencies += "com.github.JulienPeloton" %% "spark-fits" % "0.3.0"
+libraryDependencies += "com.github.JulienPeloton" %% "spark-fits" % "0.4.0"
 
 // Alternatively you can also specify directly the Scala version, e.g.
-libraryDependencies += "com.github.JulienPeloton" % "spark-fits_2.11" % "0.3.0"
+libraryDependencies += "com.github.JulienPeloton" % "spark-fits_2.11" % "0.4.0"
 ```
 
 **Scala 2.10.6 and 2.11.X**
@@ -185,7 +185,7 @@ DataFrame df = spark.read()
   .load(<String>);
 ```
 
-Included examples
+Included examples (BINTABLE + IMAGE)
 ====
 
 Example scripts in Scala and Python, plus a Jupyter notebook in python
@@ -198,12 +198,12 @@ This package can be added to Spark using the `--packages` command line
 option. For example, to include it when starting the spark shell
 (**Spark compiled with Scala 2.11**):
 
-    $SPARK_HOME/bin/spark-shell --packages com.github.JulienPeloton:spark-fits_2.11:0.3.0
+    $SPARK_HOME/bin/spark-shell --packages com.github.JulienPeloton:spark-fits_2.11:0.4.0
 
 Using `--packages` ensures that this library and its dependencies will
 be added to the classpath. In Python, you would do the same
 
-    $SPARK_HOME/bin/pyspark --packages com.github.JulienPeloton:spark-fits_2.11:0.3.0
+    $SPARK_HOME/bin/pyspark --packages com.github.JulienPeloton:spark-fits_2.11:0.4.0
 
 Alternatively to have the latest development you can download this repo
 and build the jar, and add it when launching the spark shell (but won't
@@ -232,6 +232,12 @@ See
 for more options for pyspark. To build the JAR, just run
 `sbt ++{SBT_VERSION} package` from the root of the package (see
 `run_*.sh` scripts). Here is an example in the spark-shell:
+
+Using with Jupyter Notebook
+------------
+
+We provide notebooks (pyspark) in the section [example](https://github.com/JulienPeloton/spark-fits/tree/master/examples/jupyter).
+For notebook in Scala/Spark (using the Toree kernel), see the [spark3d](https://github.com/JulienPeloton/spark3D/tree/master/examples/jupyter) examples.
 
 Local launch
 ------------
