@@ -18,13 +18,12 @@ SBT_VERSION=2.11.8
 SBT_VERSION_SPARK=2.11
 
 ## Package version
-VERSION=0.3.0
+VERSION=0.4.0
 
 # Package it
 sbt ++${SBT_VERSION} package
 
 # Parameters (put your file)
-fitsfn="hdfs://134.158.75.222:8020//user/julien.peloton/cat2149.fits"
 fitsfn="hdfs://134.158.75.222:8020//lsst/images/a.fits"
 
 master="--master spark://134.158.75.222:7077"
@@ -38,7 +37,3 @@ imput="-inputpath $fitsfn"
 cmd="spark-submit ${master} ${memory} ${conf} ${jars} ${pgm} ${input}"
 
 echo $cmd
-
-#   examples/python/readfits.py
-
-# --executor-cores 17 --total-executor-cores 102 \

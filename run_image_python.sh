@@ -18,19 +18,13 @@ SBT_VERSION=2.11.8
 SBT_VERSION_SPARK=2.11
 
 ## Package version
-VERSION=0.3.0
+VERSION=0.4.0
 
 # Package it
 sbt ++${SBT_VERSION} package
 
 # Parameters (put your file)
-# fitsfn="file://$PWD/src/test/resources/test_file.fits"
 fitsfn="file://$PWD/src/test/resources/sdss.fits"
-# fitsfn="file://$PWD/src/test/resources/toTest/tst0009.fits"
-# fitsfn="file://$PWD/src/test/resources/test_longheader_file.fits"
-# fitsfn="file://$PWD/src/test/resources/toTest/swift_events.fits"
-# fitsfn="file://$PWD/src/test/resources/dir"
-# fitsfn="file://$PWD/src/test/resources/dirNotOk"
 
 hdustart=1
 hdustop=2
