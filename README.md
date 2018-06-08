@@ -1,5 +1,5 @@
-  FITS Data Source for Apache Spark
-  ------------------------------------------------------------------------------------------------------------------
+# FITS Data Source for Apache Spark
+
 [![Build Status](https://travis-ci.org/JulienPeloton/spark-fits.svg?branch=master)](https://travis-ci.org/JulienPeloton/spark-fits)
 [![codecov](https://codecov.io/gh/JulienPeloton/spark-fits/branch/master/graph/badge.svg?style=platic)](https://codecov.io/gh/JulienPeloton/spark-fits)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11)
@@ -7,6 +7,16 @@
 
 <!-- .. contents:: **Table of Contents**
 The package -->
+
+## Latest news
+
+- [01/2018] **Launch**: spark-fits is created! 
+- [03/2018] **Release**: version 0.3.0
+- [04/2018] **Paper**: [![Arxiv](http://img.shields.io/badge/arXiv-1804.07501-yellow.svg?style=platic)](https://arxiv.org/abs/1804.07501)
+- [04/2018] **Talk**: Statistical challenges for large-scale structure in the era of LSST, Oxford. [slides](intensitymapping.physics.ox.ac.uk/SCLSS/Slides/Peloton.pdf)
+- [05/2018] **Release**: version 0.4.0
+
+## spark-fits
 
 This library provides two different tools to manipulate
 [FITS](https://fits.gsfc.nasa.gov/fits_home.html) data with [Apache
@@ -25,24 +35,21 @@ Currently available:
 -   Automatically distribute image rows over machines. **new in 0.4.0**
 -   Automatically infer DataFrame schema from the HDU header.
 
-Requirements
-============
+## Requirements
 
 This library requires Spark 2.0+ (not tested for earlier version). The
 library has been tested with Scala 2.10.6 and 2.11.X. If you want to use
 another version, feel free to contact us.
 
-APIs
-====
+## APIs
 
 spark-fits has API for Scala, Python, Java and R. All APIs share the
 same core classes and routines, so the ways to create DataFrame from all
 languages using spark-fits are identical.
 
-Scala
------
+### Scala
 
-**Linking**
+#### Linking
 
 You can link against this library in your program at the following
 coordinates in your `build.sbt`:
@@ -55,7 +62,7 @@ libraryDependencies += "com.github.JulienPeloton" %% "spark-fits" % "0.4.0"
 libraryDependencies += "com.github.JulienPeloton" % "spark-fits_2.11" % "0.4.0"
 ```
 
-**Scala 2.10.6 and 2.11.X**
+#### Scala 2.10.6 and 2.11.X
 
 Here is the minimal syntax in Scala 2.10.6 and 2.11.X to play with the
 package:
@@ -139,8 +146,8 @@ val dfCustomHeader = spark.read
   .load(fn)
 ```
 
-Python
-------
+### Python
+
 
 See full description of options in the Scala API:
 
@@ -166,8 +173,8 @@ if __name__ == "__main__":
     .load(str)
 ```
 
-Java
-----
+### Java
+
 
 See full description of options in the Scala API:
 
@@ -185,85 +192,92 @@ DataFrame df = spark.read()
   .load(<String>);
 ```
 
-Included examples (BINTABLE + IMAGE)
-====
+## Included examples (BINTABLE + IMAGE)
 
 Example scripts in Scala and Python, plus a Jupyter notebook in python
 are included in the directory `examples/`.
 
-Using with spark-shell/pyspark
-------------
+### Using with spark-shell/pyspark
 
 This package can be added to Spark using the `--packages` command line
 option. For example, to include it when starting the spark shell
 (**Spark compiled with Scala 2.11**):
 
-    $SPARK_HOME/bin/spark-shell --packages com.github.JulienPeloton:spark-fits_2.11:0.4.0
+```bash
+$SPARK_HOME/bin/spark-shell --packages com.github.JulienPeloton:spark-fits_2.11:0.4.0
+```
 
 Using `--packages` ensures that this library and its dependencies will
 be added to the classpath. In Python, you would do the same
 
-    $SPARK_HOME/bin/pyspark --packages com.github.JulienPeloton:spark-fits_2.11:0.4.0
+```bash
+$SPARK_HOME/bin/pyspark --packages com.github.JulienPeloton:spark-fits_2.11:0.4.0
+```
 
 Alternatively to have the latest development you can download this repo
 and build the jar, and add it when launching the spark shell (but won't
 be added in the classpath)
 
-    $SPARK_HOME/bin/spark-shell --jars /path/to/jar/<spark-fits.jar>
+```bash
+$SPARK_HOME/bin/spark-shell --jars /path/to/jar/<spark-fits.jar>
+```
 
 or with pyspark
 
-    $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
-
+```bash
+$SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
+```
 By default, pyspark uses a simple python shell. It is also possible to
 launch PySpark in IPython, by specifying:
 
-    export PYSPARK_DRIVER_PYTHON_OPTS="path/to/ipython"
-    $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
-
+```bash
+export PYSPARK_DRIVER_PYTHON_OPTS="path/to/ipython"
+$SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
+```
 Same with Jupyter notebook:
 
-    cd /path/to/notebooks
-    export PYSPARK_DRIVER_PYTHON_OPTS="path/to/jupyter-notebook"
-    $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
-
+```bash
+cd /path/to/notebooks
+export PYSPARK_DRIVER_PYTHON_OPTS="path/to/jupyter-notebook"
+$SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
+```
 See
 [here](https://spark.apache.org/docs/0.9.0/python-programming-guide.html)
 for more options for pyspark. To build the JAR, just run
 `sbt ++{SBT_VERSION} package` from the root of the package (see
 `run_*.sh` scripts). Here is an example in the spark-shell:
 
-Using with Jupyter Notebook
-------------
+### Using with Jupyter Notebook
 
 We provide notebooks (pyspark) in the section [example](https://github.com/JulienPeloton/spark-fits/tree/master/examples/jupyter).
 For notebook in Scala/Spark (using the Toree kernel), see the [spark3d](https://github.com/JulienPeloton/spark3D/tree/master/examples/jupyter) examples.
 
-Local launch
-------------
+### Local launch
 
 See the two shell scripts at the root of the package
 
-    ./run_scala.sh  # Scala (bintable HDU)
-    ./run_python.sh # Python (bintable HDU)
-    ./run_image python.sh # Python (image HDU)
+```bash
+./run_scala.sh  # Scala (bintable HDU)
+./run_python.sh # Python (bintable HDU)
+./run_image python.sh # Python (image HDU)
+```
 
 Just make sure that you set up correctly the paths and the different
 variables.
 
-Cluster mode
-------------
+### Cluster mode
 
 See the two shell scripts at the root of the package
 
-    ./run_scala_cluster.sh  # Scala
-    ./run_python_cluster.sh # Python
+```bash
+./run_scala_cluster.sh  # Scala
+./run_python_cluster.sh # Python
+```
 
 Just make sure that you set up correctly the paths and the different
 variables.
 
-Using at NERSC
---------------
+### Using at NERSC
 
 Although HPC systems are not designed for IO intensive jobs, Spark
 standalone mode and filesystem-agnostic approach makes it also a
@@ -271,40 +285,45 @@ candidate to process data stored in HPC-style shared file systems such
 as Lustre. Two scripts are provided at the root of the project to launch
 a Spark Job on Cori at NERSC: :
 
-    sbatch run_scala_cori.sh  # Scala
-    sbatch run_python_cori.sh # Python
+```bash
+sbatch run_scala_cori.sh  # Scala
+sbatch run_python_cori.sh # Python
+```
 
 Keep in mind that raw performances (i.e. without any attempt to take
 into account that we read from Lustre and not from HDFS for example) can
 be worst than in HTC systems.
 
-Building from source
-====
+## Building from source
 
 This library is built with SBT (see the `build.sbt` script provided). To
 build a JAR file simply run
 
-    sbt ++${SCALA_VERSION} package
+```bash
+sbt ++${SCALA_VERSION} package
+```
 
 from the project root. The build configuration includes support for
 Scala 2.10.6 and 2.11.X. In addition you can build the doc using SBT:
 
-    sbt ++{SCALA_VERSION} doc
-    open target/scala_${SCALA_VERSION}/api/index.html
+```bash
+sbt ++{SCALA_VERSION} doc
+open target/scala_${SCALA_VERSION}/api/index.html
+```
 
-Running the test suite
-====
+## Running the test suite
 
 To launch the test suite, just run:
 
-    sbt ++${SCALA_VERSION} coverage test coverageReport
+```bash
+sbt ++${SCALA_VERSION} coverage test coverageReport
+```
 
 We also provide a script (test.sh) that you can run. You should get the
 result on the screen, plus details of the coverage at
 `target/scala_${SCALA_VERSION}/scoverage-report/index.html`.
 
-Header Challenge!
-====
+## Header Challenge!
 
 The header tested so far are very simple, and not so exotic. Over the
 time, we plan to add many new features based on complex examples (see
@@ -312,14 +331,12 @@ time, we plan to add many new features based on complex examples (see
 If you use spark-fits, and encounter errors while reading a header, tell
 us (issues or PR) so that we fix the problem asap!
 
-TODO list
-====
+## TODO list
 
 -   Make the docker file
 -   Define custom Hadoop InputFile.
 -   Test other Spark version?
 -   Publish the doc.
 
-Since 23/04/18
-
-![image](http://hits.dwyl.io/JulienPeloton/spark-fits.svg%0A%20:target:%20http://hits.dwyl.io/JulienPeloton/spark-fits)
+| Since 23/04/18 | ![image](http://hits.dwyl.io/JulienPeloton/spark-fits.svg%0A%20:target:%20http://hits.dwyl.io/JulienPeloton/spark-fits) |
+|:-----:|:-----:
