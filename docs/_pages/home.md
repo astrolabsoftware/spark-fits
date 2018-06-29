@@ -25,9 +25,9 @@ feature_row:
     btn_label: "Learn More"
   - image_path:
     alt:
-    title: "<i class='fas fa-code'></i> Load and distribute data within your application"
+    title: "<i class='fas fa-code'></i> Include spark-fits in your application"
     excerpt: "Include spark-fits in your next projects!"
-    url: "/docs/scripts/"
+    url: "/docs/batch/"
     btn_class: "btn--primary"
     btn_label: "Learn More"
 ---
