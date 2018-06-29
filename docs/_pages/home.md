@@ -11,23 +11,23 @@ excerpt: 'Distribute FITS data with Apache Spark: Binary tables, images and more
 feature_row:
   - image_path:
     alt:
-    title: "<i class='fas fa-upload'></i> Load 3D object RDD"
-    excerpt: "Distribute points, spheres, shells, boxes, and more using spark3D."
-    url: "/docs/introduction/"
+    title: "<i class='fas fa-american-sign-language-interpreting'></i> API for Scala, Python, Java and R"
+    excerpt: "All APIs share the same core classes and routines, so the ways to create DataFrame from all languages using spark-fits are identical."
+    url: "/docs/api/"
     btn_class: "btn--primary"
     btn_label: "Learn More"
   - image_path:
     alt:
-    title: "<i class='fas fa-cubes'></i> Partition your space"
-    excerpt: "Partition the three-dimensional space to speed-up your search."
-    url: "/docs/partitioning/"
+    title: "<i class='fas fa-terminal'></i> Load and distribute data interactively"
+    excerpt: "Load your favourite binary tables and images data and distribute the data across machines using the spark-shell, pyspark, or jupyter notebook!"
+    url: "/docs/interactive/"
     btn_class: "btn--primary"
     btn_label: "Learn More"
   - image_path:
     alt:
-    title: "<i class='fas fa-crosshairs'></i> Query, match, play!"
-    excerpt: "Find objects based on conditions, cross-match data sets, and define your requests."
-    url: "/docs/query/"
+    title: "<i class='fas fa-code'></i> Load and distribute data within your application"
+    excerpt: "Include spark-fits in your next projects!"
+    url: "/docs/scripts/"
     btn_class: "btn--primary"
     btn_label: "Learn More"
 ---
