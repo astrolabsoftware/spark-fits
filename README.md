@@ -10,7 +10,7 @@ The package -->
 
 ## Latest news
 
-- [01/2018] **Launch**: spark-fits is created! 
+- [01/2018] **Launch**: spark-fits is created!
 - [03/2018] **Release**: version 0.3.0
 - [04/2018] **Paper**: [![Arxiv](http://img.shields.io/badge/arXiv-1804.07501-yellow.svg?style=platic)](https://arxiv.org/abs/1804.07501)
 - [04/2018] **Talk**: Statistical challenges for large-scale structure in the era of LSST, Oxford. [slides](intensitymapping.physics.ox.ac.uk/SCLSS/Slides/Peloton.pdf)
@@ -337,6 +337,10 @@ us (issues or PR) so that we fix the problem asap!
 -   Define custom Hadoop InputFile.
 -   Test other Spark version?
 -   Publish the doc.
+
+## Support
+
+<p align="center"><img width="200" src="https://github.com/JulienPeloton/spark-fits/raw/master/pic/lal_logo.jpg"/> <img width="200" src="https://github.com/JulienPeloton/spark-fits/raw/master/pic/1012px-Centre_national_de_la_recherche_scientifique.svg.png"/> <img width="200" src="https://github.com/JulienPeloton/spark-fits/raw/master/pic/Logo_Université_Paris-Saclay.svg.png"/></p>
 
 | Since 23/04/18 | ![image](http://hits.dwyl.io/JulienPeloton/spark-fits.svg%0A%20:target:%20http://hits.dwyl.io/JulienPeloton/spark-fits) |
 |:-----:|:-----:
