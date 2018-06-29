@@ -340,7 +340,7 @@ us (issues or PR) so that we fix the problem asap!
 
 ## Support
 
-<p align="center"><img width="200" src="https://github.com/JulienPeloton/spark-fits/raw/master/pic/lal_logo.jpg"/> <img width="200" src="https://github.com/JulienPeloton/spark-fits/raw/master/pic/1012px-Centre_national_de_la_recherche_scientifique.svg.png"/> <img width="200" src="https://github.com/JulienPeloton/spark-fits/raw/master/pic/Logo_Université_Paris-Saclay.svg.png"/></p>
+<p align="center"><img width="200" src="https://github.com/JulienPeloton/spark-fits/raw/master/pic/lal_logo.jpg"/> <img width="200" src="https://github.com/JulienPeloton/spark-fits/raw/master/pic/psud.png"/> <img width="200" src="https://github.com/JulienPeloton/spark-fits/raw/master/pic/1012px-Centre_national_de_la_recherche_scientifique.svg.png"/></p>
 
 | Since 23/04/18 | ![image](http://hits.dwyl.io/JulienPeloton/spark-fits.svg%0A%20:target:%20http://hits.dwyl.io/JulienPeloton/spark-fits) |
 |:-----:|:-----:
