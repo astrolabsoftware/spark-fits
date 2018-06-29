@@ -20,7 +20,7 @@ title_separator          : "-"
 name                     : "spark-fits"
 description              : "Distribute FITS data with Apache Spark: Binary tables, images and more!"
 url                      : https://theastrolab.github.io
-baseurl                  : /spark3D
+baseurl                  : /spark-fits
 repository               : "theastrolab/spark-fits"
 teaser                   :
 # breadcrumbs            : false # true, false (default)
