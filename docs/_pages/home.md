@@ -3,7 +3,7 @@ layout: splash
 permalink: /
 header:
   overlay_color: "#5e616c"
-  overlay_image: /assets/images/background.jpg
+  overlay_image: /assets/images/background.png
   cta_label: "<i class='fas fa-download'></i> Install Now"
   cta_url: "/docs/installation/"
   caption:
