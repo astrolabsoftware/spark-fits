@@ -11,7 +11,7 @@ excerpt: 'Distribute FITS data with Apache Spark: Binary tables, images and more
 feature_row:
   - image_path:
     alt:
-    title: "<i class='fas fa-american-sign-language-interpreting'></i> API for Scala, Python, Java and R"
+    title: "<i class='fas fa-exchange'></i> API for Scala, Python, Java and R"
     excerpt: "All APIs share the same core classes and routines, so the ways to create DataFrame from all languages using spark-fits are identical."
     url: "/docs/api/"
     btn_class: "btn--primary"
