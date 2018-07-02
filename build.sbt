@@ -25,7 +25,7 @@ lazy val root = (project in file(".")).
    // Name of the application
    name := "spark-fits",
    // Name of the orga
-   organization := "com.github.JulienPeloton",
+   organization := "com.github.theastrolab",
    // Do not execute test in parallel
    parallelExecution in Test := false,
    // Fail the test suite if statement coverage is < 70%
@@ -52,12 +52,12 @@ lazy val root = (project in file(".")).
 
 // POM settings for Sonatype
 homepage := Some(
- url("https://github.com/JulienPeloton/spark-fits")
+ url("https://github.com/theastrolab/spark-fits")
 )
 scmInfo := Some(
  ScmInfo(
-   url("https://github.com/JulienPeloton/spark-fits"),
-   " https://github.com/JulienPeloton/spark-fits.git"
+   url("https://github.com/theastrolab/spark-fits"),
+   " https://github.com/theastrolab/spark-fits.git"
  )
 )
 

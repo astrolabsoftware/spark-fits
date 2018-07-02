@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/theastrolab/spark-fits.svg?branch=master)](https://travis-ci.org/theastrolab/spark-fits)
 [![codecov](https://codecov.io/gh/theastrolab/spark-fits/branch/master/graph/badge.svg?style=platic)](https://codecov.io/gh/theastrolab/spark-fits)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.JulienPeloton/spark-fits_2.11)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.theastrolab/spark-fits_2.11/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.theastrolab/spark-fits_2.11)
 [![Arxiv](http://img.shields.io/badge/arXiv-1804.07501-yellow.svg?style=platic)](https://arxiv.org/abs/1804.07501)
 
 ## Latest news
@@ -12,6 +12,7 @@
 - [04/2018] **Paper**: [![Arxiv](http://img.shields.io/badge/arXiv-1804.07501-yellow.svg?style=platic)](https://arxiv.org/abs/1804.07501)
 - [04/2018] **Talk**: Statistical challenges for large-scale structure in the era of LSST, Oxford. [slides](intensitymapping.physics.ox.ac.uk/SCLSS/Slides/Peloton.pdf)
 - [05/2018] **Release**: version 0.4.0
+- [06/2018] **New location**: spark-fits is an official project of [AstroLab](https://theastrolab.github.io/)!
 
 ## spark-fits
 
