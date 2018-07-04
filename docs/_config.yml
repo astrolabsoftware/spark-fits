@@ -19,9 +19,9 @@ title                    : "spark-fits"
 title_separator          : "-"
 name                     : "spark-fits"
 description              : "Distribute FITS data with Apache Spark: Binary tables, images and more!"
-url                      : https://theastrolab.github.io
+url                      : https://astrolabsoftware.github.io
 baseurl                  : /spark-fits
-repository               : "theastrolab/spark-fits"
+repository               : "astrolabsoftware/spark-fits"
 teaser                   :
 # breadcrumbs            : false # true, false (default)
 words_per_minute         : 200
@@ -102,7 +102,7 @@ author:
   name             : "Julien Peloton"
   avatar           : # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
   bio              : "CNRS"
-  location         : "Somewhere"
+  location         : "Orsay, FR"
   email            : "peloton@lal.in2p3.fr"
   uri              :
   home             : # null (default), "absolute or relative url to link to author home"

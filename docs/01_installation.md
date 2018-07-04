@@ -20,7 +20,7 @@ another version, feel free to contact us.
 You can link spark-fits to your project (either `spark-shell` or `spark-submit`) by specifying the coordinates:
 
 ```bash
-toto:~$ spark-submit --packages "com.github.theastrolab:spark-fits_2.11:0.4.0" <...>
+toto:~$ spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.11:0.4.0" <...>
 ```
 
 It might not contain the latest features though (see *Building from source*).
@@ -64,5 +64,5 @@ Follow the [dedicated]({{ site.baseurl }}{% link 03_interactive.md %}) tutorial!
 
 Follow the [dedicated]({{ site.baseurl }}{% link 04_batch.md %}) tutorial!
 
-We also include [examples](https://github.com/theastrolab/spark-fits/tree/master/examples) and runners (`run_*.sh`) in the root folder of the repo.
+We also include [examples](https://github.com/astrolabsoftware/spark-fits/tree/master/examples) and runners (`run_*.sh`) in the root folder of the repo.
 You might have to modify those scripts with your environment.
