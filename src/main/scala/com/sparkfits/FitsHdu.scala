@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sparkfits
+package com.astrolabsoftware.sparkfits
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
 import org.apache.spark.sql.types.StructField
 
-import com.sparkfits.FitsLib.shortStringValue
+import com.astrolabsoftware.sparkfits.FitsLib.shortStringValue
 
 object FitsHdu {
 

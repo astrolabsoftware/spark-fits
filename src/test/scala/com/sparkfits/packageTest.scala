@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sparkfits
+package com.astrolabsoftware.sparkfits
 
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
@@ -63,13 +63,13 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if readfits does nothing :D
   test("Readfits test: Do you send back a DataFrameReader?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
     assert(results.isInstanceOf[DataFrameReader])
   }
 
   // Test DataFrame
   test("DataFrame test: can you really make a DF from the hdu?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn)
     assert(results.isInstanceOf[DataFrame])
@@ -88,7 +88,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       )
     )
 
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .schema(schema)
       .load(fn)
@@ -97,14 +97,14 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   // Test Data distribution
   test("Data distribution test: Can you count all elements?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn)
     assert(results.select(col("Index")).count().toInt == 20000)
   }
 
   test("Data distribution test: Can you sum up all elements?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn)
     assert(
@@ -115,7 +115,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Data distribution test: Do you pass over all blocks?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .option("recordlength", 16 * 1024)
       .load(fn)
@@ -127,7 +127,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Header printing test") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .option("verbose", true)
       .option("recordlength", 16 * 1024)
@@ -138,7 +138,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   test("Multi files test: Can you read several FITS file?") {
     val fn = "src/test/resources/dir"
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .option("verbose", true)
       .option("recordlength", 16 * 1024)
@@ -148,7 +148,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   test("Multi files test: Can you detect an error in reading different FITS file?") {
     val fn = "src/test/resources/dirNotOk"
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .option("verbose", true)
       .option("recordlength", 16 * 1024)
@@ -162,7 +162,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   test("No file test: Can you detect an error if there is no input FITS file found?") {
     val fn = "src/test/resources/dirfjsdhf"
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .option("verbose", true)
       .option("recordlength", 16 * 1024)
@@ -176,7 +176,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   // Test ordering of elements in the DF
   test("Ordering test: Is the first element of the DF correct?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn)
     assert(results.select(col("target")).first.getString(0) == "NGC0000000")

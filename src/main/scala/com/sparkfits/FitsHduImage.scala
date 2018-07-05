@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sparkfits
+package com.astrolabsoftware.sparkfits
 
 import org.apache.spark.sql.types._
 
-import com.sparkfits.FitsHdu._
-import com.sparkfits.FitsSchema.ReadMyType
+import com.astrolabsoftware.sparkfits.FitsHdu._
+import com.astrolabsoftware.sparkfits.FitsSchema.ReadMyType
 
 /**
   * Contain class and methods to manipulate Image HDU.

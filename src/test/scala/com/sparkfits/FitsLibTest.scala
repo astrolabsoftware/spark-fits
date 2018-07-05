@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sparkfits
+package com.astrolabsoftware.sparkfits
 
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.conf.Configuration
 
-import com.sparkfits.FitsLib._
-import com.sparkfits.FitsSchema._
-import com.sparkfits.FitsHduBintable._
-import com.sparkfits.FitsHduImage._
+import com.astrolabsoftware.sparkfits.FitsLib._
+import com.astrolabsoftware.sparkfits.FitsSchema._
+import com.astrolabsoftware.sparkfits.FitsHduBintable._
+import com.astrolabsoftware.sparkfits.FitsHduImage._
 
 /**
   * Test class for the FitsSchema object.

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sparkfits
+package com.astrolabsoftware.sparkfits
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
@@ -36,7 +36,7 @@ object ReadFits {
     // Loop over the two HDU of the test file
     for (hdu <- 2 to 2) {
       val df = spark.read
-        .format("com.sparkfits")
+        .format("com.astrolabsoftware.sparkfits")
         .option("hdu", hdu)                 // Index of the HDU
         .option("verbose", true)            // pretty print
         .option("recordlength", 1 * 1024)   // 1 KB per record

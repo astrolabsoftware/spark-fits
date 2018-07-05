@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sparkfits
+package com.astrolabsoftware.sparkfits
 
 import scala.util.Try
 
@@ -30,9 +30,9 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.sources.TableScan
 import org.apache.spark.sql.sources.BaseRelation
 
-import com.sparkfits.FitsLib.Fits
-import com.sparkfits.FitsSchema.getSchema
-import com.sparkfits.FitsFileInputFormat._
+import com.astrolabsoftware.sparkfits.FitsLib.Fits
+import com.astrolabsoftware.sparkfits.FitsSchema.getSchema
+import com.astrolabsoftware.sparkfits.FitsFileInputFormat._
 
 /**
   * Data Source API implementation for FITS.
@@ -44,7 +44,7 @@ import com.sparkfits.FitsFileInputFormat._
   * {{{
   * scala> val fn = "src/test/resources/test_file.fits"
   * scala> val df = spark.read
-  *  .format("com.sparkfits")
+  *  .format("com.astrolabsoftware.sparkfits")
   *  .option("hdu", 1)
   *  .option("verbose", true)
   *  .load(fn)

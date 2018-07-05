@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sparkfits
+package com.astrolabsoftware.sparkfits
 
 import org.apache.spark.sql.types._
 
-import com.sparkfits.FitsLib.Fits
+import com.astrolabsoftware.sparkfits.FitsLib.Fits
 
 /**
   * Object to handle the conversion from a HDU header to a DataFrame Schema.
@@ -52,7 +52,7 @@ object FitsSchema {
       case x if fitstype.contains("A") => StructField(name, StringType, isNullable)
       case _ => {
         println(s"""FitsSchema.ReadMyType> Cannot infer type $fitstype from the header!
-            See com.sparkfits.FitsSchema.scala
+            See com.astrolabsoftware.sparkfits.FitsSchema.scala
             """)
         StructField(name, StringType, isNullable)
       }
