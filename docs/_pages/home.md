@@ -2,12 +2,12 @@
 layout: splash
 permalink: /
 header:
-  overlay_color: "#5e616c"
-  overlay_image: /assets/images/background.png
+  overlay_color: "#376293"
+  overlay_image:
   cta_label: "<i class='fas fa-download'></i> Install Now"
   cta_url: "/docs/installation/"
   caption:
-excerpt: 'Distribute FITS data with Apache Spark: Binary tables, images and more!<br /> <small><a href="https://github.com/astrolabsoftware/spark-fits/releases/tag/0.4.0">Latest release v0.4.0</a></small><br /><br /> {::nomarkdown}<iframe style="display: inline-block;" src="https://ghbtns.com/github-btn.html?user=astrolabsoftware&repo=spark-fits&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe> <iframe style="display: inline-block;" src="https://ghbtns.com/github-btn.html?user=astrolabsoftware&repo=spark-fits&type=fork&count=true&size=large" frameborder="0" scrolling="0" width="158px" height="30px"></iframe>{:/nomarkdown}'
+excerpt: 'Distribute FITS data with Apache Spark: Binary tables, images and more!<br /> <small><a href="https://github.com/astrolabsoftware/spark-fits/releases/tag/0.5.0">Latest release v0.5.0</a></small><br /><br /> {::nomarkdown}<iframe style="display: inline-block;" src="https://ghbtns.com/github-btn.html?user=astrolabsoftware&repo=spark-fits&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe> <iframe style="display: inline-block;" src="https://ghbtns.com/github-btn.html?user=astrolabsoftware&repo=spark-fits&type=fork&count=true&size=large" frameborder="0" scrolling="0" width="158px" height="30px"></iframe>{:/nomarkdown}'
 feature_row:
   - image_path:
     alt:

@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sparkfits
+package com.astrolabsoftware.sparkfits
 
 import scala.util.Try
 
 import org.apache.spark.sql.types.StructField
 
-import com.sparkfits.FitsHdu._
-import com.sparkfits.FitsSchema.ReadMyType
+import com.astrolabsoftware.sparkfits.FitsHdu._
+import com.astrolabsoftware.sparkfits.FitsSchema.ReadMyType
 
 /**
   * Contain class and methods to manipulate Bintable HDU.
@@ -245,7 +245,7 @@ object FitsHduBintable {
         case _ => {
           println(s"""
             FitsLib.getSplitLocation> Cannot infer size of type $shortType
-            from the header! See com.sparkfits.FitsLib.getSplitLocation
+            from the header! See com.astrolabsoftware.sparkfits.FitsLib.getSplitLocation
               """)
           0
         }

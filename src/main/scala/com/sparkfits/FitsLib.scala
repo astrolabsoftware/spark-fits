@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sparkfits
+package com.astrolabsoftware.sparkfits
 
 import java.nio.charset.StandardCharsets
 
@@ -22,7 +22,7 @@ import scala.util.Try
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.conf.Configuration
 
-import com.sparkfits.FitsHdu._
+import com.astrolabsoftware.sparkfits.FitsHdu._
 
 /**
   * This is the beginning of a FITS library in Scala.

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sparkfits
+package com.astrolabsoftware.sparkfits
 
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
@@ -59,7 +59,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if the user provides the HDU index to be read
   test("HDU test: Is there a HDU number?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
     val exception = intercept[NoSuchElementException] {
       results.load(fn)
     }
@@ -68,7 +68,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if the user provides the HDU index to be read
   test("HDU test: Is HDU index above the max HDU index?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
     val exception = intercept[AssertionError] {
       results.option("hdu", 30).load(fn)
     }
@@ -76,13 +76,13 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   }
 
   test("HDU type test: Return an empty DataFrame if HDU is empty?") {
-    val results = spark.read.format("com.sparkfits").option("hdu", 0).load(fn)
+    val results = spark.read.format("com.astrolabsoftware.sparkfits").option("hdu", 0).load(fn)
     assert(results.collect().size == 0)
   }
 
   test("HDU type test: Return the proper record count if HDU is an image?") {
     val fn_image = "src/test/resources/toTest/tst0009.fits"
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 2)
       .load(fn_image)
     val count = results.count()
@@ -92,7 +92,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Test if the user provides the data type in the HDU
   test("HDU type test: Return an empty DF if the HDU is a Table? (not implemented yet)") {
     val fn_table = "src/test/resources/toTest/tst0009.fits"
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn_table)
     val count = results.count()
@@ -101,7 +101,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if one accesses column as expected for HDU 1
   test("Count test: Do you count all elements in a column in HDU 1?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn)
     assert(results.select("RA").count() == 20000)
@@ -109,7 +109,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if one accesses column as expected for HDU 1
   test("Count test: Do you count all elements in a column in HDU 2?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 2)
       .load(fn)
     assert(results.select("Index").count() == 20000)
@@ -117,7 +117,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if one accesses column as expected for HDU 1
   test("Column test: Can you select only one column?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .option("columns", "target")
       .load(fn)
@@ -126,7 +126,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if one accesses column as expected for HDU 1
   test("Column test: Can you select only some columns?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .option("columns", "target,RA")
       .load(fn)
@@ -135,7 +135,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Boolean?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 2)
       .load(fn)
     // Elements of a column are arrays of 1 element
@@ -144,7 +144,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Long?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
@@ -153,7 +153,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Int?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
@@ -162,7 +162,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Float?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
@@ -171,7 +171,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Double?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element
@@ -180,7 +180,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if type cast is done correctly
   test("Type test: Do you see a String?") {
-    val results = spark.read.format("com.sparkfits")
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn)
     // Elements of a column are arrays of 1 element

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.sparkfits
+package com.astrolabsoftware.sparkfits
 
 // Scala dependencies
 import scala.util.Try
@@ -30,7 +30,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.spark.sql.Row
 
 // Internal dependencies
-import com.sparkfits.FitsLib.Fits
+import com.astrolabsoftware.sparkfits.FitsLib.Fits
 
 /**
   * Class to handle the relationship between executors & HDFS when reading a
