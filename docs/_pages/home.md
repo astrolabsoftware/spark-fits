@@ -3,7 +3,7 @@ layout: splash
 permalink: /
 header:
   overlay_color: "#376293"
-  overlay_image: /assets/images/background.jpg
+  overlay_image: "/assets/images/background.jpg"
   cta_label: "<i class='fas fa-download'></i> <small><a href="https://github.com/astrolabsoftware/spark-fits/releases/tag/0.5.0">Latest release v0.5.0</a></small>"
   cta_url: "/docs/installation/"
   caption:
