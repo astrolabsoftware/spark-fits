@@ -71,7 +71,7 @@ if __name__ == "__main__":
     ## Loop over HDUs, and print a few rows with the schema.
     for hdu in range(1, 3):
         df = spark.read\
-            .format("com.sparkfits")\
+            .format("com.astrolabsoftware.sparkfits")\
             .option("hdu", hdu)\
             .load(args.inputpath)
 

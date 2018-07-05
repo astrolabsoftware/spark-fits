@@ -133,14 +133,14 @@ def aggregate_ccd(args):
         HDU[hdustop] included.
     """
     df_init = spark.read\
-        .format("com.sparkfits")\
+        .format("com.astrolabsoftware.sparkfits")\
         .option("hdu", args.hdustart)\
         .load(args.inputpath)
     imRDD = rowdf_into_imagerdd(df_init)
 
     for hdu in range(args.hdustart + 1, args.hdustop + 1):
         df = spark.read\
-            .format("com.sparkfits")\
+            .format("com.astrolabsoftware.sparkfits")\
             .option("hdu", hdu)\
             .load(args.inputpath)
         imRDD = imRDD.union(rowdf_into_imagerdd(df))
