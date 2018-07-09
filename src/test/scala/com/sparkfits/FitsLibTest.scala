@@ -40,6 +40,13 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     assert(fB1.isInstanceOf[Fits])
   }
 
+  // need to expand for other data type stored in the HDU 0...
+  test("FitsLib test: Can you read an Image stored in the 0th HDU?") {
+    val file0 = new Path("src/test/resources/toTest/tst0001.fits")
+    val fB1 = new Fits(file0, conf, 0)
+    assert(fB1.isInstanceOf[Fits])
+  }
+
   // Check that the HDU asked is below the max HDU index.
   test("FitsLib test: Can you detect wrong HDU index?") {
     val exception = intercept[AssertionError] {
