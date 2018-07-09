@@ -294,15 +294,31 @@ object FitsLib {
       val colNames = parseHeader(blockHeader)
 
       // Check if the HDU is empty, a table or an image
-      val isBintable = colNames.filter(
+      var isBintable = colNames.filter(
         x=>x._2.contains("BINTABLE")).values.toList.size > 0
-      val isTable = colNames.filter(
+      var isTable = colNames.filter(
         x=>x._2.contains("TABLE")).values.toList.size > 0
-      // TODO: The case where the primary header is an image is
-      // not handled here! Need to be fixed.
-      val isImage = colNames.filter(
+      var isImage = colNames.filter(
         x=>x._2.contains("IMAGE")).values.toList.size > 0
       val isEmpty = empty_hdu
+
+      // Case where you are neither a bintable, nor a table, nor an image...
+      // This happens if you are an zombie, or most likely in the HDU 0.
+      // For some obscure reason, the data type is not declared in the HDU 0,
+      // and therefore the previous piece of code cannot detect the data type.
+      // In 99% of the case, people store image in this zeroth HDU, so I will
+      // assume. This is not bug-free of course, and I might have to change this
+      // in the future. The reason why I'm spending plenty of time to describe
+      // a potential error instead of fixing it is that I do not know exactly
+      // how to fix it. Any ideas?
+      if (!isBintable && !isTable && !isImage && !isEmpty) {
+        // println("""
+        //   You are in the zeroth HDU with non-empty data block.
+        //   We are assuming that the data is an image HDU.
+        //   If this is not the case, goto FitsLib.scala.
+        //   """)
+        isImage = true
+      }
 
       val fitstype = if (isBintable) {
         "BINTABLE"
