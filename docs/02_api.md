@@ -43,7 +43,7 @@ object ReadFits extends App {
 
   // Read as a DataFrame a HDU of a table fits.
   val df = spark.read
-    .format("com.astrolabsoftware.sparkfits")
+    .format("fits")
     .option("hdu", <Int>)                 // [mandatory] Which HDU you want to read.
     .option("columns", <String>)          // [optional]  Comma-separated column names to load. Default loads all columns.
     .option("recordlength", <Int>)        // [optional]  If you want to define yourself the length of a record.
@@ -97,14 +97,14 @@ val userSchema = StructType(
 // Read as a DataFrame the first HDU of a table fits,
 // and infer schema from the header.
 val dfAutoHeader = spark.read
-  .format("com.astrolabsoftware.sparkfits")
+  .format("fits")
   .option("hdu", 1)
   .load(fn)
 
 // Read as a DataFrame the first HDU of a table fits,
 // and use a custom schema.
 val dfCustomHeader = spark.read
-  .format("com.astrolabsoftware.sparkfits")
+  .format("fits")
   .option("hdu", 1)
   .schema(userSchema)             // bypass the header, and read the userSchema
   .load(fn)
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
   ## Read as a DataFrame a HDU of a table fits.
   df = spark.read\
-    .format("com.astrolabsoftware.sparkfits")\
+    .format("fits")\
     .option("hdu", int)\
     .option("columns", str)\
     .option("recordlength", int)\
@@ -147,7 +147,7 @@ See full description of options in the Scala API:
 import org.apache.spark.sql.SparkSession
 
 DataFrame df = spark.read()
-  .format("com.astrolabsoftware.sparkfits")
+  .format("fits")
   .option("hdu", <Int>)
   .option("columns", <String>)
   .option("recordlength", <Int>)

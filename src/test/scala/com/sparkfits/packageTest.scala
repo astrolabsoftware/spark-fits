@@ -67,6 +67,12 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     assert(results.isInstanceOf[DataFrameReader])
   }
 
+  // Test if readfits does nothing :D
+  test("Readfits test: Do you yout nickname?") {
+    val results = spark.read.format("fits")
+    assert(results.isInstanceOf[DataFrameReader])
+  }
+
   // Test DataFrame
   test("DataFrame test: can you really make a DF from the hdu?") {
     val results = spark.read.format("com.astrolabsoftware.sparkfits")
