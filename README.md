@@ -13,7 +13,7 @@
 - [04/2018] **Talk**: Statistical challenges for large-scale structure in the era of LSST, Oxford. [slides](intensitymapping.physics.ox.ac.uk/SCLSS/Slides/Peloton.pdf)
 - [05/2018] **Release**: version 0.4.0
 - [06/2018] **New location**: spark-fits is an official project of [AstroLab](https://astrolabsoftware.github.io/)!
-- [07/2018] **Release**: version 0.5.0
+- [07/2018] **Release**: version 0.5.0, 0.6.0
 
 ## spark-fits
 
