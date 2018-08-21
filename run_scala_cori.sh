@@ -27,7 +27,7 @@ start-all.sh
 shifter spark-submit \
   --master $SPARKURL \
   --driver-memory 15g --executor-memory 50g --executor-cores 32 --total-executor-cores 192 \
-  --class com.sparkfits.ReadFits \
+  --class com.astrolabsoftware.sparkfits.ReadFits \
   target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
   $fitsfn
 stop-all.sh
