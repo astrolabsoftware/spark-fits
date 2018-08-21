@@ -32,7 +32,7 @@ fitsfn="hdfs://134.158.75.222:8020//lsst/tests/toTest/tst0009.fits"
 
 
 # Run it!
-cmd="spark-submit --master spark://134.158.75.222:7077 --driver-memory 4g --executor-memory 18g --class com.sparkfits.ReadFits target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar $fitsfn"
+cmd="spark-submit --master spark://134.158.75.222:7077 --driver-memory 4g --executor-memory 18g --class com.astrolabsoftware.sparkfits.ReadFits target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar $fitsfn"
 
 $cmd
 
