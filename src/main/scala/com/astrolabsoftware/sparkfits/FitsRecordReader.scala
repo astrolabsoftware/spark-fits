@@ -31,6 +31,7 @@ import org.apache.spark.sql.Row
 
 // Internal dependencies
 import com.astrolabsoftware.sparkfits.FitsLib.Fits
+import com.astrolabsoftware.sparkfits.FitsLib.FITSBLOCK_SIZE_BYTES
 
 /**
   * Class to handle the relationship between executors & HDFS when reading a
@@ -155,6 +156,9 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     // Initialise our block (header + data)
     fits = new Fits(file, conf, conf.get("hdu").toInt)
 
+    // Just get info on the primary block
+    val primaryfits = new Fits(file, conf, 0)
+
     // Define the bytes indices of our block
     // hdu_start=header_start, dataStart, dataStop, hdu_stop
     startstop = fits.blockBoundaries
@@ -182,7 +186,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       false
     }
 
-    val splitStart_tmp = if(start_theo <= startstop.dataStart && !notValid) {
+    val splitStart_tmp = if (start_theo <= startstop.dataStart && !notValid) {
       // Valid block: starting index.
       // We are just before the targeted HDU, therefore
       // we jump at the beginning of the data block
@@ -191,7 +195,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       start_theo
     }
 
-    splitEnd = if(stop_theo <= startstop.dataStop && !notValid) {
+    splitEnd = if (stop_theo <= startstop.dataStop && !notValid) {
       // Valid block: ending index (start/end inside)
       // We are inside the targeted HDU
       stop_theo
@@ -220,14 +224,31 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     // Summary: Add last row if we start the block at the middle of a row.
     // We assume that fileSplit.getStart starts at the
     // beginning of the data block for the first valid block.
-    splitStart = if((splitStart_tmp) % rowSizeLong != startstop.dataStart &&
+
+    // Here is an attempt to fix a bug when reading images:
+    //
+    // I noticed that when an image is split across several HDFS blocks,
+    // the transition is not done correctly, and there is one line typically
+    // missing. After some manual inspection, I found that introducing a shift
+    // in the starting index helps removing the bug. The shift is function of
+    // the HDU index, and depends whether the primary HDU is empty or not.
+    // By far I'm not convinced about this fix in general, but it works for
+    // the few examples that I tried. If you face a similar problem,
+    // or find a general solution, let me know!
+    var shift = if (primaryfits.empty_hdu) {
+      FITSBLOCK_SIZE_BYTES * (conf.get("hdu").toInt - 3)
+    } else {
+      FITSBLOCK_SIZE_BYTES * (conf.get("hdu").toInt - 1)
+    }
+
+    splitStart = if((splitStart_tmp) % rowSizeLong != 0 &&
       splitStart_tmp != startstop.dataStart && splitStart_tmp != 0) {
 
       // Decrement the starting index to fully catch the line we are sitting on
       var tmp_byte = 0
       do {
         tmp_byte = tmp_byte - 1
-      } while ((splitStart_tmp + tmp_byte) % rowSizeLong != 0)
+      } while ((splitStart_tmp + tmp_byte + shift) % rowSizeLong != 0)
 
       // Return offseted starting index
       splitStart_tmp + tmp_byte
@@ -301,16 +322,16 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
     // If (getPos + recordLength) goes above splitEnd
     recordLength = if ((startstop.dataStop - fits.data.getPos) < recordLength.toLong) {
-        (startstop.dataStop - fits.data.getPos).toInt
+      (startstop.dataStop - fits.data.getPos).toInt
     } else {
-        recordLength
+      recordLength
     }
 
     // If (currentPosition + recordLength) goes above splitEnd
     recordLength = if ((splitEnd - currentPosition) < recordLength.toLong) {
-        (splitEnd - currentPosition).toInt
+      (splitEnd - currentPosition).toInt
     } else {
-        recordLength
+      recordLength
     }
 
     // Last record may not end at the end of a row.
