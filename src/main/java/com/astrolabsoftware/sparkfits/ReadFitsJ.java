@@ -1,3 +1,18 @@
+/*
+ * Copyright 2018 AstroLab Software
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.astrolabsoftware.sparkfits;
 
 import org.apache.spark.sql.SparkSession;
@@ -15,16 +30,16 @@ public class ReadFitsJ {
     Logger.getLogger("akka").setLevel(Level.WARN);
     spark = SparkSession.builder()
                         .master("local")
-                        .appName("ReadFits")
+                        .appName("ReadFitsJ")
                         .getOrCreate();
     }
 
   public static void main(String[] args) {
     for (int hdu : new Integer[]{2}) {
       Dataset<Row> df = spark.read()
-                             .format("com.astrolabsoftware.sparkfits")
+                             .format("fits")
                              .option("hdu", hdu)
-                             .option("verbose", true) 
+                             .option("verbose", true)
                              .option("recordlength", 1 * 1024)
                              .load(args[0].toString());
       log.info("show>");
@@ -35,8 +50,8 @@ public class ReadFitsJ {
       }
     }
 
-  private static SparkSession spark;  
-    
+  private static SparkSession spark;
+
   private static Logger log = Logger.getLogger(ReadFitsJ.class);
-  
+
   }
