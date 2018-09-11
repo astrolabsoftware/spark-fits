@@ -34,9 +34,9 @@ object ReadFits {
   def main(args : Array[String]) = {
 
     // Loop over the two HDU of the test file
-    for (hdu <- 2 to 2) {
+    for (hdu <- 1 to 2) {
       val df = spark.read
-        .format("com.astrolabsoftware.sparkfits")
+        .format("fits")
         .option("hdu", hdu)                 // Index of the HDU
         .option("verbose", true)            // pretty print
         .option("recordlength", 1 * 1024)   // 1 KB per record
