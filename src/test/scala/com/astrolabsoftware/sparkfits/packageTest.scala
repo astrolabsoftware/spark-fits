@@ -150,6 +150,19 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       .option("recordlength", 16 * 1024)
 
     assert(results.load(fn).isInstanceOf[DataFrame])
+    assert(results.load(fn).count() == 27000)
+  }
+
+  test("Multi files test: Can you read several FITS file (glob)?") {
+    val fn = "src/test/resources/dir/*.fits"
+    val df = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .option("verbose", true)
+      .option("recordlength", 16 * 1024)
+      .load(fn)
+
+    assert(df.isInstanceOf[DataFrame])
+    assert(df.count() == 27000)
   }
 
   test("Multi files test: Can you detect an error in reading different FITS file?") {
