@@ -57,7 +57,8 @@ Note that the file can be in a local system
 (`path="file://path/myfile.fits"`) or in HDFS
 (`path="hdfs://<IP>:<PORT>//path/myfile.fits"`). You can also specify a
 directory containing a set of FITS files
-(`path="hdfs://<IP>:<PORT>//path_to_dir"`) with the same HDU structure.
+(`path="hdfs://<IP>:<PORT>//path_to_dir"`) with the same HDU structure, or you
+can apply globbing patterns (`path="hdfs://<IP>:<PORT>//path_to_dir/*.fits"`).
 The connector will load the data from the same HDU from all the files in
 one single DataFrame. This is particularly useful to manipulate many
 small files written the same way as one.

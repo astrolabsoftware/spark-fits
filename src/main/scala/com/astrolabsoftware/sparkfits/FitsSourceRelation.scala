@@ -128,7 +128,8 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
   /**
     * Search for input FITS files. The input path can be either a single
     * FITS file, or a folder containing several FITS files with the
-    * same HDU structure. Raise a NullPointerException if no files found.
+    * same HDU structure, or a globbing structure e.g. "toto/\*.fits".
+    * Raise a NullPointerException if no files found.
     *
     * @param fn : (String)
     *   Input path.
@@ -140,14 +141,20 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     val path = new Path(fn)
     val fs = path.getFileSystem(conf)
 
+    // Check whether we are globbing
+    val isGlob : Boolean = Try{fs.globStatus(path).size > 1}.getOrElse(false)
+
     // Check whether we want to load a single FITS file or several
-    val isDir = fs.isDirectory(path)
-    val isFile = fs.isFile(path)
+    val isDir : Boolean = fs.isDirectory(path)
+    val isFile : Boolean = fs.isFile(path)
 
     // println(s"isDir=$isDir isFile=$isFile path=$path")
 
     // List all the files
-    val listOfFitsFiles : List[String] = if (isDir) {
+    val listOfFitsFiles : List[String] = if (isGlob) {
+      val arr = fs.globStatus(path)
+      arr.map(x => x.getPath.toString).toList
+    } else if (isDir) {
       val it = fs.listFiles(path, true)
       getListOfFiles(it).filter{file => file.endsWith(".fits")}
     } else if (isFile){
