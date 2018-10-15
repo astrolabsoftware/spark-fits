@@ -14,6 +14,7 @@
 - [05/2018] **Release**: version 0.4.0
 - [06/2018] **New location**: spark-fits is an official project of [AstroLab](https://astrolabsoftware.github.io/)!
 - [07/2018] **Release**: version 0.5.0, 0.6.0
+- [10/2018] **Release**: version 0.7.0
 
 ## spark-fits
 
@@ -31,7 +32,7 @@ Currently available:
 
 -   Read fits file and organize the HDU data into DataFrames.
 -   Automatically distribute bintable rows over machines.
--   Automatically distribute image rows over machines. **new in 0.4.0**
+-   Automatically distribute image rows over machines.
 -   Automatically infer DataFrame schema from the HDU header.
 
 ## Header Challenge!

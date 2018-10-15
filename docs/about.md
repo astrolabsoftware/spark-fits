@@ -21,7 +21,7 @@ Currently available:
 
 -   Read fits file and organize the HDU data into DataFrames.
 -   Automatically distribute bintable rows over machines.
--   Automatically distribute image rows over machines. **new in 0.4.0**
+-   Automatically distribute image rows over machines.
 -   Automatically infer DataFrame schema from the HDU header.
 
 ## Support
