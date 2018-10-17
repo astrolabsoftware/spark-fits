@@ -313,7 +313,8 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     // Union if more than one file
     for ((file, index) <- fns.slice(1, nFiles).zipWithIndex) {
       rdd = if (implemented) {
-        rdd.union(loadOneHDU(file))
+        // rdd.union(loadOneHDU(file))
+        sqlContext.sparkContext.union(rdd, loadOneHDU(file))
       } else {
         rdd.union(loadOneEmpty)
       }
