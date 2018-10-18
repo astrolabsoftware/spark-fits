@@ -313,14 +313,19 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     // }
 
     // Union if more than one file
+    // val rdd = if (implemented) {
+    //   sqlContext.sparkContext.union(
+    //     fns.map(file => loadOneHDU(fns.mkString(",")))
+    //   )
+    // } else {
+    //   sqlContext.sparkContext.union(
+    //     fns.map(file => loadOneEmpty)
+    //   )
+    // }
     val rdd = if (implemented) {
-      sqlContext.sparkContext.union(
-        fns.map(file => loadOneHDU(file))
-      )
+      loadOneHDU(fns.mkString(","))
     } else {
-      sqlContext.sparkContext.union(
-        fns.map(file => loadOneEmpty)
-      )
+      loadOneEmpty
     }
     // val rdd = sqlContext.sparkContext.union(
     //   fns.map(file => loadOneHDU(file))
@@ -348,25 +353,25 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
   def loadOneHDU(fn : String): RDD[Row] = {
 
     // Open one file
-    val path = new Path(fn)
-    val indexHDU = conf.get("hdu").toInt
-    val fits = new Fits(path, conf, indexHDU)
-
-    // Register header and block boundaries in the Hadoop configuration
-    fits.registerHeader
-    fits.blockBoundaries.register(path, conf)
-
-    // Check the header if needed
-    if (verbosity) {
-      println(s"+------ FILE $fn ------+")
-      println(s"+------ HEADER (HDU=$indexHDU) ------+")
-      fits.blockHeader.foreach(println)
-      println("+----------------------------+")
-    }
-
-    // We do not need the data on the driver at this point.
-    // The executors will re-open it later on.
-    fits.data.close()
+    // val path = new Path(fn)
+    // val indexHDU = conf.get("hdu").toInt
+    // val fits = new Fits(path, conf, indexHDU)
+    //
+    // // Register header and block boundaries in the Hadoop configuration
+    // fits.registerHeader
+    // fits.blockBoundaries.register(path, conf)
+    //
+    // // Check the header if needed
+    // if (verbosity) {
+    //   println(s"+------ FILE $fn ------+")
+    //   println(s"+------ HEADER (HDU=$indexHDU) ------+")
+    //   fits.blockHeader.foreach(println)
+    //   println("+----------------------------+")
+    // }
+    //
+    // // We do not need the data on the driver at this point.
+    // // The executors will re-open it later on.
+    // fits.data.close()
 
     // Distribute the table data
     sqlContext.sparkContext.newAPIHadoopFile(fn,
