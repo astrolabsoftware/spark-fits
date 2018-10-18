@@ -96,12 +96,6 @@ import com.astrolabsoftware.sparkfits.FitsFileInputFormat._
 class FitsRelation(parameters: Map[String, String], userSchema: Option[StructType])(@transient val sqlContext: SQLContext)
     extends BaseRelation with TableScan {
 
-  // override def toString: String = "FITS"
-  //
-  // override def hashCode(): Int = getClass.hashCode()
-  //
-  // override def equals(other: Any): Boolean = other.isInstanceOf[FitsFileInputFormat]
-
   // Level of verbosity
   var verbosity : Boolean = false
 
@@ -253,14 +247,12 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
   /**
     * Create a RDD[Row] from the data of one HDU.
     * The input can be either the path to one FITS file (path + filename),
-    * or the path to a directory containing FITS files. In the latter,
-    * the code will load all FITS files listed inside this directory
-    * and make the union of the HDU data. Needless to say that the FITS
-    * files must have the same structure, otherwise the union will be impossible.
+    * or the path to a directory containing FITS files or a glob on a
+    * directory (*.fits). Needless to say that the FITS files must
+    * have the same structure, otherwise the union will be impossible.
     * The format of the input must be a String with Hadoop format
     *   - (local) file://path/to/data
     *   - (HDFS)  hdfs://<IP>:<PORT>//path/to/data
-    *
     *
     * If the HDU type is not "implemented", return an empty RDD[Row].
     *
@@ -269,7 +261,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   with the same HDU structure.
     * @return (RDD[Row]) always one single RDD made from the HDU of
     *   one FITS file, or from the same kind of HDU from several FITS file.
-    *   Empty if the HDU type is not a BINTABLE.
+    *   Empty if the HDU type is not a BINTABLE or IMAGE.
     *
     */
   def load(fn : String): RDD[Row] = {
@@ -287,7 +279,9 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
   /**
     * Load the HDU data from several FITS file into a single RDD[Row].
     * The structure of the HDU must be the same, that is contain the
-    * same number of columns with the same name and element types.
+    * same number of columns with the same name and element types. Note that
+    * we pass the list of all the files to newAPIHadoopFile directly, and
+    * Spark (Hadoop) does the union on its own. So powerful...
     *
     * If the HDU type is not "implemented", return an empty RDD[Row].
     *
@@ -295,7 +289,7 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *   List of filenames with the same structure.
     * @return (RDD[Row]) always one single RDD[Row] made from the HDU of
     *   one FITS file, or from the same kind of HDU from several FITS file.
-    *   Empty if the HDU type is not a BINTABLE.
+    *   Empty if the HDU type is not a BINTABLE or IMAGE.
     *
     */
   def load(fns : List[String], implemented: Boolean): RDD[Row] = {
