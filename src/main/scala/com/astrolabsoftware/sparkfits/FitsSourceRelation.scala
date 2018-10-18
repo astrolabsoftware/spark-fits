@@ -282,8 +282,6 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
 
     // Load one or all the FITS files found
     load(listOfFitsFiles, implemented)
-    // sqlContext.sparkContext.setCheckpointDir("file:///Users/julien/Documents/workspace/myrepos/spark-fits/checkpoint")
-    // rdd.checkpoint()
   }
 
   /**
@@ -302,83 +300,24 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     */
   def load(fns : List[String], implemented: Boolean): RDD[Row] = {
 
-    // Number of files
-    val nFiles = fns.size
+    if (verbosity) {
+      // Check number of files
+      val nFiles = fns.size
+      println("NFILES: ", nFiles)
+    }
 
-    // Initialise
-    // var rdd = if (implemented) {
-    //   loadOneHDU(fns(0))
-    // } else {
-    //   loadOneEmpty
-    // }
-
-    // Union if more than one file
-    // val rdd = if (implemented) {
-    //   sqlContext.sparkContext.union(
-    //     fns.map(file => loadOneHDU(fns.mkString(",")))
-    //   )
-    // } else {
-    //   sqlContext.sparkContext.union(
-    //     fns.map(file => loadOneEmpty)
-    //   )
-    // }
     val rdd = if (implemented) {
-      loadOneHDU(fns.mkString(","))
+      // Distribute the table data
+      sqlContext.sparkContext.newAPIHadoopFile(fns.mkString(","),
+        classOf[FitsFileInputFormat],
+        classOf[LongWritable],
+        classOf[Seq[Row]],
+        conf).flatMap(x => x._2)
     } else {
+      // If HDU not implemented, return an empty RDD
       loadOneEmpty
     }
-    // val rdd = sqlContext.sparkContext.union(
-    //   fns.map(file => loadOneHDU(file))
-    // )
-    // for ((file, index) <- fns.slice(1, nFiles).zipWithIndex) {
-    //   rdd = if (implemented) {
-    //     // rdd.union(loadOneHDU(file))
-    //     // sqlContext.sparkContext.union(rdd, loadOneHDU(file))
-    //     rdd.union(loadOneHDU(file))
-    //   } else {
-    //     // rdd.union(loadOneEmpty)
-    //     // sqlContext.sparkContext.union(rdd, loadOneEmpty)
-    //     rdd.union(loadOneEmpty)
-    //   }
-    // }
     rdd
-  }
-
-  /** Load a xxx FITS data contained in one HDU as a RDD[Row].
-    *
-    * @param fn : (String)
-    *   Path + filename of the fits file to be read.
-    * @return : RDD[Row] made from one single HDU.
-    */
-  def loadOneHDU(fn : String): RDD[Row] = {
-
-    // Open one file
-    // val path = new Path(fn)
-    // val indexHDU = conf.get("hdu").toInt
-    // val fits = new Fits(path, conf, indexHDU)
-    //
-    // // Register header and block boundaries in the Hadoop configuration
-    // fits.registerHeader
-    // fits.blockBoundaries.register(path, conf)
-    //
-    // // Check the header if needed
-    // if (verbosity) {
-    //   println(s"+------ FILE $fn ------+")
-    //   println(s"+------ HEADER (HDU=$indexHDU) ------+")
-    //   fits.blockHeader.foreach(println)
-    //   println("+----------------------------+")
-    // }
-    //
-    // // We do not need the data on the driver at this point.
-    // // The executors will re-open it later on.
-    // fits.data.close()
-
-    // Distribute the table data
-    sqlContext.sparkContext.newAPIHadoopFile(fn,
-      classOf[FitsFileInputFormat],
-      classOf[LongWritable],
-      classOf[Seq[Row]],
-      conf).flatMap(x => x._2)
   }
 
   /**
