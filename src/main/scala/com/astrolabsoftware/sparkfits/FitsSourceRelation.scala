@@ -197,6 +197,9 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     * the same. Throw an AssertionError otherwise.
     * The check is performed only for BINTABLE.
     *
+    * NOTE: This operation is very long for many files! Do not use it for
+    * hundreds of files!
+    *
     * @param listOfFitsFiles : (List[String])
     *   List of files as a list of String.
     * @return (String) the type of HDU: BINTABLE, IMAGE, EMPTY, or
@@ -256,6 +259,8 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     *
     * If the HDU type is not "implemented", return an empty RDD[Row].
     *
+    * NOTE: Schema check needs to be fixed!
+    *
     * @param fn : (String)
     *   Filename of the fits file to be read, or a directory containing FITS files
     *   with the same HDU structure.
@@ -270,7 +275,14 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
 
     // Check that all the files have the same Schema
     // in order to perform the union. Return the HDU type.
-    val implemented = checkSchemaAndReturnType(listOfFitsFiles)
+    // NOTE: This operation is very long for hundreds of files!
+    // NOTE: Limit that to the first 10 files.
+    // NOTE: Need to be fixed!
+    val implemented = if (listOfFitsFiles.size < 10) {
+      checkSchemaAndReturnType(listOfFitsFiles)
+    } else{
+      checkSchemaAndReturnType(listOfFitsFiles.slice(0, 10))
+    }
 
     // Load one or all the FITS files found
     load(listOfFitsFiles, implemented)
