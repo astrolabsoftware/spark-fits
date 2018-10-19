@@ -14,14 +14,14 @@ option. For example, to include it when starting the spark shell
 (**Spark compiled with Scala 2.11**):
 
 ```bash
-$SPARK_HOME/bin/spark-shell --packages com.github.astrolabsoftware:spark-fits_2.11:0.7.0
+$SPARK_HOME/bin/spark-shell --packages com.github.astrolabsoftware:spark-fits_2.11:0.7.1
 ```
 
 Using `--packages` ensures that this library and its dependencies will
 be added to the classpath (make sure you use the latest version). In Python, you would do the same
 
 ```bash
-$SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.11:0.7.0
+$SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.11:0.7.1
 ```
 
 Alternatively to have the latest development you can download this repo
