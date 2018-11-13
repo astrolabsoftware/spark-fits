@@ -44,8 +44,8 @@ lazy val root = (project in file(".")).
    // assemblyShadeRules in assembly := Seq(ShadeRule.rename("nom.**" -> "new_nom.@1").inAll),
    // Put dependencies of the library
    libraryDependencies ++= Seq(
-     "org.apache.spark" %% "spark-core" % "2.1.0" % "provided",
-     "org.apache.spark" %% "spark-sql" % "2.1.0" % "provided",
+     "org.apache.spark" %% "spark-core" % "2.3.2" % "provided",
+     "org.apache.spark" %% "spark-sql" % "2.3.2" % "provided",
      scalaTest % Test
    )
  )
