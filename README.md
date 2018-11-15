@@ -7,10 +7,9 @@
 
 ## Latest news
 
-- [01/2018] **Launch**: spark-fits is created!
+- [01/2018] **Launch**: project starts!
 - [03/2018] **Release**: version 0.3.0
 - [04/2018] **Paper**: [![Arxiv](http://img.shields.io/badge/arXiv-1804.07501-yellow.svg?style=platic)](https://arxiv.org/abs/1804.07501)
-- [04/2018] **Talk**: Statistical challenges for large-scale structure in the era of LSST, Oxford. [slides](intensitymapping.physics.ox.ac.uk/SCLSS/Slides/Peloton.pdf)
 - [05/2018] **Release**: version 0.4.0
 - [06/2018] **New location**: spark-fits is an official project of [AstroLab](https://astrolabsoftware.github.io/)!
 - [07/2018] **Release**: version 0.5.0, 0.6.0
@@ -26,7 +25,7 @@ Spark](http://spark.apache.org/):
 -   A Scala library to manipulate FITS file.
 
 The user interface has been done to be the same as other built-in Spark
-data sources (CSV, JSON, Avro, Parquet, etc). See our [website](https://astrolabsoftware.github.io/spark-fits/) for more information.
+data sources (CSV, JSON, Avro, Parquet, etc). Note that spark-fits follows Apache Spark Data Source V1 ([plan](https://github.com/astrolabsoftware/spark-fits/issues/50) to migrate to V2). See our [website](https://astrolabsoftware.github.io/spark-fits/) for more information.
 
 Currently available:
 
