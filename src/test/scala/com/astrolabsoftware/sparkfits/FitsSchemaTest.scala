@@ -80,6 +80,12 @@ class FitsSchemaTest extends FunSuite with BeforeAndAfterAll {
     assert(col.dataType.isInstanceOf[BooleanType])
   }
 
+  test("Schema test: can you convert the type Unsigned Byte for a column?") {
+    val col = ReadMyType("toto", "B")
+
+    assert(col.dataType.isInstanceOf[ByteType])
+  }
+
   test("Schema test: can you convert the name for a column?") {
     val col = ReadMyType("toto", "E")
 

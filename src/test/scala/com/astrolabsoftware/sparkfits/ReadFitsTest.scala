@@ -56,6 +56,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Add more and put a loop for several tests!
   val fn = "src/test/resources/test_file.fits"
+  val fnUb = "src/test/resources/test_file_ub.fits"
 
   // Test if the user provides the HDU index to be read
   test("HDU test: Is there a HDU number?") {
@@ -185,6 +186,15 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("target").first()(0).isInstanceOf[String])
+  }
+
+  // Test if type cast is done correctly
+  test("Type test: Do you see a Byte?") {
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fnUb)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("unsigned bytes").first()(0).isInstanceOf[Byte])
   }
 
 }
