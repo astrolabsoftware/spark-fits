@@ -217,7 +217,8 @@ object FitsHduBintable {
 
     /**
       * Companion routine to rowSplitLocations. Returns the size of a primitive
-      * according to its type from the FITS header.
+      * according to its type from the FITS header. More information about handled types can be
+      * found Table 18 of https://fits.gsfc.nasa.gov/standard40/fits_standard40aa.pdf
       *
       * @param fitstype : (String)
       *   Element type according to FITS standards (I, J, K, E, D, L, A, etc)
@@ -234,6 +235,7 @@ object FitsHduBintable {
         case x if shortType.contains("E") => 4
         case x if shortType.contains("D") => 8
         case x if shortType.contains("L") => 1
+        case x if shortType.contains("B") => 1
         case x if shortType.endsWith("X") => {
           // Example 16X means 2 bytes
           x.slice(0, x.length - 1).toInt / BYTE_SIZE
@@ -244,8 +246,8 @@ object FitsHduBintable {
         }
         case _ => {
           println(s"""
-            FitsLib.getSplitLocation> Cannot infer size of type $shortType
-            from the header! See com.astrolabsoftware.sparkfits.FitsLib.getSplitLocation
+            FitsHduBintable.getSplitLocation> Cannot infer size of type $shortType
+            from the header! See com.astrolabsoftware.sparkfits.FitsHduBintable.getSplitLocation
               """)
           0
         }

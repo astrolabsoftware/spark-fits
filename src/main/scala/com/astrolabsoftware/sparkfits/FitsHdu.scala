@@ -151,6 +151,10 @@ object FitsHdu {
           // 1 Byte containing the ASCII char T(rue) or F(alse).
           subbuf(0).toChar == 'T'
         }
+        // ISSUE-59: 8-bit (1 byte) unsigned byte
+        case x if shortType.contains("B") => {
+          ByteBuffer.wrap(subbuf, 0, 1).get()
+        }
         // Number of bits
         case x if shortType.endsWith("X") => {
           List(subbuf)
@@ -162,7 +166,7 @@ object FitsHdu {
         }
         case _ => {
           println(s"""
-            FitsLib.getElementFromBuffer> Cannot infer size of type
+            FitsHdu.getElementFromBuffer> Cannot infer size of type
             $shortType from the header! See getElementFromBuffer
               """)
           0
