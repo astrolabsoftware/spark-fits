@@ -138,6 +138,8 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     // Check whether we are globbing
     val isGlob : Boolean = Try{fs.globStatus(path).size > 1}.getOrElse(false)
 
+    val isCommaSep : Boolean = Try{fn.split(",").size > 1}.getOrElse(false)
+
     // Check whether we want to load a single FITS file or several
     val isDir : Boolean = fs.isDirectory(path)
     val isFile : Boolean = fs.isFile(path)
@@ -151,6 +153,8 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     } else if (isDir) {
       val it = fs.listFiles(path, true)
       getListOfFiles(it).filter{file => file.endsWith(".fits")}
+    } else if (isCommaSep) {
+      fn.split(",").toList
     } else if (isFile){
       List(fn)
     } else {
