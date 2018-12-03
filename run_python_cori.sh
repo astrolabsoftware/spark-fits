@@ -10,14 +10,14 @@ module load spark
 module load sbt
 
 ## SBT Version
-SBT_VERSION=2.11.8
-SBT_VERSION_SPARK=2.11
+SCALA_VERSION=2.11.8
+SCALA_VERSION_SPARK=2.11
 
 ## Package version
-VERSION=0.7.1
+VERSION=0.7.2
 
 # Package it
-sbt ++${SBT_VERSION} package
+sbt ++${SCALA_VERSION} package
 
 # Parameters (put your file)
 fitsfn="/global/cscratch1/sd/<user>/<path>"
@@ -27,7 +27,7 @@ start-all.sh
 shifter spark-submit \
   --master $SPARKURL \
   --driver-memory 15g --executor-memory 50g --executor-cores 32 --total-executor-cores 192 \
-  --jars target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
+  --jars target/scala-${SCALA_VERSION_SPARK}/spark-fits_${SCALA_VERSION_SPARK}-${VERSION}.jar \
   examples/python/readfits.py \
   -inputpath $fitsfn
 stop-all.sh

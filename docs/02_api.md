@@ -20,10 +20,10 @@ coordinates in your `build.sbt`:
 
 ```scala
 // %% will automatically set the Scala version needed for spark-fits
-libraryDependencies += "com.github.astrolabsoftware" %% "spark-fits" % "0.7.1"
+libraryDependencies += "com.github.astrolabsoftware" %% "spark-fits" % "0.7.2"
 
 // Alternatively you can also specify directly the Scala version, e.g.
-libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.11" % "0.7.1"
+libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.11" % "0.7.2"
 ```
 
 #### Scala 2.10.6 and 2.11.X
@@ -58,7 +58,8 @@ Note that the file can be in a local system
 (`path="hdfs://<IP>:<PORT>//path/myfile.fits"`). You can also specify a
 directory containing a set of FITS files
 (`path="hdfs://<IP>:<PORT>//path_to_dir"`) with the same HDU structure, or you
-can apply globbing patterns (`path="hdfs://<IP>:<PORT>//path_to_dir/*.fits"`).
+can apply globbing patterns (`path="hdfs://<IP>:<PORT>//path_to_dir/*.fits"`), or you
+can pass a string of comma-separated files (`path="hdfs://<IP>:<PORT>//path_to_dir/file1.fits,path="hdfs://<IP>:<PORT>//path_to_dir/file2.fits"`).
 The connector will load the data from the same HDU from all the files in
 one single DataFrame. This is particularly useful to manipulate many
 small files written the same way as one.

@@ -14,8 +14,8 @@
 # limitations under the License.
 
 ## SBT Version
-SBT_VERSION=2.11.8
+SCALA_VERSION=2.11.8
 
 # Clean and launch the test suite
-sbt ++${SBT_VERSION} clean
-sbt ++${SBT_VERSION} coverage test coverageReport
+sbt ++${SCALA_VERSION} clean
+sbt ++${SCALA_VERSION} coverage test coverageReport
