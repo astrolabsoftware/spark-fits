@@ -14,14 +14,14 @@
 # limitations under the License.
 
 ## SBT Version
-SBT_VERSION=2.11.8
-SBT_VERSION_SPARK=2.11
+SCALA_VERSION=2.11.8
+SCALA_VERSION_SPARK=2.11
 
 ## Package version
-VERSION=0.7.1
+VERSION=0.7.2
 
 # Package it
-sbt ++${SBT_VERSION} package
+sbt ++${SCALA_VERSION} package
 
 # Parameters (put your file)
 fitsfn="hdfs://134.158.75.222:8020//lsst/tests/tst0009.fits"
@@ -29,6 +29,6 @@ fitsfn="hdfs://134.158.75.222:8020//lsst/images/a.fits"
 
 
 # Run it!
-cmd="spark-submit --master spark://134.158.75.222:7077 --driver-memory 4g --executor-memory 18g --class com.astrolabsoftware.sparkfits.ReadImage target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar $fitsfn"
+cmd="spark-submit --master spark://134.158.75.222:7077 --driver-memory 4g --executor-memory 18g --class com.astrolabsoftware.sparkfits.ReadImage target/scala-${SCALA_VERSION_SPARK}/spark-fits_${SCALA_VERSION_SPARK}-${VERSION}.jar $fitsfn"
 
 $cmd

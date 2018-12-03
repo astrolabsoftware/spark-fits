@@ -14,14 +14,14 @@
 # limitations under the License.
 
 ## SBT Version
-SBT_VERSION=2.11.8
-SBT_VERSION_SPARK=2.11
+SCALA_VERSION=2.11.8
+SCALA_VERSION_SPARK=2.11
 
 ## Package version
-VERSION=0.7.1
+VERSION=0.7.2
 
 # Package it
-sbt ++${SBT_VERSION} package
+sbt ++${SCALA_VERSION} package
 
 # Parameters (put your file)
 fitsfn="file://$PWD/src/test/resources/test_file.fits"
@@ -30,5 +30,5 @@ fitsfn="file://$PWD/src/test/resources/test_file.fits"
 spark-submit \
   --master local[*] \
   --class com.astrolabsoftware.sparkfits.ReadFitsJ \
-  target/scala-${SBT_VERSION_SPARK}/spark-fits_${SBT_VERSION_SPARK}-${VERSION}.jar \
+  target/scala-${SCALA_VERSION_SPARK}/spark-fits_${SCALA_VERSION_SPARK}-${VERSION}.jar \
   $fitsfn

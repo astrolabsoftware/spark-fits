@@ -14,6 +14,7 @@
 - [06/2018] **New location**: spark-fits is an official project of [AstroLab](https://astrolabsoftware.github.io/)!
 - [07/2018] **Release**: version 0.5.0, 0.6.0
 - [10/2018] **Release**: version 0.7.0, 0.7.1
+- [12/2018] **Release**: version 0.7.2
 
 ## spark-fits
 
