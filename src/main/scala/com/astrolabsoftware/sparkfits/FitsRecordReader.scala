@@ -383,6 +383,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
 
     // We reached the end of the split.
     // We will now go to another split (if more available)
+    fits.data.close()
     false
   }
 }
