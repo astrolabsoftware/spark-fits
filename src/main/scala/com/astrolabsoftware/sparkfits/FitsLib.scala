@@ -266,7 +266,12 @@ object FitsLib {
 
         // Move to the another HDU if needed
         hduTmp = hduTmp + 1
-        data.seek(blockStop)
+
+        // S3 filesystem complains in the case of
+        // seek(len(file)), while HDFS does not.
+        Try{
+          data.seek(blockStop)
+        }.getOrElse{data.seek(blockStop - 1)}
 
       } while (hduTmp < hduIndex + 1)
 
@@ -401,7 +406,11 @@ object FitsLib {
             datalen + FITSBLOCK_SIZE_BYTES - (datalen % FITSBLOCK_SIZE_BYTES)
           }
 
-          data.seek(data.getPos + skipBytes)
+          // S3 filesystem complains in the case of
+          // seek(len(file)), while HDFS does not.
+          Try{
+            data.seek(data.getPos + skipBytes)
+          }.getOrElse{data.seek(data.getPos + skipBytes - 1)}
 
           // Move to the another HDU if needed
           currentHduIndex = currentHduIndex + 1
