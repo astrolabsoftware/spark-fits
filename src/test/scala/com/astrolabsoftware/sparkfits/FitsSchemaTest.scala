@@ -44,10 +44,22 @@ class FitsSchemaTest extends FunSuite with BeforeAndAfterAll {
     assert(col.dataType.isInstanceOf[FloatType])
   }
 
+  test("Schema test: can you convert the type Array(Float) for a column?") {
+    val col = ReadMyType("toto", "1E")
+
+    assert(col.dataType.isInstanceOf[ArrayType])
+  }
+
   test("Schema test: can you convert the type Double for a column?") {
     val col = ReadMyType("toto", "D")
 
     assert(col.dataType.isInstanceOf[DoubleType])
+  }
+
+  test("Schema test: can you convert the type Array(Double) for a column?") {
+    val col = ReadMyType("toto", "2D")
+
+    assert(col.dataType.isInstanceOf[ArrayType])
   }
 
   test("Schema test: can you convert the type String for a column?") {
@@ -62,16 +74,34 @@ class FitsSchemaTest extends FunSuite with BeforeAndAfterAll {
     assert(col.dataType.isInstanceOf[ShortType])
   }
 
+  test("Schema test: can you convert the type Array(Short) for a column?") {
+    val col = ReadMyType("toto", "3I")
+
+    assert(col.dataType.isInstanceOf[ArrayType])
+  }
+
   test("Schema test: can you convert the type Int for a column?") {
     val col = ReadMyType("toto", "J")
 
     assert(col.dataType.isInstanceOf[IntegerType])
   }
 
+  test("Schema test: can you convert the type Array(Int) for a column?") {
+    val col = ReadMyType("toto", "4J")
+
+    assert(col.dataType.isInstanceOf[ArrayType])
+  }
+
   test("Schema test: can you convert the type Long for a column?") {
     val col = ReadMyType("toto", "K")
 
     assert(col.dataType.isInstanceOf[LongType])
+  }
+
+  test("Schema test: can you convert the type Array(Long) for a column?") {
+    val col = ReadMyType("toto", "5K")
+
+    assert(col.dataType.isInstanceOf[ArrayType])
   }
 
   test("Schema test: can you convert the type Boolean for a column?") {

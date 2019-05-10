@@ -229,11 +229,46 @@ object FitsHduBintable {
       val shortType = FitsLib.shortStringValue(fitstype)
 
       shortType match {
-        case x if shortType.contains("I") => 2
-        case x if shortType.contains("J") => 4
-        case x if shortType.contains("K") => 8
-        case x if shortType.contains("E") => 4
-        case x if shortType.contains("D") => 8
+        case x if shortType.contains("I") => {
+          if (x == "I") {
+            2
+          } else {
+            // Multivalued columns. nI means array of n shorts
+            x.slice(0, x.length - 1).toInt * 2
+          }
+        }
+        case x if shortType.contains("J") => {
+          if (x == "J") {
+            4
+          } else {
+            // Multivalued columns. nJ means array of n ints
+            x.slice(0, x.length - 1).toInt * 4
+          }
+        }
+        case x if shortType.contains("K") => {
+          if (x == "K") {
+            8
+          } else {
+            // Multivalued columns. nK means array of n longs
+            x.slice(0, x.length - 1).toInt * 8
+          }
+        }
+        case x if shortType.contains("E") => {
+          if (x == "E") {
+            4
+          } else {
+            // Multivalued columns. nE means array of n floats
+            x.slice(0, x.length - 1).toInt * 4
+          }
+        }
+        case x if shortType.contains("D") => {
+          if (x == "D") {
+            8
+          } else {
+            // Multivalued columns. nD means array of n doubles
+            x.slice(0, x.length - 1).toInt * 8
+          }
+        }
         case x if shortType.contains("L") => 1
         case x if shortType.contains("B") => 1
         case x if shortType.endsWith("X") => {
