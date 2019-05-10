@@ -163,6 +163,15 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   }
 
   // Test if type cast is done correctly
+  test("Type test: Do you see a Short?") {
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fn_array)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("RunId").first()(0).isInstanceOf[Short])
+  }
+
+  // Test if type cast is done correctly
   test("Type test: Do you see a Float?") {
     val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
@@ -218,6 +227,16 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
     // Elements of a column are arrays of 1 element
     assert(results.select("Index").schema(0).dataType.simpleString == "array<int>")
     assert(results.select("Index").take(1)(0)(0).asInstanceOf[Seq[Int]].size == 1)
+  }
+
+  // Test if type cast is done correctly
+  test("Type test: Do you see an Array(Short)?") {
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fn_array)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("RunIdArray").schema(0).dataType.simpleString == "array<smallint>")
+    assert(results.select("RunIdArray").take(1)(0)(0).asInstanceOf[Seq[Int]].size == 3)
   }
 
   // Test if type cast is done correctly
