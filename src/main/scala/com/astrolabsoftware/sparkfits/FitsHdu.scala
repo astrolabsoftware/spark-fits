@@ -16,6 +16,7 @@
 package com.astrolabsoftware.sparkfits
 
 import java.nio.ByteBuffer
+import java.nio.FloatBuffer
 import java.nio.charset.StandardCharsets
 
 import org.apache.spark.sql.types.StructField
@@ -126,26 +127,66 @@ object FitsHdu {
       val shortType = shortStringValue{fitstype}
 
       shortType match {
-        // 16-bit Integer
-        case x if shortType.contains("I") => {
+        // Single 16-bit Integer
+        case x if shortType == "I" => {
           ByteBuffer.wrap(subbuf, 0, 2).getShort()
         }
-        // 32-bit Integer
-        case x if shortType.contains("J") => {
+        // Array of 16-bit Integers
+        case x if shortType.contains("I") => {
+          val num = x.slice(0, x.length - 1).toInt
+          val array = Array.ofDim[Short](num)
+          ByteBuffer.wrap(subbuf, 0, num*2).asShortBuffer().get(array)
+          array
+        }
+
+        // Single 32-bit Integer
+        case x if shortType == "J" => {
           ByteBuffer.wrap(subbuf, 0, 4).getInt()
         }
-        // 64-bit Integer
-        case x if shortType.contains("K") => {
+        // Array of 32-bit Integers
+        case x if shortType.contains("J") => {
+          val num = x.slice(0, x.length - 1).toInt
+          val array = Array.ofDim[Int](num)
+          ByteBuffer.wrap(subbuf, 0, num*4).asIntBuffer().get(array)
+          array
+        }
+
+        // Single 64-bit Integer
+        case x if shortType == "K" => {
           ByteBuffer.wrap(subbuf, 0, 8).getLong()
         }
+        // Array of 64-bit Integers
+        case x if shortType.contains("K") => {
+          val num = x.slice(0, x.length - 1).toInt
+          val array = Array.ofDim[Long](num)
+          ByteBuffer.wrap(subbuf, 0, num*8).asLongBuffer().get(array)
+          array
+        }
+
         // Single precision floating-point
-        case x if shortType.contains("E") => {
+        case x if shortType == "E" => {
           ByteBuffer.wrap(subbuf, 0, 4).getFloat()
         }
+        // Array of Single precision floating-points
+        case x if shortType.contains("E") => {
+          val num = x.slice(0, x.length - 1).toInt
+          val array = Array.ofDim[Float](num)
+          ByteBuffer.wrap(subbuf, 0, num*4).asFloatBuffer().get(array)
+          array
+        }
+
         // Double precision floating-point
-        case x if shortType.contains("D") => {
+        case x if shortType == "D" => {
           ByteBuffer.wrap(subbuf, 0, 8).getDouble()
         }
+        // Array of Double precision floating-points
+        case x if shortType.contains("D") => {
+          val num = x.slice(0, x.length - 1).toInt
+          val array = Array.ofDim[Double](num)
+          ByteBuffer.wrap(subbuf, 0, num*8).asDoubleBuffer().get(array)
+          array
+        }
+
         // Boolean
         case x if shortType.contains("L") => {
           // 1 Byte containing the ASCII char T(rue) or F(alse).

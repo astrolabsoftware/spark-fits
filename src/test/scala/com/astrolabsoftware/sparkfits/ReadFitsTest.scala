@@ -57,6 +57,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Add more and put a loop for several tests!
   val fn = "src/test/resources/test_file.fits"
   val fnUb = "src/test/resources/test_file_ub.fits"
+  val fn_array = "src/test/resources/test_file_array.fits"
 
   // Test if the user provides the HDU index to be read
   test("HDU test: Is there a HDU number?") {
@@ -177,6 +178,42 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("Dec").first()(0).isInstanceOf[Double])
+  }
+
+  // Test if type cast is done correctly
+  test("Type test: Do you see an Array(Long)?") {
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fn_array)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("Index").schema(0).dataType.simpleString == "array<bigint>")
+  }
+
+  // Test if type cast is done correctly
+  test("Type test: Do you see an Array(Float)?") {
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fn_array)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("RA").schema(0).dataType.simpleString == "array<float>")
+  }
+
+  // Test if type cast is done correctly
+  test("Type test: Do you see an Array(Double)?") {
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fn_array)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("Dec").schema(0).dataType.simpleString == "array<double>")
+  }
+
+  // Test if type cast is done correctly
+  test("Type test: Do you see an Array(Int)?") {
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 2)
+      .load(fn_array)
+    // Elements of a column are arrays of 1 element
+    assert(results.select("Index").schema(0).dataType.simpleString == "array<int>")
   }
 
   // Test if type cast is done correctly
