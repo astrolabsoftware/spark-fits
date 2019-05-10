@@ -187,6 +187,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn_array)
     // Elements of a column are arrays of 1 element
     assert(results.select("Index").schema(0).dataType.simpleString == "array<bigint>")
+    assert(results.select("Index").take(1)(0)(0).asInstanceOf[Seq[Long]].size == 7)
   }
 
   // Test if type cast is done correctly
@@ -196,6 +197,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn_array)
     // Elements of a column are arrays of 1 element
     assert(results.select("RA").schema(0).dataType.simpleString == "array<float>")
+    assert(results.select("RA").take(1)(0)(0).asInstanceOf[Seq[Float]].size == 2)
   }
 
   // Test if type cast is done correctly
@@ -205,6 +207,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn_array)
     // Elements of a column are arrays of 1 element
     assert(results.select("Dec").schema(0).dataType.simpleString == "array<double>")
+    assert(results.select("Dec").take(1)(0)(0).asInstanceOf[Seq[Double]].size == 3)
   }
 
   // Test if type cast is done correctly
@@ -214,6 +217,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn_array)
     // Elements of a column are arrays of 1 element
     assert(results.select("Index").schema(0).dataType.simpleString == "array<int>")
+    assert(results.select("Index").take(1)(0)(0).asInstanceOf[Seq[Int]].size == 1)
   }
 
   // Test if type cast is done correctly

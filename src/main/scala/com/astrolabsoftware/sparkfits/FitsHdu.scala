@@ -16,7 +16,6 @@
 package com.astrolabsoftware.sparkfits
 
 import java.nio.ByteBuffer
-import java.nio.FloatBuffer
 import java.nio.charset.StandardCharsets
 
 import org.apache.spark.sql.types.StructField
