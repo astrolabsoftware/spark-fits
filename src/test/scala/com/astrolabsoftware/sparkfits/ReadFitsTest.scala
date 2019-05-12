@@ -58,6 +58,28 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   val fn = "src/test/resources/test_file.fits"
   val fnUb = "src/test/resources/test_file_ub.fits"
   val fn_array = "src/test/resources/test_file_array.fits"
+  val fn_long = "src/test/resources/test_longheader_file.fits"
+
+  // Test if the user provides a correct recordLength
+  test("recordLength test: Can you catch a too small user-defined recordLength?") {
+    val results = spark.read
+      .format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .option("recordLength", 1024)
+    val exception = intercept[AssertionError] {
+      results.load(fn_long)
+    }
+    assert(exception.getMessage.contains("recordLength option too small"))
+  }
+
+  // Test if the code can adapt recordlength
+  test("recordLength test: Can you adapt the size of recordLength if needed?") {
+    val results = spark.read
+      .format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fn_long)
+    assert(results.count() == 100)
+  }
 
   // Test if the user provides the HDU index to be read
   test("HDU test: Is there a HDU number?") {

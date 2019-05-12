@@ -188,6 +188,17 @@ object FitsLib {
         """)
     }
 
+    if (conf.get("recordlength") != null) {
+      val keyValues = parseHeader(blockHeader)
+      val recordLength = conf.get("recordlength").toInt
+      val rowSize = hdu.getSizeRowBytes(keyValues)
+      if (recordLength < rowSize) {
+        throw new AssertionError(s"""
+          You specified a recordLength option too small compared to the FITS row size:
+          $recordLength B < $rowSize B """)
+      }
+    }
+
     /**
       * Give access to methods concerning Image HDU.
       *

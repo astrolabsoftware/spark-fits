@@ -140,7 +140,7 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val lFile = new Path("src/test/resources/test_longheader_file.fits")
     val fB1 = new Fits(lFile, conf, 1)
     val header = fB1.blockHeader
-    assert(header.size == 89)
+    assert(header.size == 409)
   }
 
   // Check the header
