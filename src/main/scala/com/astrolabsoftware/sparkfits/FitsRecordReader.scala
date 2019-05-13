@@ -255,23 +255,24 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     } else splitStart_tmp
 
     // Get the record length in Bytes (get integer!). First look if the user
-    // specify a size for the recordLength. If not, set it to 1 Ko.
+    // specify a size for the recordLength. If not, set it to max(1 Ko, rowSize).
     // If the HDU is an image, the recordLength is the row size (NAXIS1 * nbytes)
     val recordLengthFromUser = Try{conf.get("recordlength").toInt}
       .getOrElse{
         if (fits.hduType == "IMAGE") {
-          rowSizeLong.toInt
+          rowSizeInt
         } else {
-          (1 * 1024 / rowSizeLong.toInt) * rowSizeLong.toInt
+          // set it to max(1 Ko, rowSize)
+          math.max((1 * 1024 / rowSizeInt) * rowSizeInt, rowSizeInt)
         }
       }
 
     // For Table, seek for a round number of lines for the record
-    recordLength = (recordLengthFromUser / rowSizeLong.toInt) * rowSizeLong.toInt
+    recordLength = (recordLengthFromUser / rowSizeInt) * rowSizeInt
 
     // Make sure that the recordLength is not bigger than the block size!
     // This is a guard for small files.
-    recordLength = if ((recordLength / rowSizeLong.toInt)  < nrowsLong.toInt) {
+    recordLength = if ((recordLength / rowSizeInt)  < nrowsLong.toInt) {
       // OK less than the total number of lines
       recordLength
     } else {
