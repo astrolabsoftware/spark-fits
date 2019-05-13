@@ -19,6 +19,7 @@ data sources (CSV, JSON, Avro, Parquet, etc).
 
 Currently available:
 
+-   Support for Scala 2.11 & Scala 2.12
 -   Read fits file and organize the HDU data into DataFrames.
 -   Automatically distribute bintable rows over machines.
 -   Automatically distribute image rows over machines.

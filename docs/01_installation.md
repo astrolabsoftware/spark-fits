@@ -12,7 +12,7 @@ redirect_from:
 ## Requirements
 
 This library requires Spark 2.0+ (not tested for earlier version). The
-library has been tested with Scala 2.10.6 and 2.11.X. If you want to use
+library is tested with Scala 2.11 & 2.12. If you want to use
 another version, feel free to contact us.
 
 ## Including spark-fits in your project
@@ -20,7 +20,11 @@ another version, feel free to contact us.
 You can link spark-fits to your project (either `spark-shell` or `spark-submit`) by specifying the coordinates:
 
 ```bash
-toto:~$ spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.11:0.7.3" <...>
+# Scala 2.11
+toto:~$ spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.11:0.8.0" <...>
+
+# Scala 2.12
+toto:~$ spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.12:0.8.0" <...>
 ```
 
 It might not contain the latest features though (see *Building from source*).
