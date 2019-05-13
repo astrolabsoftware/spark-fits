@@ -15,7 +15,7 @@
 - [07/2018] **Release**: version 0.5.0, 0.6.0
 - [10/2018] **Release**: version 0.7.0, 0.7.1
 - [12/2018] **Release**: version 0.7.2
-- [03/2019] **Release**: version 0.8.0
+- [03/2019] **Release**: version 0.7.3
 - [05/2019] **Release**: version 0.8.0
 
 ## spark-fits
