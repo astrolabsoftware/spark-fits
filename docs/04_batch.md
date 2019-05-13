@@ -15,7 +15,7 @@ In addition, we provide scripts to run spark-fits applications at NERSC, Califor
 See the two shell scripts at the root of the package
 
 ```bash
-./run_scala.sh  # Scala (bintable HDU)
+./run_scala-2.1X.sh  # Scala (bintable HDU)
 ./run_python.sh # Python (bintable HDU)
 ./run_image python.sh # Python (image HDU)
 ```
