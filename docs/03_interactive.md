@@ -27,7 +27,7 @@ be added to the classpath (make sure you use the latest version). In Python, you
 # Scala 2.11
 $SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.11:0.8.0
 
-# Scala 2.11
+# Scala 2.12
 $SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.12:0.8.0
 ```
 
