@@ -14,8 +14,8 @@
 # limitations under the License.
 
 ## SBT Version
-SCALA_VERSION=2.11.8
-SCALA_VERSION_SPARK=2.11
+SCALA_VERSION=2.12.8
+SCALA_VERSION_SPARK=2.12
 
 ## Package version
 VERSION=0.7.3
