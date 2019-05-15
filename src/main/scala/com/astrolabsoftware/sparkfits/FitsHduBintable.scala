@@ -46,8 +46,12 @@ object FitsHduBintable {
       colNames.values.toList.asInstanceOf[List[String]]
     }
 
-    val colPositions = selectedColNames.map(
-      x => getColumnPos(keyValues, x)).toList.sorted
+    val colPositions = if (selectedColumns != null) {
+      selectedColNames.map(x => getColumnPos(keyValues, x)).toList
+    } else {
+      selectedColNames.map(x => getColumnPos(keyValues, x)).toList.sorted
+    }
+
 
     val rowTypes = getColTypes(keyValues)
 
