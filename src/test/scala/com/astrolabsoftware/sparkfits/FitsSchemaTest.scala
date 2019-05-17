@@ -45,7 +45,7 @@ class FitsSchemaTest extends FunSuite with BeforeAndAfterAll {
   }
 
   test("Schema test: can you convert the type Array(Float) for a column?") {
-    val col = ReadMyType("toto", "1E")
+    val col = ReadMyType("toto", "2E")
 
     assert(col.dataType.isInstanceOf[ArrayType])
   }
@@ -54,6 +54,19 @@ class FitsSchemaTest extends FunSuite with BeforeAndAfterAll {
     val col = ReadMyType("toto", "D")
 
     assert(col.dataType.isInstanceOf[DoubleType])
+  }
+
+  test("Schema test: do you convert a one-element vector into a scalar?") {
+    val myTypes = Map[String, String](
+      "1I" -> "ShortType",
+      "1J" -> "IntegerType",
+      "1K" -> "LongType",
+      "1E" -> "FloatType",
+      "1D" -> "DoubleType")
+    for (myType <- myTypes) {
+      val col = ReadMyType("toto", myType._1)
+      assert(col.dataType.toString == myType._2)
+    }
   }
 
   test("Schema test: can you convert the type Array(Double) for a column?") {
