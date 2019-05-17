@@ -587,7 +587,7 @@ object FitsLib {
       */
     def retrieveHeader : Array[String] = {
 
-      conf.get(hdfsPath+"_header").split(separator)
+      conf.get(hdfsPath + "_header").split(separator)
     }
 
     /**

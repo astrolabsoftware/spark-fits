@@ -44,18 +44,23 @@ object FitsSchema {
     // columns with vectors of numbers (nI, nE, nK, ...).
     fitstype match {
       case x if fitstype == "I" => StructField(name, ShortType, isNullable)
+      case x if fitstype == "1I" => StructField(name, ShortType, isNullable)
       case x if fitstype.contains("I") => StructField(name, ArrayType(ShortType), isNullable)
 
       case x if fitstype == "J" => StructField(name, IntegerType, isNullable)
+      case x if fitstype == "1J" => StructField(name, IntegerType, isNullable)
       case x if fitstype.contains("J") => StructField(name, ArrayType(IntegerType), isNullable)
 
       case x if fitstype == "K" => StructField(name, LongType, isNullable)
+      case x if fitstype == "1K" => StructField(name, LongType, isNullable)
       case x if fitstype.contains("K") => StructField(name, ArrayType(LongType), isNullable)
 
       case x if fitstype == "E" => StructField(name, FloatType, isNullable)
+      case x if fitstype == "1E" => StructField(name, FloatType, isNullable)
       case x if fitstype.contains("E") => StructField(name, ArrayType(FloatType), isNullable)
 
       case x if fitstype == "D" => StructField(name, DoubleType, isNullable)
+      case x if fitstype == "1D" => StructField(name, DoubleType, isNullable)
       case x if fitstype.contains("D") => StructField(name, ArrayType(DoubleType), isNullable)
 
       case x if fitstype.contains("L") => StructField(name, BooleanType, isNullable)

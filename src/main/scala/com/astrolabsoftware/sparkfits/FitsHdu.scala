@@ -130,6 +130,10 @@ object FitsHdu {
         case x if shortType == "I" => {
           ByteBuffer.wrap(subbuf, 0, 2).getShort()
         }
+        // 1 element vector is considered as a scalar
+        case x if shortType == "1I" => {
+          ByteBuffer.wrap(subbuf, 0, 2).getShort()
+        }
         // Array of 16-bit Integers
         case x if shortType.contains("I") => {
           val num = x.slice(0, x.length - 1).toInt
@@ -140,6 +144,10 @@ object FitsHdu {
 
         // Single 32-bit Integer
         case x if shortType == "J" => {
+          ByteBuffer.wrap(subbuf, 0, 4).getInt()
+        }
+        // 1 element vector is considered as a scalar
+        case x if shortType == "1J" => {
           ByteBuffer.wrap(subbuf, 0, 4).getInt()
         }
         // Array of 32-bit Integers
@@ -154,6 +162,10 @@ object FitsHdu {
         case x if shortType == "K" => {
           ByteBuffer.wrap(subbuf, 0, 8).getLong()
         }
+        // 1 element vector is considered as a scalar
+        case x if shortType == "1K" => {
+          ByteBuffer.wrap(subbuf, 0, 8).getLong()
+        }
         // Array of 64-bit Integers
         case x if shortType.contains("K") => {
           val num = x.slice(0, x.length - 1).toInt
@@ -166,6 +178,10 @@ object FitsHdu {
         case x if shortType == "E" => {
           ByteBuffer.wrap(subbuf, 0, 4).getFloat()
         }
+        // 1 element vector is considered as a scalar
+        case x if shortType == "1E" => {
+          ByteBuffer.wrap(subbuf, 0, 4).getFloat()
+        }
         // Array of Single precision floating-points
         case x if shortType.contains("E") => {
           val num = x.slice(0, x.length - 1).toInt
@@ -176,6 +192,10 @@ object FitsHdu {
 
         // Double precision floating-point
         case x if shortType == "D" => {
+          ByteBuffer.wrap(subbuf, 0, 8).getDouble()
+        }
+        // 1 element vector is considered as a scalar
+        case x if shortType == "1D" => {
           ByteBuffer.wrap(subbuf, 0, 8).getDouble()
         }
         // Array of Double precision floating-points

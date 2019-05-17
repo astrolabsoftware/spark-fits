@@ -56,6 +56,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Add more and put a loop for several tests!
   val fn = "src/test/resources/test_file.fits"
+  val fnAlt = "src/test/resources/test_file_one-element.fits"
   val fnUb = "src/test/resources/test_file_ub.fits"
   val fn_array = "src/test/resources/test_file_array.fits"
   val fn_long = "src/test/resources/test_longheader_file.fits"
@@ -173,6 +174,13 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("Index").first()(0).isInstanceOf[Long])
+
+    // Test also that vector with one element gets converted to scalar
+    val resultsAlt = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fnAlt)
+    // Elements of a column are arrays of 1 element
+    assert(resultsAlt.select("Index").first()(0).isInstanceOf[Long])
   }
 
   // Test if type cast is done correctly
@@ -182,6 +190,13 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("RunId").first()(0).isInstanceOf[Int])
+
+    // Test also that vector with one element gets converted to scalar
+    val resultsAlt = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 2)
+      .load(fnAlt)
+    // Elements of a column are arrays of 1 element
+    assert(resultsAlt.select("Index").first()(0).isInstanceOf[Int])
   }
 
   // Test if type cast is done correctly
@@ -191,6 +206,13 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn_array)
     // Elements of a column are arrays of 1 element
     assert(results.select("RunId").first()(0).isInstanceOf[Short])
+
+    // Test also that vector with one element gets converted to scalar
+    val resultsAlt = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fnAlt)
+    // Elements of a column are arrays of 1 element
+    assert(resultsAlt.select("RunId").first()(0).isInstanceOf[Short])
   }
 
   // Test if type cast is done correctly
@@ -200,6 +222,13 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("RA").first()(0).isInstanceOf[Float])
+
+    // Test also that vector with one element gets converted to scalar
+    val resultsAlt = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fnAlt)
+    // Elements of a column are arrays of 1 element
+    assert(resultsAlt.select("RA").first()(0).isInstanceOf[Float])
   }
 
   // Test if type cast is done correctly
@@ -209,6 +238,13 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn)
     // Elements of a column are arrays of 1 element
     assert(results.select("Dec").first()(0).isInstanceOf[Double])
+
+    // Test also that vector with one element gets converted to scalar
+    val resultsAlt = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fnAlt)
+    // Elements of a column are arrays of 1 element
+    assert(resultsAlt.select("Dec").first()(0).isInstanceOf[Double])
   }
 
   // Test if type cast is done correctly
@@ -248,7 +284,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn_array)
     // Elements of a column are arrays of 1 element
     assert(results.select("Index").schema(0).dataType.simpleString == "array<int>")
-    assert(results.select("Index").take(1)(0)(0).asInstanceOf[Seq[Int]].size == 1)
+    assert(results.select("Index").take(1)(0)(0).asInstanceOf[Seq[Int]].size == 2)
   }
 
   // Test if type cast is done correctly
