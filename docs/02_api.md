@@ -20,10 +20,10 @@ coordinates in your `build.sbt`:
 
 ```scala
 // %% will automatically set the Scala version needed for spark-fits
-libraryDependencies += "com.github.astrolabsoftware" %% "spark-fits" % "0.8.0"
+libraryDependencies += "com.github.astrolabsoftware" %% "spark-fits" % "0.8.1"
 
 // Alternatively you can also specify directly the Scala version, e.g.
-libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.11" % "0.8.0"
+libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.11" % "0.8.1"
 ```
 
 #### Scala 2.10.6 and 2.11.X
