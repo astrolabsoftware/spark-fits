@@ -18,7 +18,7 @@ SCALA_VERSION=2.12.8
 SCALA_VERSION_SPARK=2.12
 
 ## Package version
-VERSION=0.7.3
+VERSION=0.8.1
 
 # Package it
 sbt ++${SCALA_VERSION} package

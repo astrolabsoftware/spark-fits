@@ -19,7 +19,7 @@ import xerial.sbt.Sonatype._
 lazy val root = (project in file(".")).
  settings(
    inThisBuild(List(
-     version      := "0.8.0",
+     version      := "0.8.1",
      mainClass in Compile := Some("com.astrolabsoftware.sparkfits.ReadFits")
    )),
    // Name of the application
