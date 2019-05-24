@@ -175,11 +175,12 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     assert(df.count() == 27000)
   }
 
-  test("Multi files test: Can you detect an error in reading different FITS file?") {
+  test("Multi files test: Can you detect an error in reading different FITS file [FAILFAST]?") {
     val fn = "src/test/resources/dirNotOk"
     val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .option("verbose", true)
+      .option("mode", "FAILFAST")
       .option("recordlength", 16 * 1024)
 
       val exception = intercept[AssertionError] {
@@ -187,6 +188,33 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       }
 
     assert(exception.getMessage.contains("different structures"))
+  }
+
+  test("Multi files test: Can you read several FITS file (image) discarding empty ones??") {
+    val fn = "src/test/resources/dirIm/*.fits"
+    val df = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .option("verbose", true)
+      .load(fn)
+
+    df.count()
+
+    assert(df.isInstanceOf[DataFrame])
+  }
+
+  test("Multi files test: Can you read several FITS file (image), and fail if there are empty ones??") {
+    val fn = "src/test/resources/dirIm/*.fits"
+    val df = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .option("verbose", true)
+      .option("mode", "FAILFAST")
+      .load(fn)
+
+    val exception = intercept[AssertionError] {
+      df.count()
+    }
+
+    assert(exception.getMessage.contains("You are trying to add HDU data with different structures!"))
   }
 
   test("No file test: Can you detect an error if there is no input FITS file found?") {

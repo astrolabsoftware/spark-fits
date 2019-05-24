@@ -39,7 +39,7 @@ object ReadFits {
         .format("fits")
         .option("hdu", hdu)                 // Index of the HDU
         .option("verbose", true)            // pretty print
-        .option("recordlength", 1 * 1024)   // 1 KB per record
+        .option("recordlength", 5 * 1024)   // 1 KB per record
         .load(args(0).toString)             // File to load
 
       println("show>")

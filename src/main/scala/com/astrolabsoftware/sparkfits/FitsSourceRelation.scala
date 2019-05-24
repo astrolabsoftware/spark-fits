@@ -224,27 +224,29 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     val fits_init = new Fits(path_init, conf, indexHDU)
 
     if (fits_init.hdu.implemented) {
-      val schema_init = getSchema(fits_init)
-      fits_init.data.close()
-
-      for (file <- listOfFitsFiles.slice(1, listOfFitsFiles.size)) {
-        var path = new Path(file)
-        val fits = new Fits(path, conf, indexHDU)
-        val schema = getSchema(fits)
-        val isOk = schema_init == schema
-        isOk match {
-          case true => isOk
-          case false => {
-            throw new AssertionError(
-              """
-            You are trying to add HDU data with different structures!
-            Check that the number of columns, names of columns and element
-            types are the same. re-run with .option("verbose", true) to
-            list the files.
-          """)
+      // Do not perform checks if the mode is PERMISSIVE.
+      if (conf.get("mode") != "PERMISSIVE") {
+        val schema_init = getSchema(fits_init)
+        fits_init.data.close()
+        for (file <- listOfFitsFiles.slice(1, listOfFitsFiles.size)) {
+          var path = new Path(file)
+          val fits = new Fits(path, conf, indexHDU)
+          val schema = getSchema(fits)
+          val isOk = schema_init == schema
+          isOk match {
+            case true => isOk
+            case false => {
+              throw new AssertionError(
+                """
+              You are trying to add HDU data with different structures!
+              Check that the number of columns, names of columns and element
+              types are the same. re-run with .option("verbose", true) to
+              list all the files.
+            """)
+            }
           }
+          fits.data.close()
         }
-        fits.data.close()
       }
       true
     } else {
