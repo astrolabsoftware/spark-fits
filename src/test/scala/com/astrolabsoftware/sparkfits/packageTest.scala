@@ -194,6 +194,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     val fn = "src/test/resources/dirIm"
     val df = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
+      .option("recordLength", 5 * 1024)
       .option("verbose", true)
       .load(fn)
 
@@ -207,6 +208,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     val df = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .option("verbose", true)
+      .option("recordLength", 5 * 1024)
       .option("mode", "FAILFAST")
       .load(fn)
 
