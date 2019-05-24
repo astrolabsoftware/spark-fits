@@ -29,6 +29,9 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 // Spark dependencies
 import org.apache.spark.sql.Row
 
+// Logger
+import org.apache.log4j.LogManager
+
 // Internal dependencies
 import com.astrolabsoftware.sparkfits.FitsLib.Fits
 import com.astrolabsoftware.sparkfits.FitsLib.FITSBLOCK_SIZE_BYTES
@@ -140,6 +143,8 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     */
   override def initialize(inputSplit: InputSplit, context: TaskAttemptContext) {
 
+    val log = LogManager.getRootLogger
+
     // Hadoop description of the input file (Path, split, start/stop indices).
     val fileSplit = inputSplit.asInstanceOf[FileSplit]
 
@@ -166,6 +171,12 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     // Get the header
     header = fits.blockHeader
     val keyValues = FitsLib.parseHeader(header)
+
+    if (keyValues("NAXIS").toInt == 0) {
+      log.warn(s"\nEmpty HDU for ${file}")
+      notValid = true
+      return
+    }
 
     // Get the number of rows and the size (B) of one row.
     // this is dependent on the HDU type
