@@ -172,10 +172,13 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
     header = fits.blockHeader
     val keyValues = FitsLib.parseHeader(header)
 
-    if (keyValues("NAXIS").toInt == 0) {
+    if (keyValues("NAXIS").toInt == 0 & conf.get("mode") == "PERMISSIVE") {
       log.warn(s"\nEmpty HDU for ${file}")
       notValid = true
       return
+    } else if (keyValues("NAXIS").toInt == 0 & conf.get("mode") == "FAILFAST") {
+      log.warn(s"\nEmpty HDU for ${file}")
+      log.warn(s"\nUse option('mode', 'PERMISSIVE') if you want to discard all empty HDUs.")
     }
 
     // Get the number of rows and the size (B) of one row.
