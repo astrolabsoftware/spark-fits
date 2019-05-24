@@ -191,7 +191,11 @@ object FitsLib {
     if (conf.get("recordlength") != null) {
       val keyValues = parseHeader(blockHeader)
       val recordLength = conf.get("recordlength").toInt
-      val rowSize = hdu.getSizeRowBytes(keyValues)
+
+      // Set the rowsize to recordLength in case of trouble,
+      // e.g empty HDU (checks are performed later in FitsRecordReader)
+      val rowSize = Try{hdu.getSizeRowBytes(keyValues)}.getOrElse{recordLength}
+
       if (recordLength < rowSize) {
         throw new AssertionError(s"""
           You specified a recordLength option too small compared to the FITS row size:

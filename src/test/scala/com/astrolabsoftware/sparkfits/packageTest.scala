@@ -202,6 +202,19 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     assert(df.isInstanceOf[DataFrame])
   }
 
+  test("Multi files test: Can you read several FITS file (image) discarding empty ones + set recordLength?") {
+    val fn = "src/test/resources/dirIm"
+    val df = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 2)
+      .option("verbose", true)
+      .option("recordlength", 2 * 1024)
+      .load(fn)
+
+    df.count()
+
+    assert(df.isInstanceOf[DataFrame])
+  }
+
   test("Multi files test: Can you read several FITS file (image), and fail if there are empty ones??") {
     val fn = "src/test/resources/dirIm/*.fits"
     val df = spark.read.format("com.astrolabsoftware.sparkfits")

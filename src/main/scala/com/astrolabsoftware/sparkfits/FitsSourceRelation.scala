@@ -111,10 +111,6 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     case None => sys.error("'path' must be specified.")
   }
 
-  if (conf.get("mode") == null) {
-    conf.set("mode", "PERMISSIVE")
-  }
-
   val indexHDU = parameters.get("hdu") match {
     case Some(x) => x
     case None => throw new NoSuchElementException("""
@@ -352,6 +348,10 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     for (keyAndVal <- parameters) {
       conf.set(keyAndVal._1, keyAndVal._2)
       extraOptions += (keyAndVal._1 -> keyAndVal._2)
+    }
+    if (conf.get("mode") == null) {
+      conf.set("mode", "PERMISSIVE")
+      extraOptions += ("mode" -> "PERMISSIVE")
     }
   }
 
