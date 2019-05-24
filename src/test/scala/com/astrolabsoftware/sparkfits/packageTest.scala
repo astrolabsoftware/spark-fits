@@ -190,8 +190,8 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     assert(exception.getMessage.contains("different structures"))
   }
 
-  test("Multi files test: Can you read several FITS file (image) discarding empty ones??") {
-    val fn = "src/test/resources/dirIm/*.fits"
+  test("Multi files test: Can you read several FITS file (image) discarding empty ones?") {
+    val fn = "src/test/resources/dirIm"
     val df = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .option("verbose", true)
