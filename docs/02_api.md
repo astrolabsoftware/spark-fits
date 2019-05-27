@@ -20,10 +20,10 @@ coordinates in your `build.sbt`:
 
 ```scala
 // %% will automatically set the Scala version needed for spark-fits
-libraryDependencies += "com.github.astrolabsoftware" %% "spark-fits" % "0.8.1"
+libraryDependencies += "com.github.astrolabsoftware" %% "spark-fits" % "0.8.2"
 
 // Alternatively you can also specify directly the Scala version, e.g.
-libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.11" % "0.8.1"
+libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.11" % "0.8.2"
 ```
 
 #### Scala 2.10.6 and 2.11.X
@@ -47,6 +47,7 @@ object ReadFits extends App {
     .option("hdu", <Int>)                 // [mandatory] Which HDU you want to read.
     .option("columns", <String>)          // [optional]  Comma-separated column names to load. Default loads all columns.
     .option("recordlength", <Int>)        // [optional]  If you want to define yourself the length of a record.
+    .option("mode", <String>)             // [optional]  Discard empty files silently or fail fast.
     .option("verbose", <Boolean>)         // [optional]  If you want to print debugging messages on screen.
     .schema(<StructType>)                 // [optional]  If you want to bypass the header.
     .load(<String>)                       // [mandatory] Path to file or directory. Load data as DataFrame.
@@ -77,6 +78,8 @@ to 1 KB. Careful for large value, you might suffer from a long garbage
 collector time. The maximum size allowed for a single record to be
 processed is 2\*\*31 - 1 (Int max value). But I doubt you ever need to
 go as high...
+
+The `mode` parameter controls the behaviour when reading many files. By default, it is set to `PERMISSIVE`, that is if there are empty files they will be silently discarded and the connector will not fail. Note that the empty files found will be printed on screen (WARN level of log). You can also set `mode` to `FAILFAST` to force the connector to crash if it encounters empty files. 
 
 Note that the schema is directly inferred from the HEADER of the HDU. In
 case the HEADER is not present or corrupted, you can also manually
@@ -134,6 +137,7 @@ if __name__ == "__main__":
     .option("hdu", int)\
     .option("columns", str)\
     .option("recordlength", int)\
+    .option("mode", str)\
     .option("verbose", bool)\
     .schema(StructType)\
     .load(str)
@@ -153,6 +157,7 @@ DataFrame df = spark.read()
   .option("hdu", <Int>)
   .option("columns", <String>)
   .option("recordlength", <Int>)
+  .option("mode", <String>)
   .option("verbose", <Boolean>)
   .schema(<StructType>)
   .load(<String>);
