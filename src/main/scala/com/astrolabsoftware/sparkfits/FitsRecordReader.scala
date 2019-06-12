@@ -239,21 +239,8 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       // We assume that fileSplit.getStart starts at the
       // beginning of the data block for the first valid block.
 
-      // Here is an attempt to fix a bug when reading images:
-      //
-      // I noticed that when an image is split across several HDFS blocks,
-      // the transition is not done correctly, and there is one line typically
-      // missing. After some manual inspection, I found that introducing a shift
-      // in the starting index helps removing the bug. The shift is function of
-      // the HDU index, and depends whether the primary HDU is empty or not.
-      // By far I'm not convinced about this fix in general, but it works for
-      // the few examples that I tried. If you face a similar problem,
-      // or find a general solution, let me know!
-      var shift = if (primaryfits.empty_hdu) {
-        FITSBLOCK_SIZE_BYTES * (conf.get("hdu").toInt - 3)
-      } else {
-        FITSBLOCK_SIZE_BYTES * (conf.get("hdu").toInt - 1)
-      }
+      // We shift the start to where the data block starts
+      var shift = -startstop.dataStart
 
       splitStart = if((splitStart_tmp) % rowSizeLong != 0 &&
         splitStart_tmp != startstop.dataStart && splitStart_tmp != 0) {
