@@ -20,10 +20,10 @@ coordinates in your `build.sbt`:
 
 ```scala
 // %% will automatically set the Scala version needed for spark-fits
-libraryDependencies += "com.github.astrolabsoftware" %% "spark-fits" % "0.8.2"
+libraryDependencies += "com.github.astrolabsoftware" %% "spark-fits" % "0.8.3"
 
 // Alternatively you can also specify directly the Scala version, e.g.
-libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.11" % "0.8.2"
+libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.11" % "0.8.3"
 ```
 
 #### Scala 2.10.6 and 2.11.X
@@ -79,7 +79,7 @@ collector time. The maximum size allowed for a single record to be
 processed is 2\*\*31 - 1 (Int max value). But I doubt you ever need to
 go as high...
 
-The `mode` parameter controls the behaviour when reading many files. By default, it is set to `PERMISSIVE`, that is if there are empty files they will be silently discarded and the connector will not fail. Note that the empty files found will be printed on screen (WARN level of log). You can also set `mode` to `FAILFAST` to force the connector to crash if it encounters empty files. 
+The `mode` parameter controls the behaviour when reading many files. By default, it is set to `PERMISSIVE`, that is if there are empty files they will be silently discarded and the connector will not fail. Note that the empty files found will be printed on screen (WARN level of log). You can also set `mode` to `FAILFAST` to force the connector to crash if it encounters empty files.
 
 Note that the schema is directly inferred from the HEADER of the HDU. In
 case the HEADER is not present or corrupted, you can also manually
