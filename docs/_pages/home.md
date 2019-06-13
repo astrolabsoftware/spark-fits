@@ -8,7 +8,7 @@ header:
   cta_url: "/docs/installation/"
   caption:
 intro:
-  - excerpt: '<p><font size="6">Distribute FITS data with Apache Spark: Binary tables, images and more!</font></p><br /><a href="https://github.com/astrolabsoftware/spark-fits/releases/tag/0.8.2">Latest release: 0.8.2</a>'
+  - excerpt: '<p><font size="6">Distribute FITS data with Apache Spark: Binary tables, images and more!</font></p><br /><a href="https://github.com/astrolabsoftware/spark-fits/releases/tag/0.8.3">Latest release: 0.8.3</a>'
 excerpt: '{::nomarkdown}<iframe style="display: inline-block;" src="https://ghbtns.com/github-btn.html?user=astrolabsoftware&repo=spark-fits&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe> <iframe style="display: inline-block;" src="https://ghbtns.com/github-btn.html?user=astrolabsoftware&repo=spark-fits&type=fork&count=true&size=large" frameborder="0" scrolling="0" width="158px" height="30px"></iframe>{:/nomarkdown}'
 feature_row:
   - image_path:
