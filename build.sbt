@@ -44,10 +44,12 @@ lazy val root = (project in file(".")).
    // assemblyShadeRules in assembly := Seq(ShadeRule.rename("nom.**" -> "new_nom.@1").inAll),
    // Put dependencies of the library
    libraryDependencies ++= Seq(
-     "org.apache.spark" %% "spark-core" % "2.4.3" % "provided",
-     "org.apache.spark" %% "spark-sql" % "2.4.3" % "provided",
+     "org.apache.spark" %% "spark-core" % "3.0.0-preview" % "provided",
+     "org.apache.spark" %% "spark-sql" % "3.0.0-preview" % "provided",
      scalaTest % Test
-   )
+   ),
+
+   scalaVersion := "2.12.1"
  )
 
 // POM settings for Sonatype
