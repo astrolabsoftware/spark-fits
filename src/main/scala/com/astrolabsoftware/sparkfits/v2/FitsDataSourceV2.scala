@@ -17,7 +17,7 @@ class FitsDataSourceV2 extends FileDataSourceV2 {
   }
 
   // Still have to figure this out
-  override def fallbackFileFormat: Class[_ <: FileFormat] = ???
+  override def fallbackFileFormat: Class[_ <: FileFormat] = null
 
   override def getTable(options: CaseInsensitiveStringMap): Table = {
     val paths = getPaths(options)

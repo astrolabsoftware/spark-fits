@@ -21,7 +21,8 @@ case class FitsTable(
                       fallbackFileFormat: Class[_ <: FileFormat])
   extends FileTable(sparkSession, options, paths, userSpecifiedSchema) {
 
-  override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = ???
+  override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder =
+    new FitsScanBuilder(name, sparkSession, options, schema)
 
   override lazy val schema: StructType = userSpecifiedSchema.getOrElse {
     val conf = new Configuration(sparkSession.sparkContext.hadoopConfiguration)
