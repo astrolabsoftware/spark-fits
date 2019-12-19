@@ -6,12 +6,10 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class FitsScanBuilder(
-                       name: String,
                        sparkSession: SparkSession,
                        options: CaseInsensitiveStringMap,
                        schema: StructType
                      ) extends ScanBuilder {
-  override def build(): Scan = new FitsScan(name, sparkSession, options, schema)
-
+  override def build(): Scan = new FitsScan(sparkSession, options, schema)
 
 }

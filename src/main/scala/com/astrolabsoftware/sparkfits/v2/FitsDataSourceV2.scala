@@ -11,17 +11,13 @@ class FitsDataSourceV2 extends FileDataSourceV2 {
   override def shortName() = "fits"
 
   override def getTable(options: CaseInsensitiveStringMap, schema: StructType): Table = {
-    val paths = getPaths(options)
-    val tableName = getTableName(paths)
-    FitsTable(tableName, sparkSession, options, paths, Some(schema), fallbackFileFormat)
+    FitsTable(sparkSession, options, Some(schema), fallbackFileFormat)
   }
 
   // Still have to figure this out
   override def fallbackFileFormat: Class[_ <: FileFormat] = null
 
   override def getTable(options: CaseInsensitiveStringMap): Table = {
-    val paths = getPaths(options)
-    val tableName = getTableName(paths)
-    FitsTable(tableName, sparkSession, options, paths, None, fallbackFileFormat)
+    FitsTable(sparkSession, options, None, fallbackFileFormat)
   }
 }

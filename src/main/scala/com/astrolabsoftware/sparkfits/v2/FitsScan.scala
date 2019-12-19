@@ -6,7 +6,6 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class FitsScan(
-                name: String,
                 sparkSession: SparkSession,
                 options: CaseInsensitiveStringMap,
                 schema: StructType
@@ -19,5 +18,5 @@ class FitsScan(
   override def planInputPartitions(): Array[InputPartition] = Array.empty
 
   override def createReaderFactory(): PartitionReaderFactory =
-    new FitsPartitionReaderFactory(name, sparkSession, options, schema)
+    new FitsPartitionReaderFactory(sparkSession, options, schema)
 }
