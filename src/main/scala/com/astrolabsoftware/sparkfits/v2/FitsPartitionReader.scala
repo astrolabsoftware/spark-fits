@@ -2,12 +2,26 @@ package com.astrolabsoftware.sparkfits.v2
 
 import com.astrolabsoftware.sparkfits.FitsLib
 import com.astrolabsoftware.sparkfits.FitsLib.Fits
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.LongWritable
-import org.apache.spark.sql.Row
+import org.apache.log4j.LogManager
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
+import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
+import org.apache.spark.sql.types.StructType
 
-class FitsPartitionReader[T] extends PartitionReader[T] {
+class FitsPartitionReader[T](
+                              partition: FilePartition,
+                              sparkSession: SparkSession,
+                              conf: Configuration,
+                              schema: StructType
+                            ) extends PartitionReader[T] {
+
+  // partition will have how many files are in this logical partition. There can be one or more
+  // It is ensured that the one file will not be split across multiple partitions, so
+  // we don;'t have to worry about padding, split in middle of row etc etc
 
   // Initialise mutable variables to be used by the executors
   // Handle the HDFS block boundaries
@@ -25,7 +39,7 @@ class FitsPartitionReader[T] extends PartitionReader[T] {
   private var header: Array[String] = null
   private var nrowsLong : Long = 0L
   private var rowSizeInt : Int = 0
-  private var rowSizeLong : Long = 0L
+  private var rowSizeLong : Long = 0Lf
   private var startstop: FitsLib.FitsBlockBoundaries = FitsLib.FitsBlockBoundaries()
   private var notValid : Boolean = false
 
@@ -36,18 +50,57 @@ class FitsPartitionReader[T] extends PartitionReader[T] {
   // Intermediate variable to store binary data
   private var recordValueBytes: Array[Byte] = null
 
+  private var currentFileIndex = 0
+  private var currentPartitionedFile: Option[PartitionedFile] = None
+  private var currentFileDataStop: Long = _
+  private var currentFitsFile: Fits = _
+  private var currentHeader: Array[String] = _
+  val log = LogManager.getRootLogger
+
+  private def setCurrentFileParams(index: Int): Unit = {
+    if (currentFileIndex != index || !currentPartitionedFile.isDefined) {
+      currentFileIndex = index
+      currentPartitionedFile = Option(partition.files(currentFileIndex))
+      currentFileDataStop = currentPartitionedFile.get.start + currentPartitionedFile.get.length
+      val path = new Path(currentPartitionedFile.get.filePath)
+      currentFitsFile = new Fits(path, conf, conf.getInt("hdu", -1))
+      currentHeader = fits.blockHeader
+      val keyValues = FitsLib.parseHeader(header)
+      if (keyValues("NAXIS").toInt == 0 & conf.get("mode") == "PERMISSIVE") {
+        log.warn(s"Empty HDU for ${path}")
+        notValid = true
+      }
+      if (keyValues("NAXIS").toInt == 0 & conf.get("mode") == "FAILFAST") {
+        log.warn(s"Empty HDU for ${file}")
+        log.warn(s"Use option('mode', 'PERMISSIVE') if you want to discard all empty HDUs.")
+      }
+      nrowsLong = fits.hdu.getNRows(keyValues)
+      rowSizeInt = fits.hdu.getSizeRowBytes(keyValues)
+      rowSizeLong = rowSizeInt.toLong
+
+    }
+  }
   override def next(): Boolean = {
-    // Close the file if mapper is outside the HDU
-    if (notValid) {
-      fits.data.close()
+    // We are done reading all the files in the partition
+    if (currentFileIndex >= partition.index) {
       return false
     }
 
+    setCurrentFileParams(currentFileIndex)
+
+    // Close the file if mapper is outside the HDU
+//    if (notValid) {
+//      fits.data.close()
+//      return false
+//    }
+
     // Close the file if we went outside the block!
     // This means we sent all our records.
-    if (fits.data.getPos >= startstop.dataStop) {
-      fits.data.close()
-      return false
+    if (currentFitsFile.data.getPos >= currentFileDataStop) {
+      currentFitsFile.data.close()
+      // Done reading this file, try with the next file in this block
+      currentFileIndex += 1
+      next()
     }
 
     // Initialise the key of the HDFS block
@@ -114,7 +167,7 @@ class FitsPartitionReader[T] extends PartitionReader[T] {
           recordValueBytes.slice(
             rowSizeInt*i, rowSizeInt*(i+1))))
       }
-      recordValue = tmp.result
+//      recordValue = tmp.result
 
       // update our current position
       currentPosition = currentPosition + recordLength

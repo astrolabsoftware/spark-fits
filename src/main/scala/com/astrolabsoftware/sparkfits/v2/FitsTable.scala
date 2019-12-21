@@ -2,7 +2,7 @@ package com.astrolabsoftware.sparkfits.v2
 
 import scala.collection.JavaConverters._
 import com.astrolabsoftware.sparkfits.FitsLib.Fits
-import com.astrolabsoftware.sparkfits.utils.FiteUtils._
+import com.astrolabsoftware.sparkfits.utils.FitsUtils._
 import com.astrolabsoftware.sparkfits.FitsSchema.getSchema
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
@@ -24,7 +24,7 @@ case class FitsTable(
   extends Table with SupportsRead {
 
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder =
-    new FitsScanBuilder(sparkSession, options, schema)
+    new FitsScanBuilder(sparkSession, conf, schema)
 
   // Initialise Hadoop configuration
   val conf = new Configuration(sparkSession.sparkContext.hadoopConfiguration)

@@ -7,7 +7,7 @@ import org.apache.hadoop.fs.{LocatedFileStatus, Path, RemoteIterator}
 
 import scala.util.Try
 
-object FiteUtils {
+object FitsUtils {
   /**
     * Search for input FITS files. The input path can be either a single
     * FITS file, or a folder containing several FITS files with the
