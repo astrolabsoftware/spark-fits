@@ -16,7 +16,7 @@ class FitsPartitionReader[T](
                               sparkSession: SparkSession,
                               broadCastedConf: Broadcast[SerializableConfiguration],
                               schema: StructType
-                            ) extends PartitionReader[T] {
+                            ) extends PartitionReader[InternalRow] {
 
   // partition will have how many files are in this logical partition. There can be one or more
   // It is ensured that the one file will not be split across multiple partitions, so

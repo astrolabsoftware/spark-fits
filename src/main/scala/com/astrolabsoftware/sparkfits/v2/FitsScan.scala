@@ -37,9 +37,9 @@ class FitsScan(
     val partitionedFiles = getPartitionedFiles()
     // Sort by length so that bigger blocks are scheduled first
     val sortedPartitionedFiles = partitionedFiles.sortBy(_.length)
-    val maxSplitBytes = maxSplitBytes(sparkSession, partitionedFiles)
-    // Handle the case when there is just one file and its size is less than then maxSplitBytes
-    FilePartition.getFilePartitions(sparkSession, sortedPartitionedFiles, maxSplitBytes)
+    val splitBytes = maxSplitBytes(sparkSession, partitionedFiles)
+    // Handle the case when there is just one file and its size is less than then splitBytes
+    FilePartition.getFilePartitions(sparkSession, sortedPartitionedFiles, splitBytes)
   }
 
   private def getPartitionedFiles(): Seq[PartitionedFile] = {
@@ -67,7 +67,6 @@ class FitsScan(
     val defaultParallelism = sparkSession.sparkContext.defaultParallelism
     val totalBytes = partitionedFiles.map(_.length + openCostInBytes).sum
     val bytesPerCore = totalBytes / defaultParallelism
-
     Math.min(defaultMaxSplitBytes, Math.max(openCostInBytes, bytesPerCore))
   }
 }
