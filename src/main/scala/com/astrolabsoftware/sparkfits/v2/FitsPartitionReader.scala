@@ -11,7 +11,7 @@ import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFil
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-class FitsPartitionReader[T](
+class FitsPartitionReader[T <: InternalRow](
                               partition: FilePartition,
                               sparkSession: SparkSession,
                               broadCastedConf: Broadcast[SerializableConfiguration],
