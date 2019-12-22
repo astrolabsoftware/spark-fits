@@ -9,6 +9,7 @@ import org.apache.spark.sql.types.StructType
 import com.astrolabsoftware.sparkfits.utils.FitsUtils._
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.util.SerializableConfiguration
 
 class FitsScan(
                 sparkSession: SparkSession,
@@ -26,8 +27,11 @@ class FitsScan(
     partitions.toArray
   }
 
-  override def createReaderFactory(): PartitionReaderFactory =
-    new FitsPartitionReaderFactory(sparkSession, conf, schema)
+  override def createReaderFactory(): PartitionReaderFactory = {
+    val broadCastedConf = sparkSession.sparkContext.broadcast(
+      new SerializableConfiguration(conf))
+    new FitsPartitionReaderFactory(sparkSession, broadCastedConf, schema)
+  }
 
   protected def partitions: Seq[FilePartition] = {
     val partitionedFiles = getPartitionedFiles()
@@ -45,6 +49,8 @@ class FitsScan(
         val path = new Path(file)
         val fits = new Fits(path, conf, conf.getInt("hdu", 0))
         val boundaries = fits.getBlockBoundaries
+        fits.registerHeader
+        fits.blockBoundaries.register(path, conf)
         // Broadcast the boundaries, to avoid computing again
         // ToDO: Check this once - InternalRow.empty
         PartitionedFile(InternalRow.empty, file, boundaries.dataStart, boundaries.blockStop - boundaries.dataStart)
