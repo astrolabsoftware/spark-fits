@@ -43,7 +43,8 @@ class FitsScan(
   }
 
   private def getPartitionedFiles(): Seq[PartitionedFile] = {
-    val files = searchFitsFile(conf.get("paths"), conf, conf.getBoolean("verbosity", false))
+    val files = conf.get("listOfFitsFiles").split(",")
+    // val files = searchFitsFile(conf.get("path"), conf, conf.getBoolean("verbosity", false))
     files.map {
       file =>
         val path = new Path(file)

@@ -14,6 +14,7 @@ import org.apache.spark.sql.execution.datasources.FileFormat
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
+import scala.collection.mutable
 import scala.util.Try
 
 case class FitsTable(
@@ -31,8 +32,11 @@ case class FitsTable(
 
   // This will contain all options use to load the data
   private val extraOptions = new scala.collection.mutable.HashMap[String, String]
-  private val optionsAsScala = options.asScala.toMap
-  private val listOfFitsFiles = searchFitsFile(optionsAsScala("paths"), conf, verbosity)
+  private val optionsAsScala: mutable.Map[String, String] = mutable.Map.empty
+  optionsAsScala ++= options.asScala
+  private final val listOfFitsFiles = searchFitsFile(optionsAsScala("path"), conf, verbosity)
+  // Add list of Fits files for a use later
+  optionsAsScala += ("listOfFitsFiles" -> listOfFitsFiles.mkString(","))
 
   def registerConfigurations: Unit = {
     for (keyAndVal <- optionsAsScala) {
@@ -71,7 +75,7 @@ case class FitsTable(
   }
 
   // We don't really have the notion of table name FITS. So just returning the location
-  override def name(): String = options.get("paths")
+  override def name(): String = options.get("path")
 
   override def capabilities: java.util.Set[TableCapability] = Set(BATCH_READ).asJava
 }

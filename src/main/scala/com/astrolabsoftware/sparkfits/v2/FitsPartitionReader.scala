@@ -6,6 +6,8 @@ import org.apache.log4j.LogManager
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.AttributeReference
+import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.types.StructType
@@ -22,7 +24,7 @@ class FitsPartitionReader[T <: InternalRow](
   // It is ensured that the one file will not be split across multiple partitions, so
   // we don't have to worry about padding, split in middle of row etc etc
 
-  assert(partition.index >= 1, "There are no files in this partition, seems incorrect")
+  assert(partition.files.size >= 1, "There are no files in this partition, seems incorrect")
 
   private val conf = broadCastedConf.value.value
   private var currentFitsMetadata: Option[FitsMetadata] = None
@@ -30,6 +32,8 @@ class FitsPartitionReader[T <: InternalRow](
   private var fits: Fits = _
   private var recordValueBytes: Array[Byte] = null
   private var currentRow: InternalRow = null
+  private final val attributedSchema = schema.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
+  private val unsafeProjection = GenerateUnsafeProjection.generate(attributedSchema, attributedSchema)
 
   val log = LogManager.getRootLogger
 
@@ -41,7 +45,7 @@ class FitsPartitionReader[T <: InternalRow](
   }
   override def next(): Boolean = {
     // We are done reading all the files in the partition
-    if (currentFileIndex >= partition.index) {
+    if (currentFileIndex > partition.index) {
       return false
     }
 
@@ -65,14 +69,18 @@ class FitsPartitionReader[T <: InternalRow](
 
     recordValueBytes = new Array[Byte](currentFitsMetadata.get.rowSizeInt)
     fits.data.readFully(recordValueBytes, 0, currentFitsMetadata.get.rowSizeInt)
-    currentRow = InternalRow.fromSeq(recordValueBytes)
+    currentRow = InternalRow.fromSeq(fits.getRow(recordValueBytes))
     true
   }
 
-  override def get(): InternalRow = currentRow
+  private val rowConverter = {
+    () => unsafeProjection(currentRow)
+  }
+
+  override def get(): InternalRow = rowConverter()
 
   override def close(): Unit = {
-    if (fits.data.getPos >= currentFitsMetadata.get.startStop.dataStop) {
+    if (fits.data != null) {
       fits.data.close()
     }
   }
