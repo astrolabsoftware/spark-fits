@@ -5,6 +5,7 @@ import com.astrolabsoftware.sparkfits.utils.FitsMetadata
 import org.apache.log4j.LogManager
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.CatalystTypeConverters
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
@@ -69,15 +70,17 @@ class FitsPartitionReader[T <: InternalRow](
 
     recordValueBytes = new Array[Byte](currentFitsMetadata.get.rowSizeInt)
     fits.data.readFully(recordValueBytes, 0, currentFitsMetadata.get.rowSizeInt)
-    currentRow = InternalRow.fromSeq(fits.getRow(recordValueBytes))
+//    currentRow = InternalRow.fromSeq(fits.getRow(recordValueBytes))
+    currentRow = InternalRow.fromSeq(fits.getRow(recordValueBytes).map(CatalystTypeConverters.convertToCatalyst(_)))
     true
   }
 
-  private val rowConverter = {
-    () => unsafeProjection(currentRow)
-  }
+//  private val rowConverter = {
+//    () => unsafeProjection(currentRow)
+//  }
 
-  override def get(): InternalRow = rowConverter()
+//  override def get(): InternalRow = rowConverter()
+  override def get(): InternalRow = currentRow
 
   override def close(): Unit = {
     if (fits.data != null) {
