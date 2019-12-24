@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import Dependencies._
-import xerial.sbt.Sonatype._
 
 lazy val root = (project in file(".")).
  settings(
@@ -69,7 +67,13 @@ developers := List(
    "Julien Peloton",
    "peloton@lal.in2p3.fr",
    url("https://github.com/JulienPeloton")
- )
+ ),
+  Developer(
+    "Mayur Bhosale",
+    "Mayur Bhosale",
+    "mayurdb31@gmail.com",
+    url("https://github.com/mayurdb")
+  )
 )
 
 licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
