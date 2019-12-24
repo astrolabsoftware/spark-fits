@@ -5,12 +5,9 @@ import com.astrolabsoftware.sparkfits.utils.FitsMetadata
 import org.apache.log4j.LogManager
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.CatalystTypeConverters
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.AttributeReference
-import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
+import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.connector.read.PartitionReader
-import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
+import org.apache.spark.sql.execution.datasources.FilePartition
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
@@ -33,8 +30,6 @@ class FitsPartitionReader[T <: InternalRow](
   private var fits: Fits = _
   private var recordValueBytes: Array[Byte] = null
   private var currentRow: InternalRow = null
-  private final val attributedSchema = schema.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
-  private val unsafeProjection = GenerateUnsafeProjection.generate(attributedSchema, attributedSchema)
 
   val log = LogManager.getRootLogger
 
@@ -60,7 +55,7 @@ class FitsPartitionReader[T <: InternalRow](
     }
 
     // Close the file if we went outside the block!
-    // This means we sent all our records.
+    // This means we read all the records.
     if (fits.data.getPos >= currentFitsMetadata.get.startStop.dataStop) {
       fits.data.close()
       // Done reading this file, try with the next file in this block
@@ -70,16 +65,12 @@ class FitsPartitionReader[T <: InternalRow](
 
     recordValueBytes = new Array[Byte](currentFitsMetadata.get.rowSizeInt)
     fits.data.readFully(recordValueBytes, 0, currentFitsMetadata.get.rowSizeInt)
-//    currentRow = InternalRow.fromSeq(fits.getRow(recordValueBytes))
+    // FixMe: We can just directly read the rows as UnsafeRow to avoid unnecessary conversion
+    //  back and forth
     currentRow = InternalRow.fromSeq(fits.getRow(recordValueBytes).map(CatalystTypeConverters.convertToCatalyst(_)))
     true
   }
 
-//  private val rowConverter = {
-//    () => unsafeProjection(currentRow)
-//  }
-
-//  override def get(): InternalRow = rowConverter()
   override def get(): InternalRow = currentRow
 
   override def close(): Unit = {

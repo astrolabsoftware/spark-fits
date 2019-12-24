@@ -1,27 +1,25 @@
 package com.astrolabsoftware.sparkfits.v2
 
-import scala.collection.JavaConverters._
 import com.astrolabsoftware.sparkfits.FitsLib.Fits
-import com.astrolabsoftware.sparkfits.utils.FitsUtils._
 import com.astrolabsoftware.sparkfits.FitsSchema.getSchema
+import com.astrolabsoftware.sparkfits.utils.FitsUtils._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.TableCapability.BATCH_READ
 import org.apache.spark.sql.connector.catalog.{SupportsRead, Table, TableCapability}
 import org.apache.spark.sql.connector.read.ScanBuilder
-import org.apache.spark.sql.execution.datasources.FileFormat
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Try
 
 case class FitsTable(
                       sparkSession: SparkSession,
                       options: CaseInsensitiveStringMap,
-                      userSpecifiedSchema: Option[StructType],
-                      fallbackFileFormat: Class[_ <: FileFormat])
+                      userSpecifiedSchema: Option[StructType])
   extends Table with SupportsRead {
 
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder =
@@ -63,8 +61,8 @@ case class FitsTable(
     } else{
       checkSchemaAndReturnType(listOfFitsFiles.slice(0, 10), conf)
     }
+    conf.setBoolean("implemented", implemented)
 
-//    val conf = new Configuration(sparkSession.sparkContext.hadoopConfiguration)
     val pathFS = new Path(listOfFitsFiles(0))
     val fits = new Fits(pathFS, conf, options.get("hdu").toInt)
     // Register header and block boundaries
@@ -75,7 +73,7 @@ case class FitsTable(
   }
 
   // We don't really have the notion of table name FITS. So just returning the location
-  override def name(): String = options.get("path")
+  override def name(): String = s"FITS Table: ${options.get("path")}"
 
   override def capabilities: java.util.Set[TableCapability] = Set(BATCH_READ).asJava
 }

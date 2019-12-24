@@ -48,6 +48,7 @@ class FitsMetadata(partitionedFile: PartitionedFile, val index: Int, conf: Confi
   val rowSizeLong = rowSizeInt.toLong
 
   // For Table, seek for a round number of lines for the record
+  // ToDo: Cases when the user has given the record length
   private var recordLength = (recordLengthFromUser / rowSizeInt) * rowSizeInt
 
   // Make sure that the recordLength is not bigger than the block size!
@@ -61,7 +62,4 @@ class FitsMetadata(partitionedFile: PartitionedFile, val index: Int, conf: Confi
   }
   // Move to the starting binary index
   fits.data.seek(startStop.dataStart)
-
-  // Set our starting block position
-  var currentPosition = startStop.dataStart
 }

@@ -1,23 +1,23 @@
 package com.astrolabsoftware.sparkfits.v2
 
-import org.apache.spark.sql.connector.catalog.Table
-import org.apache.spark.sql.execution.datasources.FileFormat
-import org.apache.spark.sql.execution.datasources.v2.FileDataSourceV2
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.connector.catalog.{Table, TableProvider}
+import org.apache.spark.sql.sources.DataSourceRegister
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class FitsDataSourceV2 extends FileDataSourceV2 {
+class FitsDataSourceV2 extends TableProvider with DataSourceRegister {
 
-  override def shortName() = "fits"
+  // ToDo: Use the name "fits" and still resolve v1 vs v2 somehow
+  override def shortName() = "fitsv2"
+
+  lazy val sparkSession = SparkSession.active
 
   override def getTable(options: CaseInsensitiveStringMap, schema: StructType): Table = {
-    FitsTable(sparkSession, options, Some(schema), fallbackFileFormat)
+    FitsTable(sparkSession, options, Some(schema))
   }
 
-  // Still have to figure this out
-  override def fallbackFileFormat: Class[_ <: FileFormat] = null
-
   override def getTable(options: CaseInsensitiveStringMap): Table = {
-    FitsTable(sparkSession, options, None, fallbackFileFormat)
+    FitsTable(sparkSession, options, None)
   }
 }

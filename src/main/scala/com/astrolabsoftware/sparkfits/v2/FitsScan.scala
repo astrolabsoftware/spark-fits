@@ -6,7 +6,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.read.{Batch, InputPartition, PartitionReaderFactory, Scan}
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionDirectory, PartitionedFile}
 import org.apache.spark.sql.types.StructType
-import com.astrolabsoftware.sparkfits.utils.FitsUtils._
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.util.SerializableConfiguration
@@ -34,12 +33,16 @@ class FitsScan(
   }
 
   protected def partitions: Seq[FilePartition] = {
-    val partitionedFiles = getPartitionedFiles()
-    // Sort by length so that bigger blocks are scheduled first
-    val sortedPartitionedFiles = partitionedFiles.sortBy(_.length)
-    val splitBytes = maxSplitBytes(sparkSession, partitionedFiles)
-    // Handle the case when there is just one file and its size is less than then splitBytes
-    FilePartition.getFilePartitions(sparkSession, sortedPartitionedFiles, splitBytes)
+    if (conf.getBoolean("implemented", true)) {
+      val partitionedFiles = getPartitionedFiles()
+      // Sort by length so that bigger blocks are scheduled first
+      val sortedPartitionedFiles = partitionedFiles.sortBy(_.length)
+      val splitBytes = maxSplitBytes(sparkSession, partitionedFiles)
+      // Handle the case when there is just one file and its size is less than then splitBytes
+      FilePartition.getFilePartitions(sparkSession, sortedPartitionedFiles, splitBytes)
+    } else {
+      Seq.empty
+    }
   }
 
   private def getPartitionedFiles(): Seq[PartitionedFile] = {
@@ -50,6 +53,7 @@ class FitsScan(
         val path = new Path(file)
         val fits = new Fits(path, conf, conf.getInt("hdu", 0))
         val boundaries = fits.getBlockBoundaries
+        // Register the header and block boundaries for re-use later
         fits.registerHeader
         fits.blockBoundaries.register(path, conf)
         // Broadcast the boundaries, to avoid computing again
