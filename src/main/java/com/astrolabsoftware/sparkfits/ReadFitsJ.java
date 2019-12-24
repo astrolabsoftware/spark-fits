@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.astrolabsoftware.sparkfits.examples;
+package com.astrolabsoftware.sparkfits;
 
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions.*;

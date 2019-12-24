@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 lazy val root = (project in file(".")).
  settings(
    inThisBuild(List(
@@ -69,7 +68,7 @@ developers := List(
    url("https://github.com/JulienPeloton")
  ),
   Developer(
-    "Mayur Bhosale",
+    "MayurBhosale",
     "Mayur Bhosale",
     "mayurdb31@gmail.com",
     url("https://github.com/mayurdb")
