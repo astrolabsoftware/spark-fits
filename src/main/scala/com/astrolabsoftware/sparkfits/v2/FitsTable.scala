@@ -29,7 +29,6 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.util.Try
 
 case class FitsTable(
                       sparkSession: SparkSession,
@@ -42,27 +41,23 @@ case class FitsTable(
 
   // Initialise Hadoop configuration
   val conf = new Configuration(sparkSession.sparkContext.hadoopConfiguration)
-
-  // This will contain all options use to load the data
-  private val extraOptions = new scala.collection.mutable.HashMap[String, String]
   private val optionsAsScala: mutable.Map[String, String] = mutable.Map.empty
   optionsAsScala ++= options.asScala
   private final val listOfFitsFiles = searchFitsFile(optionsAsScala("path"), conf, verbosity)
-  // Add list of Fits files for a use later
+  // Add list of Fits files to conf for a re-use later
   optionsAsScala += ("listOfFitsFiles" -> listOfFitsFiles.mkString(","))
 
   def registerConfigurations: Unit = {
     for (keyAndVal <- optionsAsScala) {
       conf.set(keyAndVal._1, keyAndVal._2)
-      extraOptions += (keyAndVal._1 -> keyAndVal._2)
     }
     if (conf.get("mode") == null) {
       conf.set("mode", "PERMISSIVE")
-      extraOptions += ("mode" -> "PERMISSIVE")
     }
   }
   registerConfigurations
-  val verbosity = Try{extraOptions("verbose")}.getOrElse("false").toBoolean
+
+  val verbosity = conf.getBoolean("verbose", false)
 
   override lazy final val schema: StructType = userSpecifiedSchema.getOrElse {
 
@@ -90,5 +85,6 @@ case class FitsTable(
   // We don't really have the notion of table name FITS. So just returning the location
   override def name(): String = s"FITS Table: ${options.get("path")}"
 
+  // Here we define, functionality supported by FITS datasource
   override def capabilities: java.util.Set[TableCapability] = Set(BATCH_READ).asJava
 }

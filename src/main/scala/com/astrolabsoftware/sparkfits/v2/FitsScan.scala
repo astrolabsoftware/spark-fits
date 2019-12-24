@@ -42,6 +42,8 @@ class FitsScan(
   }
 
   override def createReaderFactory(): PartitionReaderFactory = {
+    // Broadcast the confs which will have the file boundaries and headers
+    // for the re-use on the executor side
     val broadCastedConf = sparkSession.sparkContext.broadcast(
       new SerializableConfiguration(conf))
     new FitsPartitionReaderFactory(sparkSession, broadCastedConf, schema)
@@ -62,7 +64,6 @@ class FitsScan(
 
   private def getPartitionedFiles(): Seq[PartitionedFile] = {
     val files = conf.get("listOfFitsFiles").split(",")
-    // val files = searchFitsFile(conf.get("path"), conf, conf.getBoolean("verbosity", false))
     files.map {
       file =>
         val path = new Path(file)
@@ -71,7 +72,6 @@ class FitsScan(
         // Register the header and block boundaries for re-use later
         fits.registerHeader
         fits.blockBoundaries.register(path, conf)
-        // Broadcast the boundaries, to avoid computing again
         // ToDO: Check this once - InternalRow.empty
         PartitionedFile(InternalRow.empty, file, boundaries.dataStart, boundaries.blockStop - boundaries.dataStart)
     }

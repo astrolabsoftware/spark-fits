@@ -62,13 +62,6 @@ class FitsPartitionReader[T <: InternalRow](
 
     setCurrentFileParams()
 
-    // Close the file if mapper is outside the HDU
-    if (currentFitsMetadata.get.notValid) {
-      fits.data.close()
-      // Try next file
-      currentFileIndex += 1
-    }
-
     // Close the file if we went outside the block!
     // This means we read all the records.
     if (fits.data.getPos >= currentFitsMetadata.get.startStop.dataStop) {
@@ -82,7 +75,8 @@ class FitsPartitionReader[T <: InternalRow](
     fits.data.readFully(recordValueBytes, 0, currentFitsMetadata.get.rowSizeInt)
     // FixMe: We can just directly read the rows as UnsafeRow to avoid unnecessary conversion
     //  back and forth
-    currentRow = InternalRow.fromSeq(fits.getRow(recordValueBytes).map(CatalystTypeConverters.convertToCatalyst(_)))
+    currentRow = InternalRow.fromSeq(
+      fits.getRow(recordValueBytes).map(CatalystTypeConverters.convertToCatalyst(_)))
     true
   }
 
