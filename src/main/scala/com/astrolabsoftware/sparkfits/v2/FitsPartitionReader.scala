@@ -52,18 +52,12 @@ class FitsPartitionReader[T <: InternalRow](
 
   private def setCurrentFileParams(): Unit = {
       if (!currentFitsMetadata.isDefined || currentFitsMetadata.get.index != currentFileIndex) {
-      println(
-        s"""
-          | Info:
-          | Number of files: ${partition.files.size}
-          | Index: ${partition.index}
-          |""".stripMargin)
       currentFitsMetadata = Option(new FitsMetadata(partition.files(currentFileIndex), currentFileIndex, conf))
       fits = currentFitsMetadata.get.fits
     }
   }
+
   override def next(): Boolean = {
-    println("Getting next record")
     // We are done reading all the files in the partition
     if (currentFileIndex > partition.files.size-1) {
       return false
@@ -90,14 +84,7 @@ class FitsPartitionReader[T <: InternalRow](
     fits.data.readFully(recordValueBytes, 0, currentFitsMetadata.get.rowSizeInt)
     // FixMe: We can just directly read the rows as UnsafeRow to avoid unnecessary conversion
     //  back and forth
-//    currentRow = InternalRow.fromSeq(
-//      fits.getRow(recordValueBytes).map(CatalystTypeConverters.convertToCatalyst(_)))
-
-//    currentRow = InternalRow.fromSeq(
-//      fits.getRow(recordValueBytes).map(converters.toRow(_)))
-    currentRow = converters.toRow(Row.fromSeq(recordValueBytes))
-
-    println("Got record")
+   currentRow = converters.toRow(Row.fromSeq(fits.getRow(recordValueBytes)))
     true
   }
 

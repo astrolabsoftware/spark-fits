@@ -87,8 +87,8 @@ case class FitsTable(
     getSchema(fits)
   }
 
-  // We don't really have the notion of table name FITS. So just returning the location
-  override def name(): String = s"FITS Table: ${options.get("path")}"
+  // We don't really have the notion of table name in FITS. So just returning the location
+  override def name(): String = s"${options.get("path")}"
 
   // Here we define, functionality supported by FITS datasource
   override def capabilities: java.util.Set[TableCapability] = Set(BATCH_READ).asJava
