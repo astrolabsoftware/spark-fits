@@ -36,6 +36,8 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   private var spark : SparkSession = _
 
+  private val fileFormats = List("com.astrolabsoftware.sparkfits", "fitsv2")
+
   override protected def beforeAll() : Unit = {
     super.beforeAll()
     spark = SparkSession
@@ -63,256 +65,327 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if the user provides a correct recordLength
   test("recordLength test: Can you catch a too small user-defined recordLength?") {
-    val results = spark.read
-      .format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .option("recordLength", 1024)
-    val exception = intercept[AssertionError] {
-      results.load(fn_long)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read
+          .format(fileFormat)
+          .option("hdu", 1)
+          .option("recordLength", 1024)
+        val exception = intercept[AssertionError] {
+          results.load(fn_long)
+        }
+        assert(exception.getMessage.contains("recordLength option too small"))
     }
-    assert(exception.getMessage.contains("recordLength option too small"))
   }
 
   // Test if the code can adapt recordlength
   test("recordLength test: Can you adapt the size of recordLength if needed?") {
-    val results = spark.read
-      .format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn_long)
-    assert(results.count() == 100)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read
+          .format(fileFormat)
+          .option("hdu", 1)
+          .load(fn_long)
+        assert(results.count() == 100)
+    }
   }
 
   // Test if the user provides the HDU index to be read
   test("HDU test: Is there a HDU number?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-    val exception = intercept[NoSuchElementException] {
-      results.load(fn)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+        val exception = intercept[NoSuchElementException] {
+          results.load(fn)
+        }
+        assert(exception.getMessage.contains("HDU"))
     }
-    assert(exception.getMessage.contains("HDU"))
   }
 
   // Test if the user provides the HDU index to be read
   test("HDU test: Is HDU index above the max HDU index?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-    val exception = intercept[AssertionError] {
-      results.option("hdu", 30).load(fn)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+        val exception = intercept[AssertionError] {
+          results.option("hdu", 30).load(fn)
+        }
+        assert(exception.getMessage.contains("HDU"))
     }
-    assert(exception.getMessage.contains("HDU"))
   }
 
   test("HDU type test: Return an empty DataFrame if HDU is empty?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits").option("hdu", 0).load(fn)
-    assert(results.collect().size == 0)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat).option("hdu", 0).load(fn)
+        assert(results.collect().size == 0)
+    }
   }
 
   test("HDU type test: Return the proper record count if HDU is an image?") {
-    val fn_image = "src/test/resources/toTest/tst0009.fits"
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 2)
-      .load(fn_image)
-    val count = results.count()
-    assert(count == 155)
+    fileFormats.foreach {
+      fileFormat =>
+        val fn_image = "src/test/resources/toTest/tst0009.fits"
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 2)
+          .load(fn_image)
+        val count = results.count()
+        assert(count == 155)
+    }
   }
 
   // Test if the user provides the data type in the HDU
   test("HDU type test: Return an empty DF if the HDU is a Table? (not implemented yet)") {
-    val fn_table = "src/test/resources/toTest/tst0009.fits"
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn_table)
-    val count = results.count()
-    assert(count == 0)
+    fileFormats.foreach {
+      fileFormat =>
+        val fn_table = "src/test/resources/toTest/tst0009.fits"
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn_table)
+        val count = results.count()
+        assert(count == 0)
+    }
   }
 
   // Test if one accesses column as expected for HDU 1
   test("Count test: Do you count all elements in a column in HDU 1?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn)
-    assert(results.select("RA").count() == 20000)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn)
+        assert(results.select("RA").count() == 20000)
+    }
   }
 
   // Test if one accesses column as expected for HDU 1
   test("Count test: Do you count all elements in a column in HDU 2?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 2)
-      .load(fn)
-    assert(results.select("Index").count() == 20000)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 2)
+          .load(fn)
+        assert(results.select("Index").count() == 20000)
+    }
   }
 
   // Test if one accesses column as expected for HDU 1
   test("Column test: Can you select only one column?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .option("columns", "target")
-      .load(fn)
-    assert(results.first.size == 1)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .option("columns", "target")
+          .load(fn)
+        assert(results.first.size == 1)
+    }
   }
 
   // Test if one accesses column as expected for HDU 1
   test("Column test: Can you select only some columns?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .option("columns", "target,RA")
-      .load(fn)
-    assert(results.first.size == 2)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .option("columns", "target,RA")
+          .load(fn)
+        assert(results.first.size == 2)
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Boolean?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 2)
-      .load(fn)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("Discovery").first()(0).isInstanceOf[Boolean])
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 2)
+          .load(fn)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("Discovery").first()(0).isInstanceOf[Boolean])
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Long?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("Index").first()(0).isInstanceOf[Long])
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("Index").first()(0).isInstanceOf[Long])
 
-    // Test also that vector with one element gets converted to scalar
-    val resultsAlt = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fnAlt)
-    // Elements of a column are arrays of 1 element
-    assert(resultsAlt.select("Index").first()(0).isInstanceOf[Long])
+        // Test also that vector with one element gets converted to scalar
+        val resultsAlt = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fnAlt)
+        // Elements of a column are arrays of 1 element
+        assert(resultsAlt.select("Index").first()(0).isInstanceOf[Long])
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Int?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("RunId").first()(0).isInstanceOf[Int])
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("RunId").first()(0).isInstanceOf[Int])
 
-    // Test also that vector with one element gets converted to scalar
-    val resultsAlt = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 2)
-      .load(fnAlt)
-    // Elements of a column are arrays of 1 element
-    assert(resultsAlt.select("Index").first()(0).isInstanceOf[Int])
+        // Test also that vector with one element gets converted to scalar
+        val resultsAlt = spark.read.format(fileFormat)
+          .option("hdu", 2)
+          .load(fnAlt)
+        // Elements of a column are arrays of 1 element
+        assert(resultsAlt.select("Index").first()(0).isInstanceOf[Int])
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Short?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn_array)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("RunId").first()(0).isInstanceOf[Short])
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn_array)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("RunId").first()(0).isInstanceOf[Short])
 
-    // Test also that vector with one element gets converted to scalar
-    val resultsAlt = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fnAlt)
-    // Elements of a column are arrays of 1 element
-    assert(resultsAlt.select("RunId").first()(0).isInstanceOf[Short])
+        // Test also that vector with one element gets converted to scalar
+        val resultsAlt = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fnAlt)
+        // Elements of a column are arrays of 1 element
+        assert(resultsAlt.select("RunId").first()(0).isInstanceOf[Short])
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Float?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("RA").first()(0).isInstanceOf[Float])
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("RA").first()(0).isInstanceOf[Float])
 
-    // Test also that vector with one element gets converted to scalar
-    val resultsAlt = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fnAlt)
-    // Elements of a column are arrays of 1 element
-    assert(resultsAlt.select("RA").first()(0).isInstanceOf[Float])
+        // Test also that vector with one element gets converted to scalar
+        val resultsAlt = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fnAlt)
+        // Elements of a column are arrays of 1 element
+        assert(resultsAlt.select("RA").first()(0).isInstanceOf[Float])
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Double?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("Dec").first()(0).isInstanceOf[Double])
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("Dec").first()(0).isInstanceOf[Double])
 
-    // Test also that vector with one element gets converted to scalar
-    val resultsAlt = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fnAlt)
-    // Elements of a column are arrays of 1 element
-    assert(resultsAlt.select("Dec").first()(0).isInstanceOf[Double])
+        // Test also that vector with one element gets converted to scalar
+        val resultsAlt = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fnAlt)
+        // Elements of a column are arrays of 1 element
+        assert(resultsAlt.select("Dec").first()(0).isInstanceOf[Double])
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see an Array(Long)?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn_array)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("Index").schema(0).dataType.simpleString == "array<bigint>")
-    assert(results.select("Index").take(1)(0)(0).asInstanceOf[Seq[Long]].size == 7)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn_array)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("Index").schema(0).dataType.simpleString == "array<bigint>")
+        assert(results.select("Index").take(1)(0)(0).asInstanceOf[Seq[Long]].size == 7)
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see an Array(Float)?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn_array)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("RA").schema(0).dataType.simpleString == "array<float>")
-    assert(results.select("RA").take(1)(0)(0).asInstanceOf[Seq[Float]].size == 2)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn_array)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("RA").schema(0).dataType.simpleString == "array<float>")
+        assert(results.select("RA").take(1)(0)(0).asInstanceOf[Seq[Float]].size == 2)
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see an Array(Double)?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn_array)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("Dec").schema(0).dataType.simpleString == "array<double>")
-    assert(results.select("Dec").take(1)(0)(0).asInstanceOf[Seq[Double]].size == 3)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn_array)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("Dec").schema(0).dataType.simpleString == "array<double>")
+        assert(results.select("Dec").take(1)(0)(0).asInstanceOf[Seq[Double]].size == 3)
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see an Array(Int)?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 2)
-      .load(fn_array)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("Index").schema(0).dataType.simpleString == "array<int>")
-    assert(results.select("Index").take(1)(0)(0).asInstanceOf[Seq[Int]].size == 2)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 2)
+          .load(fn_array)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("Index").schema(0).dataType.simpleString == "array<int>")
+        assert(results.select("Index").take(1)(0)(0).asInstanceOf[Seq[Int]].size == 2)
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see an Array(Short)?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn_array)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("RunIdArray").schema(0).dataType.simpleString == "array<smallint>")
-    assert(results.select("RunIdArray").take(1)(0)(0).asInstanceOf[Seq[Int]].size == 3)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn_array)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("RunIdArray").schema(0).dataType.simpleString == "array<smallint>")
+        assert(results.select("RunIdArray").take(1)(0)(0).asInstanceOf[Seq[Int]].size == 3)
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see a String?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("target").first()(0).isInstanceOf[String])
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn)
+      // Elements of a column are arrays of 1 element
+      assert(results.select("target").first()(0).isInstanceOf[String])
+    }
   }
 
   // Test if type cast is done correctly
   test("Type test: Do you see a Byte?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fnUb)
-    // Elements of a column are arrays of 1 element
-    assert(results.select("unsigned bytes").first()(0).isInstanceOf[Byte])
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fnUb)
+        // Elements of a column are arrays of 1 element
+        assert(results.select("unsigned bytes").first()(0).isInstanceOf[Byte])
+    }
   }
-
 }

@@ -60,7 +60,12 @@ case class FitsTable(
   val verbosity = conf.getBoolean("verbose", false)
 
   override lazy final val schema: StructType = userSpecifiedSchema.getOrElse {
-
+    // Ensure HDU index was specified
+    if (conf.get("hdu") == null) {
+      throw new NoSuchElementException("""
+                                    You need to specify the HDU to be read!
+                                    spark.readfits.option("hdu", <Int>)""")
+    }
     // Check that all the files have the same Schema
     // in order to perform the union. Return the HDU type.
     // NOTE: This operation is very long for hundreds of files!

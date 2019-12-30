@@ -31,6 +31,8 @@ class FitsScan(
                 schema: StructType
               ) extends Scan with Batch {
 
+  println("Using the V2 for read")
+
   override def toBatch: Batch = this
 
   // FITS does not support column pruning or other optimizations at the file level.
@@ -63,6 +65,11 @@ class FitsScan(
   }
 
   private def getPartitionedFiles(): Seq[PartitionedFile] = {
+    // FixMe: For a really large number of files, the Driver will get stuck while listing
+    //  the files itself for block storage like S3. If not that, driver definitely
+    //  get stuck while iterating over each file, and computing the boundaries
+    //  We can launch a spark job to list the files and compute the boundaries distributively
+    //  :Just_A_Thought:
     val files = conf.get("listOfFitsFiles").split(",")
     files.map {
       file =>
