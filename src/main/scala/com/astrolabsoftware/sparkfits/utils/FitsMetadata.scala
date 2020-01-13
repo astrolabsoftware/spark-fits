@@ -73,7 +73,8 @@ class FitsMetadata(partitionedFile: PartitionedFile, val index: Int, conf: Confi
 
 
     // For Table, seek for a round number of lines for the record
-    // ToDo: Cases when the user has given the record length
+    // ToDo: Cases when the user has given the record length. Currenty, this
+    //  recordLength is not getting used.
     recordLength = (recordLengthFromUser / rowSizeInt) * rowSizeInt
 
     // Make sure that the recordLength is not bigger than the block size!
