@@ -240,16 +240,19 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       // beginning of the data block for the first valid block.
 
       // We shift the start to where the data block starts
-      var shift = -startstop.dataStart + 1
+      var shift = -startstop.dataStart
 
       splitStart = if((splitStart_tmp) % rowSizeLong != 0 &&
         splitStart_tmp != startstop.dataStart && splitStart_tmp != 0) {
 
         // Decrement the starting index to fully catch the line we are sitting on
+        // Only do it if necessary, otherwise you'll get duplicate (#93)
         var tmp_byte = 0
-        do {
-          tmp_byte = tmp_byte - 1
-        } while ((splitStart_tmp + tmp_byte + shift) % rowSizeLong != 0)
+        if ((splitStart_tmp + tmp_byte + shift) % rowSizeLong != 0) {
+          do {
+            tmp_byte = tmp_byte - 1
+          } while ((splitStart_tmp + tmp_byte + shift) % rowSizeLong != 0)
+        }
 
         // Return offseted starting index
         splitStart_tmp + tmp_byte
