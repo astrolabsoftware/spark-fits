@@ -246,10 +246,13 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
         splitStart_tmp != startstop.dataStart && splitStart_tmp != 0) {
 
         // Decrement the starting index to fully catch the line we are sitting on
+        // Only do it if necessary, otherwise you'll get duplicate (#93)
         var tmp_byte = 0
-        do {
-          tmp_byte = tmp_byte - 1
-        } while ((splitStart_tmp + tmp_byte + shift) % rowSizeLong != 0)
+        if ((splitStart_tmp + tmp_byte + shift) % rowSizeLong != 0) {
+          do {
+            tmp_byte = tmp_byte - 1
+          } while ((splitStart_tmp + tmp_byte + shift) % rowSizeLong != 0)
+        }
 
         // Return offseted starting index
         splitStart_tmp + tmp_byte
