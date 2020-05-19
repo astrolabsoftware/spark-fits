@@ -18,6 +18,7 @@
 - [03/2019] **Release**: version 0.7.3
 - [05/2019] **Release**: version 0.8.0, 0.8.1, 0.8.2
 - [06/2019] **Release**: version 0.8.3
+- [05/2020] **Release**: version 0.8.4
 
 ## spark-fits
 
@@ -33,20 +34,20 @@ data sources (CSV, JSON, Avro, Parquet, etc). Note that spark-fits follows Apach
 
 ```bash
 # Scala 2.11
-spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.11:0.8.3" <...>
+spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.11:0.8.4" <...>
 
 # Scala 2.12
-spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.12:0.8.3" <...>
+spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.12:0.8.4" <...>
 ```
 
 or you can link against this library in your program at the following coordinates in your build.sbt
 
 ```scala
 // Scala 2.11
-libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.11" % "0.8.3"
+libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.11" % "0.8.4"
 
 // Scala 2.12
-libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.12" % "0.8.3"
+libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.12" % "0.8.4"
 ```
 
 Currently available:
