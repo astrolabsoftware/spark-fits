@@ -121,15 +121,17 @@ object FitsHduImage {
       * Build a list of one StructField from header information.
       * The list of StructField is then used to build the DataFrame schema.
       *
-      * @return (List[StructField]) List of StructField with column name = Image,
+      * @return (List[StructField]) List of StructField with column names [Image, ImgIndex],
       *   data type, and whether the data is nullable.
       *
       */
     override def listOfStruct : List[StructField] = {
       // Get the list of StructField.
       val lStruct = List.newBuilder[StructField]
-      val tmp = ReadMyType("Image", elementType(0), true)
-      lStruct += tmp.copy(tmp.name, ArrayType(tmp.dataType))
+      val img = ReadMyType("Image", elementType(0), true)
+      val index = ReadMyType("ImgIndex", "K", true)
+      lStruct += img.copy(img.name, ArrayType(img.dataType))
+      lStruct += index.copy(index.name, index.dataType)
       lStruct.result
     }
 

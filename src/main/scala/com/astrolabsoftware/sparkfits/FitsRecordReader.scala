@@ -72,6 +72,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
   private var nrowsLong : Long = 0L
   private var rowSizeInt : Int = 0
   private var rowSizeLong : Long = 0L
+  private var nrowsPerImage : Long = 0L
   private var startstop: FitsLib.FitsBlockBoundaries = FitsLib.FitsBlockBoundaries()
   private var notValid : Boolean = false
 
@@ -180,6 +181,9 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
         log.warn(s"Empty HDU for ${file}")
         log.warn(s"Use option('mode', 'PERMISSIVE') if you want to discard all empty HDUs.")
       }
+
+      // Total number of rows per image
+      nrowsPerImage = keyValues("NAXIS2").toInt
 
       // Get the number of rows and the size (B) of one row.
       // this is dependent on the HDU type
@@ -370,13 +374,20 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       // Read a record of length `0 to recordLength - 1`
       fits.data.readFully(recordValueBytes, 0, recordLength)
 
+      val imgPosition = (((currentPosition + recordLength)/rowSizeLong - 1)/nrowsPerImage).toLong
       // Convert each row
       // 1 task: 32 MB @ 2s
       val tmp = Seq.newBuilder[Row]
       for (i <- 0 to recordLength / rowSizeLong.toInt - 1) {
-        tmp += Row.fromSeq(fits.getRow(
+        val myrow = fits.getRow(
             recordValueBytes.slice(
-              rowSizeInt*i, rowSizeInt*(i+1))))
+              rowSizeInt*i, rowSizeInt*(i+1)
+            )
+          )
+        val data = if (fits.hduType == "IMAGE") {
+          myrow :+ imgPosition
+        } else myrow
+        tmp += Row.fromSeq(data)
       }
       recordValue = tmp.result
 
