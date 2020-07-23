@@ -14,10 +14,10 @@ option. For example, to include it when starting the spark shell:
 
 ```bash
 # Scala 2.11
-$SPARK_HOME/bin/spark-shell --packages com.github.astrolabsoftware:spark-fits_2.11:0.8.4
+$SPARK_HOME/bin/spark-shell --packages com.github.astrolabsoftware:spark-fits_2.11:0.9.0
 
 # Scala 2.12
-$SPARK_HOME/bin/spark-shell --packages com.github.astrolabsoftware:spark-fits_2.12:0.8.4
+$SPARK_HOME/bin/spark-shell --packages com.github.astrolabsoftware:spark-fits_2.12:0.9.0
 ```
 
 Using `--packages` ensures that this library and its dependencies will
@@ -25,10 +25,10 @@ be added to the classpath (make sure you use the latest version). In Python, you
 
 ```bash
 # Scala 2.11
-$SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.11:0.8.4
+$SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.11:0.9.0
 
 # Scala 2.12
-$SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.12:0.8.4
+$SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.12:0.9.0
 ```
 
 Alternatively to have the latest development you can download this repo
@@ -59,7 +59,7 @@ export PYSPARK_DRIVER_PYTHON_OPTS="path/to/jupyter-notebook"
 $SPARK_HOME/bin/pyspark --jars /path/to/jar/<spark-fits.jar>
 ```
 See
-[here](https://spark.apache.org/docs/0.9.0/python-programming-guide.html)
+[here](https://spark.apache.org/docs/latest/python-programming-guide.html)
 for more options for pyspark. To build the JAR, just run
 `sbt ++{SBT_VERSION} package` from the root of the package (see
 `run_*.sh` scripts). Here is an example in the spark-shell:
