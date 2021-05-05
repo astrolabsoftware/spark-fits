@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import Dependencies._
-import xerial.sbt.Sonatype._
-
 lazy val root = (project in file(".")).
  settings(
    inThisBuild(List(
@@ -44,10 +41,12 @@ lazy val root = (project in file(".")).
    // assemblyShadeRules in assembly := Seq(ShadeRule.rename("nom.**" -> "new_nom.@1").inAll),
    // Put dependencies of the library
    libraryDependencies ++= Seq(
-     "org.apache.spark" %% "spark-core" % "2.4.3" % "provided",
-     "org.apache.spark" %% "spark-sql" % "2.4.3" % "provided",
-     scalaTest % Test
-   )
+     "org.apache.spark" %% "spark-core" % "3.0.0-preview" % "provided",
+     "org.apache.spark" %% "spark-sql" % "3.0.0-preview" % "provided",
+     "org.scalatest" %% "scalatest" % "3.0.1" % Test
+   ),
+
+   scalaVersion := "2.12.1"
  )
 
 // POM settings for Sonatype
@@ -67,7 +66,13 @@ developers := List(
    "Julien Peloton",
    "peloton@lal.in2p3.fr",
    url("https://github.com/JulienPeloton")
- )
+ ),
+  Developer(
+    "MayurBhosale",
+    "Mayur Bhosale",
+    "mayurdb31@gmail.com",
+    url("https://github.com/mayurdb")
+  )
 )
 
 licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))

@@ -40,6 +40,8 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   private var spark : SparkSession = _
 
+  private val fileFormats = List("com.astrolabsoftware.sparkfits", "fitsv2")
+
   override protected def beforeAll() : Unit = {
     super.beforeAll()
     spark = SparkSession
@@ -63,192 +65,243 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
 
   // Test if readfits does nothing :D
   test("Readfits test: Do you send back a DataFrameReader?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-    assert(results.isInstanceOf[DataFrameReader])
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+        assert(results.isInstanceOf[DataFrameReader])
+    }
   }
 
   // Test if readfits does nothing :D
   test("Readfits test: Do you yout nickname?") {
-    val results = spark.read.format("fits")
-    assert(results.isInstanceOf[DataFrameReader])
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+        assert(results.isInstanceOf[DataFrameReader])
+    }
   }
 
   // Test DataFrame
   test("DataFrame test: can you really make a DF from the hdu?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn)
-    assert(results.isInstanceOf[DataFrame])
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn)
+        assert(results.isInstanceOf[DataFrame])
+    }
   }
 
   // Test DataFrame
   test("User schema test: can you really take an external header?") {
-    // Specify manually the header
-    val schema = StructType(
-      List(
-        StructField("toto", StringType, true),
-        StructField("tutu", FloatType, true),
-        StructField("tata", DoubleType, true),
-        StructField("titi", LongType, true),
-        StructField("tete", IntegerType, true)
-      )
-    )
+    fileFormats.foreach {
+      fileFormat =>
+        // Specify manually the header
+        val schema = StructType(
+          List(
+            StructField("toto", StringType, true),
+            StructField("tutu", FloatType, true),
+            StructField("tata", DoubleType, true),
+            StructField("titi", LongType, true),
+            StructField("tete", IntegerType, true)
+          )
+        )
 
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .schema(schema)
-      .load(fn)
-    assert(results.columns.deep == Array("toto", "tutu", "tata", "titi", "tete").deep)
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .schema(schema)
+          .load(fn)
+        assert(results.columns.deep == Array("toto", "tutu", "tata", "titi", "tete").deep)
+    }
   }
 
   // Test Data distribution
   test("Data distribution test: Can you count all elements?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn)
-    assert(results.select(col("Index")).count().toInt == 20000)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn)
+        assert(results.select(col("Index")).count().toInt == 20000)
+    }
   }
 
   test("Data distribution test: Can you sum up all elements?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn)
-    assert(
-      results.select(
-        col("Index")).rdd
-          .map(_(0).asInstanceOf[Long])
-          .reduce(_+_) == 199990000)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn)
+        assert(
+          results.select(
+            col("Index")).rdd
+            .map(_ (0).asInstanceOf[Long])
+            .reduce(_ + _) == 199990000)
+    }
   }
 
   test("Data distribution test: Do you pass over all blocks?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .option("recordlength", 16 * 1024)
-      .load(fn)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .option("recordlength", 16 * 1024)
+          .load(fn)
 
-    val count = results.select(col("Index")).count().toInt
-    val count_unique = results.select(col("Index")).distinct().count().toInt
+        val count = results.select(col("Index")).count().toInt
+        val count_unique = results.select(col("Index")).distinct().count().toInt
 
-    assert(count == count_unique)
+        assert(count == count_unique)
+    }
   }
 
   test("Header printing test") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .option("verbose", true)
-      .option("recordlength", 16 * 1024)
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .option("verbose", true)
+          .option("recordlength", 16 * 1024)
 
-    // Finally print the header and exit.
-    assert(results.load(fn).isInstanceOf[DataFrame])
+        // Finally print the header and exit.
+        assert(results.load(fn).isInstanceOf[DataFrame])
+    }
   }
 
   test("Multi files test: Can you read several FITS file?") {
-    val fn = "src/test/resources/dir"
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .option("verbose", true)
-      .option("recordlength", 16 * 1024)
+    fileFormats.foreach {
+      fileFormat =>
+        val fn = "src/test/resources/dir"
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .option("verbose", true)
+          .option("recordlength", 16 * 1024)
 
-    assert(results.load(fn).isInstanceOf[DataFrame])
-    assert(results.load(fn).count() == 27000)
+        assert(results.load(fn).isInstanceOf[DataFrame])
+        assert(results.load(fn).count() == 27000)
+    }
   }
 
   test("Multi files test: Can you read several FITS file (glob)?") {
-    val fn = "src/test/resources/dir/*.fits"
-    val df = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .option("verbose", true)
-      .option("recordlength", 16 * 1024)
-      .load(fn)
+    fileFormats.foreach {
+      fileFormat =>
+        val fn = "src/test/resources/dir/*.fits"
+        val df = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .option("verbose", true)
+          .option("recordlength", 16 * 1024)
+          .load(fn)
 
-    assert(df.isInstanceOf[DataFrame])
-    assert(df.count() == 27000)
+        assert(df.isInstanceOf[DataFrame])
+        assert(df.count() == 27000)
+    }
   }
 
   test("Multi files test: Can you read several FITS file (comma-separated)?") {
-    val fn = "src/test/resources/dir/test_file.fits,src/test/resources/dir/test_file2.fits"
-    val df = spark.read.format("fits")
-      .option("hdu", 1)
-      .load(fn)
+    (fileFormats ++ List("fits")).foreach {
+      fileFormat =>
+        val fn = "src/test/resources/dir/test_file.fits,src/test/resources/dir/test_file2.fits"
+        val df = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn)
 
-    assert(df.isInstanceOf[DataFrame])
-    assert(df.count() == 27000)
+        assert(df.isInstanceOf[DataFrame])
+        assert(df.count() == 27000)
+    }
   }
 
   test("Multi files test: Can you detect an error in reading different FITS file [FAILFAST]?") {
-    val fn = "src/test/resources/dirNotOk"
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .option("verbose", true)
-      .option("mode", "FAILFAST")
-      .option("recordlength", 16 * 1024)
+    fileFormats.foreach {
+      fileFormat =>
+        val fn = "src/test/resources/dirNotOk"
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .option("verbose", true)
+          .option("mode", "FAILFAST")
+          .option("recordlength", 16 * 1024)
 
-      val exception = intercept[AssertionError] {
-        results.load(fn).count
-      }
+        val exception = intercept[AssertionError] {
+          results.load(fn).count
+        }
 
-    assert(exception.getMessage.contains("different structures"))
+        assert(exception.getMessage.contains("different structures"))
+    }
   }
 
   test("Multi files test: Can you read several FITS file (image) discarding empty ones?") {
-    val fn = "src/test/resources/dirIm"
-    val df = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 2)
-      .option("verbose", true)
-      .load(fn)
+    fileFormats.foreach {
+      fileFormat =>
+        val fn = "src/test/resources/dirIm"
+        val df = spark.read.format(fileFormat)
+          .option("hdu", 2)
+          .option("verbose", true)
+          .load(fn)
 
-    df.count()
+        df.count()
 
-    assert(df.isInstanceOf[DataFrame])
+        assert(df.isInstanceOf[DataFrame])
+    }
   }
 
   test("Multi files test: Can you read several FITS file (image) discarding empty ones + set recordLength?") {
-    val fn = "src/test/resources/dirIm"
-    val df = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 2)
-      .option("verbose", true)
-      .option("recordlength", 2 * 1024)
-      .load(fn)
+    fileFormats.foreach {
+      fileFormat =>
+        val fn = "src/test/resources/dirIm"
+        val df = spark.read.format(fileFormat)
+          .option("hdu", 2)
+          .option("verbose", true)
+          .option("recordlength", 2 * 1024)
+          .load(fn)
 
-    df.count()
+        df.count()
 
-    assert(df.isInstanceOf[DataFrame])
+        assert(df.isInstanceOf[DataFrame])
+    }
   }
 
   test("Multi files test: Can you read several FITS file (image), and fail if there are empty ones??") {
-    val fn = "src/test/resources/dirIm/*.fits"
-    val df = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 2)
-      .option("verbose", true)
-      .option("mode", "FAILFAST")
-      .load(fn)
+    fileFormats.foreach {
+      fileFormat =>
+        val fn = "src/test/resources/dirIm/*.fits"
+          val df = spark.read.format(fileFormat)
+          .option("hdu", 2)
+          .option("verbose", true)
+          .option("mode", "FAILFAST")
 
-    val exception = intercept[AssertionError] {
-      df.count()
+        // in V2 schema is loaded while the data frame is created
+        val exception = intercept[AssertionError] {
+          df.load(fn).count
+        }
+
+        assert(exception.getMessage.contains("You are trying to add HDU data with different structures!"))
     }
-
-    assert(exception.getMessage.contains("You are trying to add HDU data with different structures!"))
   }
 
   test("No file test: Can you detect an error if there is no input FITS file found?") {
-    val fn = "src/test/resources/dirfjsdhf"
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .option("verbose", true)
-      .option("recordlength", 16 * 1024)
+    fileFormats.foreach {
+      fileFormat =>
+        val fn = "src/test/resources/dirfjsdhf"
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .option("verbose", true)
+          .option("recordlength", 16 * 1024)
 
-      val exception = intercept[NullPointerException] {
-        results.load(fn)
-      }
+        val exception = intercept[NullPointerException] {
+          results.load(fn)
+        }
 
-    assert(exception.getMessage.contains("0 files detected"))
+        assert(exception.getMessage.contains("0 files detected"))
+    }
   }
 
   // Test ordering of elements in the DF
   test("Ordering test: Is the first element of the DF correct?") {
-    val results = spark.read.format("com.astrolabsoftware.sparkfits")
-      .option("hdu", 1)
-      .load(fn)
-    assert(results.select(col("target")).first.getString(0) == "NGC0000000")
+    fileFormats.foreach {
+      fileFormat =>
+        val results = spark.read.format(fileFormat)
+          .option("hdu", 1)
+          .load(fn)
+        assert(results.select(col("target")).first.getString(0) == "NGC0000000")
+    }
   }
 }
