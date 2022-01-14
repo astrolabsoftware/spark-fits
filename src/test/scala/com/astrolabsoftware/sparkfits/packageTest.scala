@@ -251,4 +251,13 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       .load(fn)
     assert(results.select(col("target")).first.getString(0) == "NGC0000000")
   }
+
+  // Test slash in columns
+  test("Slash in names: can you read column names with slash?") {
+    val fn = "src/test/resources/colnames_with_slash.fits"
+    val results = spark.read.format("com.astrolabsoftware.sparkfits")
+      .option("hdu", 1)
+      .load(fn)
+    assert(results.columns.deep == Array("lsst/u_MEAN", "lsst/g_MEAN", "euclid/VIS_MEAN", "euclid/Y_MEAN").deep)
+  }
 }
