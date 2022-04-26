@@ -14,10 +14,10 @@ option. For example, to include it when starting the spark shell:
 
 ```bash
 # Scala 2.11
-$SPARK_HOME/bin/spark-shell --packages com.github.astrolabsoftware:spark-fits_2.11:0.9.0
+$SPARK_HOME/bin/spark-shell --packages com.github.astrolabsoftware:spark-fits_2.11:1.0.0
 
 # Scala 2.12
-$SPARK_HOME/bin/spark-shell --packages com.github.astrolabsoftware:spark-fits_2.12:0.9.0
+$SPARK_HOME/bin/spark-shell --packages com.github.astrolabsoftware:spark-fits_2.12:1.0.0
 ```
 
 Using `--packages` ensures that this library and its dependencies will
@@ -25,10 +25,10 @@ be added to the classpath (make sure you use the latest version). In Python, you
 
 ```bash
 # Scala 2.11
-$SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.11:0.9.0
+$SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.11:1.0.0
 
 # Scala 2.12
-$SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.12:0.9.0
+$SPARK_HOME/bin/pyspark --packages com.github.astrolabsoftware:spark-fits_2.12:1.0.0
 ```
 
 Alternatively to have the latest development you can download this repo

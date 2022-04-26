@@ -19,7 +19,7 @@ import xerial.sbt.Sonatype._
 lazy val root = (project in file(".")).
  settings(
    inThisBuild(List(
-     version      := "0.9.0",
+     version      := "1.0.0",
      mainClass in Compile := Some("com.astrolabsoftware.sparkfits.ReadFits")
    )),
    // Name of the application
@@ -44,8 +44,8 @@ lazy val root = (project in file(".")).
    // assemblyShadeRules in assembly := Seq(ShadeRule.rename("nom.**" -> "new_nom.@1").inAll),
    // Put dependencies of the library
    libraryDependencies ++= Seq(
-     "org.apache.spark" %% "spark-core" % "2.4.3" % "provided",
-     "org.apache.spark" %% "spark-sql" % "2.4.3" % "provided",
+     "org.apache.spark" %% "spark-core" % "2.4.7" % "provided",
+     "org.apache.spark" %% "spark-sql" % "2.4.7" % "provided",
      scalaTest % Test
    )
  )
