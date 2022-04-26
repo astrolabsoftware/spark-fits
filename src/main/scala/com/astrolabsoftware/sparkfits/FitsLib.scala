@@ -92,6 +92,15 @@ object FitsLib {
 
   /**
     * Decompose each line of the header into (key, value).
+    * Note the white space before the slash to include colnames with slash:
+    *   a=toto/tutu    / a comment
+    * TTYPEn would be `toto/tutu`
+    *
+    * I reckon This is not very robust though as rows such as
+    *   a=toto /tutu    / a comment
+    * where the value of TTYPEn is expected to be `toto / tutu` would not
+    * be considered, and it would return only `toto`.
+    *
     *
     * @param header : (Array[String])
     *   The header of the HDU.
@@ -101,9 +110,34 @@ object FitsLib {
   def parseHeader(header : Array[String]) : Map[String, String] = {
     header.map(x => x.split("="))
       .filter(x => x.size > 1)
-      .map(x => (x(0).trim(), x(1).split("/")(0).trim()))
+      .map(x => (x(0).trim(), x(1).split(" /")(0).trim()))
       .toMap
   }
+
+  /**
+    * This is a better code than above, but it does not work if
+    * there is no comment section on the card...
+    *   a=toto/tutu    / a comment --> OK
+    *   a=toto/tutu                --> NOT OK
+    * Unfortunately, both exist :-(
+    *
+    * @param header : (Array[String])
+    *   The header of the HDU.
+    * @return (Map[String, String]), map array with (keys, values).
+    *
+    */
+  // def parseHeader(header : Array[String]) : Map[String, String] = {
+  //   header.map(x => x.split("="))
+  //     .filter(x => x.size > 1)
+  //     .map{x =>
+  //       val head = x(0).trim()
+  //       val ttype_ = x(1).split("/").map(y => y.trim())
+  //
+  //       val ttype = ttype_.slice(0, ttype_.size - 1).mkString("/")
+  //
+  //       (head, ttype)
+  //     }.toMap
+  // }
 
   /**
     *
