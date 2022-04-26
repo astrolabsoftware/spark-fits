@@ -21,10 +21,10 @@ You can link spark-fits to your project (either `spark-shell` or `spark-submit`)
 
 ```bash
 # Scala 2.11
-toto:~$ spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.11:0.9.0" <...>
+toto:~$ spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.11:1.0.0" <...>
 
 # Scala 2.12
-toto:~$ spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.12:0.9.0" <...>
+toto:~$ spark-submit --packages "com.github.astrolabsoftware:spark-fits_2.12:1.0.0" <...>
 ```
 
 It might not contain the latest features though (see *Building from source*).
