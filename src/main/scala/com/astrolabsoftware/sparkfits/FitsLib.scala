@@ -208,6 +208,7 @@ object FitsLib {
     val blockHeader = if (conf.get(hdfsPath + "_header") != null) {
       retrieveHeader
     } else readFullHeaderBlocks
+    val fullHeaderBlock = blockHeader
     resetCursorAtHeader
 
     // Check whether we know the HDU type.
@@ -235,6 +236,16 @@ object FitsLib {
           You specified a recordLength option too small compared to the FITS row size:
           $recordLength B < $rowSize B """)
       }
+    }
+
+    /**
+      * Give access to full header of HDU
+      *
+      * @return (Array[String])
+      *
+      */
+    def getHDUFullHeader : Array[String] = {
+      fullHeaderBlock
     }
 
     /**

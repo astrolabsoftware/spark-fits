@@ -15,6 +15,9 @@
  */
 package com.astrolabsoftware.sparkfits
 
+import com.astrolabsoftware.sparkfits.FitsLib.Fits
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
@@ -49,6 +52,14 @@ object ReadFits {
 
       val count = df.count()
       println("Total rows: " + count.toString)
+
+      println("getHDUFullHeader>")
+      val hadoopconf = new Configuration()
+      val testpath = new Path(args(0).toString)
+      val fitsobj = new Fits(testpath, hadoopconf, 0)
+      for (elem <- fitsobj.getHDUFullHeader) {
+        println(elem)
+      }
     }
   }
 }
