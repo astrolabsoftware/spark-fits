@@ -22,6 +22,10 @@ lazy val root = (project in file(".")).
      version      := "1.0.0",
      mainClass in Compile := Some("com.astrolabsoftware.sparkfits.ReadFits")
    )),
+
+   //Scala version
+   scalaVersion := "2.12.8",
+
    // Name of the application
    name := "spark-fits",
    // Name of the orga
