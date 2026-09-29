@@ -19,6 +19,9 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.mapreduce.TaskAttemptID
+import org.apache.hadoop.mapreduce.lib.input.FileSplit
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 
 import com.astrolabsoftware.sparkfits.FitsLib._
 import com.astrolabsoftware.sparkfits.FitsSchema._
@@ -168,6 +171,25 @@ class FitsLibTest extends FunSuite with BeforeAndAfterAll {
     val row = fB1.getRow(buffer)
 
     assert(row(0) == "NGC0000000")
+  }
+
+  test("FitsRecordReader test: Align a split relative to the FITS data block") {
+    val splitStart = 5780L
+    val split = new FileSplit(file, splitStart, 1024L, Array.empty[String])
+    val splitConf = new Configuration()
+    splitConf.set("hdu", "1")
+    splitConf.set("mode", "FAILFAST")
+    val context = new TaskAttemptContextImpl(splitConf, new TaskAttemptID())
+    val reader = new FitsRecordReader()
+
+    try {
+      reader.initialize(split, context)
+      assert(reader.nextKeyValue())
+      assert(reader.getCurrentValue.head(0) == "NGC0000000")
+      assert(reader.getCurrentValue.head(3) == 0L)
+    } finally {
+      reader.close()
+    }
   }
 
   // Check the reader (element-by-element)
