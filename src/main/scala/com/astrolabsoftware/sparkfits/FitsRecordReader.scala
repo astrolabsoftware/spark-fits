@@ -246,7 +246,7 @@ class FitsRecordReader extends RecordReader[LongWritable, Seq[Row]] {
       // We shift the start to where the data block starts
       var shift = -startstop.dataStart
 
-      splitStart = if((splitStart_tmp) % rowSizeLong != 0 &&
+      splitStart = if((splitStart_tmp + shift) % rowSizeLong != 0 &&
         splitStart_tmp != startstop.dataStart && splitStart_tmp != 0) {
 
         // Decrement the starting index to fully catch the line we are sitting on
