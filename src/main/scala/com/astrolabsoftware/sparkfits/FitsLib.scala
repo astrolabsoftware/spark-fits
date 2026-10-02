@@ -257,7 +257,7 @@ object FitsLib {
     def handleBintable : FitsHduBintable.BintableHDU = {
       // Grab only columns specified by the user
       val selectedColNames = if (conf.get("columns") != null) {
-        conf.getStrings("columns").deep.toList.asInstanceOf[List[String]]
+        conf.getStrings("columns").toList
       } else null
 
       FitsHduBintable.BintableHDU(blockHeader, selectedColNames)

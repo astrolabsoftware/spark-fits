@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag (vMAJOR.MINOR.PATCH)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify-tag:
+    if: github.repository == 'astrolabsoftware/spark-fits'
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.verify.outputs.sha }}
+      version: ${{ steps.verify.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: verify
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          git show-ref --verify --quiet "refs/tags/$TAG"
+          sha=$(git rev-parse "refs/tags/$TAG^{commit}")
+          git merge-base --is-ancestor "$sha" origin/master
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: verify-tag
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { spark: '2.4.8', scala: '2.12.21', java: '8' }
+          - { spark: '3.4.4', scala: '2.12.21', java: '11' }
+          - { spark: '3.5.9', scala: '2.12.21', java: '11' }
+          - { spark: '4.2.0', scala: '2.13.18', java: '17' }
+    name: Test Spark ${{ matrix.spark }} / Scala ${{ matrix.scala }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify-tag.outputs.sha }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - env:
+          SPARK_VERSION: ${{ matrix.spark }}
+          RELEASE_VERSION: ${{ needs.verify-tag.outputs.version }}
+        run: sbt '++${{ matrix.scala }}' test
+
+  publish:
+    needs: [verify-tag, test]
+    runs-on: ubuntu-latest
+    environment: maven-central
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify-tag.outputs.sha }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - name: Import signing key
+        env:
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        run: |
+          test -n "$PGP_SECRET" && test -n "$PGP_PASSPHRASE"
+          test -n "$SONATYPE_USERNAME" && test -n "$SONATYPE_PASSWORD"
+          printf '%s' "$PGP_SECRET" | base64 --decode | gpg --batch --import
+      - name: Publish to Maven Central
+        env:
+          RELEASE_VERSION: ${{ needs.verify-tag.outputs.version }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        run: sbt '++2.12.21' publishSigned '++2.13.18' publishSigned sonaRelease
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+        run: gh release create "$TAG" --verify-tag --generate-notes
