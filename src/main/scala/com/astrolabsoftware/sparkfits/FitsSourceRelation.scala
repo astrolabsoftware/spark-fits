@@ -366,13 +366,18 @@ class FitsRelation(parameters: Map[String, String], userSchema: Option[StructTyp
     userSchema.getOrElse{
       val listOfFitsFiles = searchFitsFile(filePath)
 
-      val pathFS = new Path(listOfFitsFiles(0))
+      // An empty IMAGE can have a different BITPIX from files containing pixels.
+      val schemaFile = listOfFitsFiles.find { file =>
+        val candidate = new Fits(new Path(file), conf, conf.get("hdu").toInt)
+        try !candidate.empty_hdu finally candidate.data.close()
+      }.getOrElse(listOfFitsFiles(0))
+      val pathFS = new Path(schemaFile)
       val fits = new Fits(pathFS, conf, conf.get("hdu").toInt)
       // Register header and block boundaries
       // in the Hadoop configuration for later re-use
       fits.registerHeader
       fits.blockBoundaries.register(pathFS, conf)
-      getSchema(fits)
+      try getSchema(fits) finally fits.data.close()
     }
   }
 

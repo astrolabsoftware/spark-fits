@@ -207,6 +207,14 @@ class packageTest extends AnyFunSuite with BeforeAndAfterAll {
     assert(df.isInstanceOf[DataFrame])
   }
 
+  test("Multi files test: Infer image schema from a non-empty file when an empty file comes first") {
+    val fn = "src/test/resources/dirIm/1_i_am_empty.fits,src/test/resources/dirIm/0_i_am_not_empty.fits"
+    val df = spark.read.format("fits").option("hdu", 2).load(fn)
+
+    assert(df.schema("Image").dataType == ArrayType(ShortType, true))
+    assert(df.count() > 0)
+  }
+
   test("Multi files test: Can you read several FITS file (image) discarding empty ones + set recordLength?") {
     val fn = "src/test/resources/dirIm"
     val df = spark.read.format("com.astrolabsoftware.sparkfits")
