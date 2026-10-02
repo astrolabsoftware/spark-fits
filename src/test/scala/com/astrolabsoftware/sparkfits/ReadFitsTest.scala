@@ -15,7 +15,8 @@
  */
 package com.astrolabsoftware.sparkfits
 
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.spark.sql.SparkSession
 
@@ -25,7 +26,7 @@ import org.apache.log4j.Logger
 /**
   * Test class for the package object.
   */
-class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
+class ReadFitsTest extends AnyFunSuite with BeforeAndAfterAll {
 
   // Set to Level.WARN is you want verbosity
   Logger.getLogger("org").setLevel(Level.OFF)
@@ -67,10 +68,11 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .option("recordLength", 1024)
-    val exception = intercept[AssertionError] {
+    val exception = intercept[Throwable] {
       results.load(fn_long)
     }
-    assert(exception.getMessage.contains("recordLength option too small"))
+    assert(Iterator.iterate(exception)(_.getCause).takeWhile(_ != null)
+      .exists(e => e.isInstanceOf[AssertionError] && e.getMessage.contains("recordLength option too small")))
   }
 
   // Test if the code can adapt recordlength
@@ -94,10 +96,11 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
   // Test if the user provides the HDU index to be read
   test("HDU test: Is HDU index above the max HDU index?") {
     val results = spark.read.format("com.astrolabsoftware.sparkfits")
-    val exception = intercept[AssertionError] {
+    val exception = intercept[Throwable] {
       results.option("hdu", 30).load(fn)
     }
-    assert(exception.getMessage.contains("HDU"))
+    assert(Iterator.iterate(exception)(_.getCause).takeWhile(_ != null)
+      .exists(e => e.isInstanceOf[AssertionError] && e.getMessage.contains("HDU")))
   }
 
   test("HDU type test: Return an empty DataFrame if HDU is empty?") {
@@ -254,7 +257,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn_array)
     // Elements of a column are arrays of 1 element
     assert(results.select("Index").schema(0).dataType.simpleString == "array<bigint>")
-    assert(results.select("Index").take(1)(0)(0).asInstanceOf[Seq[Long]].size == 7)
+    assert(results.select("Index").take(1)(0)(0).asInstanceOf[scala.collection.Seq[Long]].size == 7)
   }
 
   // Test if type cast is done correctly
@@ -264,7 +267,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn_array)
     // Elements of a column are arrays of 1 element
     assert(results.select("RA").schema(0).dataType.simpleString == "array<float>")
-    assert(results.select("RA").take(1)(0)(0).asInstanceOf[Seq[Float]].size == 2)
+    assert(results.select("RA").take(1)(0)(0).asInstanceOf[scala.collection.Seq[Float]].size == 2)
   }
 
   // Test if type cast is done correctly
@@ -274,7 +277,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn_array)
     // Elements of a column are arrays of 1 element
     assert(results.select("Dec").schema(0).dataType.simpleString == "array<double>")
-    assert(results.select("Dec").take(1)(0)(0).asInstanceOf[Seq[Double]].size == 3)
+    assert(results.select("Dec").take(1)(0)(0).asInstanceOf[scala.collection.Seq[Double]].size == 3)
   }
 
   // Test if type cast is done correctly
@@ -284,7 +287,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn_array)
     // Elements of a column are arrays of 1 element
     assert(results.select("Index").schema(0).dataType.simpleString == "array<int>")
-    assert(results.select("Index").take(1)(0)(0).asInstanceOf[Seq[Int]].size == 2)
+    assert(results.select("Index").take(1)(0)(0).asInstanceOf[scala.collection.Seq[Int]].size == 2)
   }
 
   // Test if type cast is done correctly
@@ -294,7 +297,7 @@ class ReadFitsTest extends FunSuite with BeforeAndAfterAll {
       .load(fn_array)
     // Elements of a column are arrays of 1 element
     assert(results.select("RunIdArray").schema(0).dataType.simpleString == "array<smallint>")
-    assert(results.select("RunIdArray").take(1)(0)(0).asInstanceOf[Seq[Int]].size == 3)
+    assert(results.select("RunIdArray").take(1)(0)(0).asInstanceOf[scala.collection.Seq[Int]].size == 3)
   }
 
   // Test if type cast is done correctly

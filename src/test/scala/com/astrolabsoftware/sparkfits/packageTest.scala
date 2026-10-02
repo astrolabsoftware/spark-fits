@@ -15,7 +15,8 @@
  */
 package com.astrolabsoftware.sparkfits
 
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame
@@ -29,7 +30,15 @@ import org.apache.log4j.Logger
 /**
   * Test class for the package object.
   */
-class packageTest extends FunSuite with BeforeAndAfterAll {
+class packageTest extends AnyFunSuite with BeforeAndAfterAll {
+
+  private def assertStructureFailure(read: => Any): Unit = {
+    val failure = intercept[Throwable](read)
+    // Spark 3+ wraps failures raised during a DataFrame action.
+    assert(Iterator.iterate(failure)(_.getCause).takeWhile(_ != null)
+      .exists(e => e.isInstanceOf[AssertionError] &&
+        e.getMessage.contains("different structures")))
+  }
 
   // Set to Level.WARN is you want verbosity
   Logger.getLogger("org").setLevel(Level.OFF)
@@ -98,7 +107,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       .option("hdu", 1)
       .schema(schema)
       .load(fn)
-    assert(results.columns.deep == Array("toto", "tutu", "tata", "titi", "tete").deep)
+    assert(results.columns.sameElements(Array("toto", "tutu", "tata", "titi", "tete")))
   }
 
   // Test Data distribution
@@ -183,11 +192,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       .option("mode", "FAILFAST")
       .option("recordlength", 16 * 1024)
 
-      val exception = intercept[AssertionError] {
-        results.load(fn).count
-      }
-
-    assert(exception.getMessage.contains("different structures"))
+    assertStructureFailure(results.load(fn).count)
   }
 
   test("Multi files test: Can you read several FITS file (image) discarding empty ones?") {
@@ -223,11 +228,7 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       .option("mode", "FAILFAST")
       .load(fn)
 
-    val exception = intercept[AssertionError] {
-      df.count()
-    }
-
-    assert(exception.getMessage.contains("You are trying to add HDU data with different structures!"))
+    assertStructureFailure(df.count())
   }
 
   test("No file test: Can you detect an error if there is no input FITS file found?") {
@@ -237,11 +238,12 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
       .option("verbose", true)
       .option("recordlength", 16 * 1024)
 
-      val exception = intercept[NullPointerException] {
+      val exception = intercept[Throwable] {
         results.load(fn)
       }
 
-    assert(exception.getMessage.contains("0 files detected"))
+    assert(Iterator.iterate(exception)(_.getCause).takeWhile(_ != null)
+      .exists(e => e.isInstanceOf[NullPointerException] && e.getMessage.contains("0 files detected")))
   }
 
   // Test ordering of elements in the DF
@@ -258,6 +260,6 @@ class packageTest extends FunSuite with BeforeAndAfterAll {
     val results = spark.read.format("com.astrolabsoftware.sparkfits")
       .option("hdu", 1)
       .load(fn)
-    assert(results.columns.deep == Array("lsst/u_MEAN", "lsst/g_MEAN", "euclid/VIS_MEAN", "euclid/Y_MEAN").deep)
+    assert(results.columns.sameElements(Array("lsst/u_MEAN", "lsst/g_MEAN", "euclid/VIS_MEAN", "euclid/Y_MEAN")))
   }
 }

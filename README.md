@@ -1,8 +1,7 @@
 # FITS Data Source for Apache Spark
 
-[![Build Status](https://travis-ci.org/astrolabsoftware/spark-fits.svg?branch=master)](https://travis-ci.org/astrolabsoftware/spark-fits)
-[![codecov](https://codecov.io/gh/astrolabsoftware/spark-fits/branch/master/graph/badge.svg?style=platic)](https://codecov.io/gh/astrolabsoftware/spark-fits)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.astrolabsoftware/spark-fits_2.11/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.github.astrolabsoftware/spark-fits_2.11)
+[![CI](https://github.com/astrolabsoftware/spark-fits/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/astrolabsoftware/spark-fits/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.astrolabsoftware/spark-fits_2.12)](https://central.sonatype.com/artifact/com.github.astrolabsoftware/spark-fits_2.12)
 [![Arxiv](http://img.shields.io/badge/arXiv-1804.07501-yellow.svg?style=platic)](https://arxiv.org/abs/1804.07501)
 
 ## Latest news
@@ -51,6 +50,17 @@ libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.11" % "1.0.
 // Scala 2.12
 libraryDependencies += "com.github.astrolabsoftware" % "spark-fits_2.12" % "1.0.0"
 ```
+
+For the next release, the build targets Scala 2.12 (Spark 3.4.4) and Scala
+2.13 (Spark 4.2.0). CI also builds and tests with Spark 2.4.8 and 3.5.9
+on Scala 2.12. Match the Scala binary version of your Spark installation; use
+the latest published version of the corresponding `spark-fits_2.12` or
+`spark-fits_2.13` artifact. Spark is a `provided` dependency and is not
+bundled into spark-fits.
+
+To run the build locally, use `sbt test` (Scala 2.12 / Spark 3.4.4).
+Set `SPARK_VERSION` and use `++2.12.21` or `++2.13.18` to select another CI
+combination. Release instructions are in [docs/releasing.md](docs/releasing.md).
 
 Currently available:
 

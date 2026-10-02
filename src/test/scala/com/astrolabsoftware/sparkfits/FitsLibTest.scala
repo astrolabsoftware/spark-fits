@@ -15,7 +15,8 @@
  */
 package com.astrolabsoftware.sparkfits
 
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.conf.Configuration
@@ -31,7 +32,7 @@ import com.astrolabsoftware.sparkfits.FitsHduImage._
 /**
   * Test class for the FitsSchema object.
   */
-class FitsLibTest extends FunSuite with BeforeAndAfterAll {
+class FitsLibTest extends AnyFunSuite with BeforeAndAfterAll {
 
   // Open the test fits file and get meta info
   val file = new Path("src/test/resources/test_file.fits")
